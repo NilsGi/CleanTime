@@ -64,17 +64,7 @@
     .hero-subtitle {
       font-size: clamp(17px, 4vw, 22px);
       opacity: 0.95;
-      margin-bottom: 18px;
-    }
-
-    .hero-count {
-      display: inline-block;
-      background: rgba(255,255,255,0.16);
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 999px;
-      padding: 10px 17px;
-      font-size: 15px;
-      backdrop-filter: blur(8px);
+      margin-bottom: 0;
     }
 
     .wrap {
@@ -185,6 +175,13 @@
       line-height: 1.2;
     }
 
+    .stat-detail {
+      margin-top: 8px;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
     .stat-note {
       margin-top: 7px;
       color: var(--muted);
@@ -259,16 +256,10 @@
       Laddar...
     </div>
 
-    <div class="counter-note" id="mainCounterNote"></div>
-
     <div class="hero-subtitle">
-      av drogfrihet
+      dagar av drogfrihet
     </div>
-
-    <div class="hero-count">
-      👥 <strong id="countHero">0</strong> registrerade personer
-    </div>
-  </section>
+</section>
 
   <main class="wrap">
 
@@ -276,7 +267,7 @@
       <h2>Registrera din drogfria tid</h2>
 
       <p class="helper-text">
-        Välj datumet då du blev drogfri. Inga namn eller e-postadresser sparas.
+        Välj datumet då du blev drogfri.
       </p>
 
       <form id="cleanForm">
@@ -291,34 +282,48 @@
     <section class="stats-grid">
 
       <div class="stat-card">
-        <div class="stat-title">👥 Personer</div>
-        <div class="stat-value" id="count">0</div>
+        <div class="stat-value" id="count">0 personer</div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-title">⏳ Total tid</div>
-        <div class="stat-value" id="total">0 dagar</div>
+        <div class="stat-title">Total tid</div>
+        <div class="stat-value" id="totalYears">0,0 år</div>
+        <div class="stat-detail" id="totalDetail">(0 dagar)</div>
         <div class="stat-note" id="totalDaysNote"></div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-title">📊 Medel</div>
-        <div class="stat-value" id="average">0 dagar</div>
-        <div class="stat-note" id="averageDaysNote">Medel räknas på totala dagar</div>
+        <div class="stat-title">Medel</div>
+        <div class="stat-value" id="averageYears">0,0 år</div>
+        <div class="stat-detail" id="averageDetail">(0 dagar)</div>
+        <div class="stat-note" id="averageDaysNote"></div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-title">🏆 Längsta tid</div>
-        <div class="stat-value" id="longest">0 dagar</div>
+        <div class="stat-title">Längsta tid</div>
+        <div class="stat-value" id="longestYears">0,0 år</div>
+        <div class="stat-detail" id="longestDetail">(0 dagar)</div>
         <div class="stat-note" id="longestDaysNote"></div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-title">🌱 Kortaste tid</div>
-        <div class="stat-value" id="shortest">0 dagar</div>
+        <div class="stat-title">Kortaste tid</div>
+        <div class="stat-value" id="shortestYears">0 dagar</div>
+        <div class="stat-detail" id="shortestDetail"></div>
         <div class="stat-note" id="shortestDaysNote"></div>
       </div>
 
+    </section>
+
+    <section class="card">
+      <h2>Hur räknas tiden?</h2>
+      <p class="helper-text">
+        Drogfri tid räknas från det registrerade datumet fram till dagens datum.
+        Den stora räknaren visar totalt antal dagar för alla registreringar tillsammans.
+        I statistikrutorna räknas år som 365,25 dagar och visas med en decimal.
+        Texten inom parentes visar samma tid omräknad till år, månader och dagar,
+        där en månad räknas som cirka 30,44 dagar i genomsnitt.
+      </p>
     </section>
 
   </main>
@@ -354,47 +359,60 @@
       return Math.floor((today - cleanDate) / 86400000);
     }
 
-    function formatApproxTime(totalDays) {
-      if (totalDays <= 0) return "0 dagar";
+    function pluralize(value, singular, plural) {
+      return value === 1 ? singular : plural;
+    }
 
+    function formatDetailFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(days));
       const years = Math.floor(totalDays / 365.25);
-      const remainingAfterYears = totalDays - (years * 365.25);
-      const months = Math.floor(remainingAfterYears / 30.4375);
-      const days = Math.floor(remainingAfterYears - (months * 30.4375));
+      const daysAfterYears = totalDays - Math.floor(years * 365.25);
 
-      const parts = [];
+      const averageMonthDays = 30.4375;
+      const months = Math.floor(daysAfterYears / averageMonthDays);
+      const remainingDays = Math.round(daysAfterYears - (months * averageMonthDays));
+
+      let parts = [];
       if (years > 0) parts.push(years + " år");
-      if (months > 0) parts.push(months + " månader");
-      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
+      if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
+      if (remainingDays > 0 || parts.length === 0) {
+        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+      }
+
       return parts.join(" ");
     }
 
-    function formatCalendarTimeFromDate(dateString) {
-      const start = parseDateOnly(dateString);
-      const end = todayDateOnly();
+    function formatShortValue(days) {
+      const totalDays = Math.max(0, Math.floor(days));
+      const averageMonthDays = 30.4375;
 
-      if (start > end) return "0 dagar";
-
-      let years = end.getFullYear() - start.getFullYear();
-      let months = end.getMonth() - start.getMonth();
-      let days = end.getDate() - start.getDate();
-
-      if (days < 0) {
-        months--;
-        const daysInPreviousMonth = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
-        days += daysInPreviousMonth;
+      if (totalDays < averageMonthDays) {
+        return totalDays + " " + pluralize(totalDays, "dag", "dagar");
       }
 
-      if (months < 0) {
-        years--;
-        months += 12;
+      if (totalDays < 365.25) {
+        const months = Math.floor(totalDays / averageMonthDays);
+        const remainingDays = Math.round(totalDays - (months * averageMonthDays));
+
+        let parts = [];
+        if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
+        if (remainingDays > 0) parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+
+        return parts.join(" ");
       }
 
-      const parts = [];
-      if (years > 0) parts.push(years + " år");
-      if (months > 0) parts.push(months + " månader");
-      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
-      return parts.join(" ");
+      return null;
+    }
+
+    function formatStatsFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(days));
+      const decimalYears = (totalDays / 365.25).toFixed(1).replace(".", ",");
+
+      return {
+        yearsDecimal: decimalYears + " år",
+        detail: "(" + formatDetailFromDays(totalDays) + ")",
+        daysText: totalDays.toLocaleString("sv-SE") + " " + pluralize(totalDays, "dag", "dagar")
+      };
     }
 
     function showMessage(text, type) {
@@ -410,18 +428,26 @@
     }
 
     function setEmptyStats() {
-      document.getElementById("mainCounter").innerText = "0 dagar";
-      document.getElementById("mainCounterNote").innerText = "";
-      document.getElementById("countHero").innerText = "0";
-      document.getElementById("count").innerText = "0";
-      document.getElementById("total").innerText = "0 dagar";
-      document.getElementById("average").innerText = "0 dagar";
-      document.getElementById("longest").innerText = "0 dagar";
-      document.getElementById("shortest").innerText = "0 dagar";
-      document.getElementById("totalDaysNote").innerText = "";
-      document.getElementById("averageDaysNote").innerText = "";
-      document.getElementById("longestDaysNote").innerText = "";
-      document.getElementById("shortestDaysNote").innerText = "";
+      const zero = formatStatsFromDays(0);
+
+      document.getElementById("mainCounter").innerText = "0";
+      document.getElementById("count").innerText = "0 personer";
+
+      document.getElementById("totalYears").innerText = zero.yearsDecimal;
+      document.getElementById("totalDetail").innerText = zero.detail;
+      document.getElementById("totalDaysNote").innerText = zero.daysText + " totalt";
+
+      document.getElementById("averageYears").innerText = zero.yearsDecimal;
+      document.getElementById("averageDetail").innerText = zero.detail;
+      document.getElementById("averageDaysNote").innerText = zero.daysText + " i genomsnitt";
+
+      document.getElementById("longestYears").innerText = zero.yearsDecimal;
+      document.getElementById("longestDetail").innerText = zero.detail;
+      document.getElementById("longestDaysNote").innerText = zero.daysText;
+
+      document.getElementById("shortestYears").innerText = "0 dagar";
+      document.getElementById("shortestDetail").innerText = "";
+      document.getElementById("shortestDaysNote").innerText = zero.daysText;
     }
 
     async function loadStats() {
@@ -448,57 +474,52 @@
     }
 
     function updateStats() {
-      const validEntries = cleanEntries
-        .map(entry => ({
-          clean_date: entry.clean_date,
-          days: daysBetween(entry.clean_date)
-        }))
-        .filter(entry => entry.days >= 0);
+      const daysList = cleanEntries
+        .map(entry => daysBetween(entry.clean_date))
+        .filter(days => days >= 0);
 
-      if (validEntries.length === 0) {
+      if (daysList.length === 0) {
         setEmptyStats();
         return;
       }
 
-      const count = validEntries.length;
-      const totalDays = validEntries.reduce((sum, entry) => sum + entry.days, 0);
+      const count = daysList.length;
+      const totalDays = daysList.reduce((sum, days) => sum + days, 0);
       const averageDays = Math.floor(totalDays / count);
+      const longestDays = Math.max(...daysList);
+      const shortestDays = Math.min(...daysList);
 
-      const longestEntry = validEntries.reduce((a, b) => a.days >= b.days ? a : b);
-      const shortestEntry = validEntries.reduce((a, b) => a.days <= b.days ? a : b);
+      const total = formatStatsFromDays(totalDays);
+      const average = formatStatsFromDays(averageDays);
+      const longest = formatStatsFromDays(longestDays);
+      const shortest = formatStatsFromDays(shortestDays);
+      const shortestShortValue = formatShortValue(shortestDays);
 
-      const totalDisplay = count === 1
-        ? formatCalendarTimeFromDate(validEntries[0].clean_date)
-        : formatApproxTime(totalDays);
+      document.getElementById("mainCounter").innerText = totalDays.toLocaleString("sv-SE");
+      document.getElementById("count").innerText = count.toLocaleString("sv-SE") + " personer";
 
-      document.getElementById("mainCounter").innerText = totalDisplay;
-      document.getElementById("mainCounterNote").innerText =
-        totalDays.toLocaleString("sv-SE") + " dagar totalt";
+      document.getElementById("totalYears").innerText = total.yearsDecimal;
+      document.getElementById("totalDetail").innerText = total.detail;
+      document.getElementById("totalDaysNote").innerText = total.daysText + " totalt";
 
-      document.getElementById("countHero").innerText = count.toLocaleString("sv-SE");
-      document.getElementById("count").innerText = count.toLocaleString("sv-SE");
-
-      document.getElementById("total").innerText = totalDisplay;
-      document.getElementById("totalDaysNote").innerText =
-        count === 1
-          ? totalDays.toLocaleString("sv-SE") + " dagar"
-          : totalDays.toLocaleString("sv-SE") + " dagar totalt, omräknat med 365,25 dagar/år";
-
-      const averageDisplay = count === 1
-        ? formatCalendarTimeFromDate(validEntries[0].clean_date)
-        : formatApproxTime(averageDays);
-
-      document.getElementById("average").innerText = averageDisplay;
+      document.getElementById("averageYears").innerText = average.yearsDecimal;
+      document.getElementById("averageDetail").innerText = average.detail;
       document.getElementById("averageDaysNote").innerText =
-        averageDays.toLocaleString("sv-SE") + " dagar i genomsnitt";
+        average.daysText + " i genomsnitt";
 
-      document.getElementById("longest").innerText = formatCalendarTimeFromDate(longestEntry.clean_date);
-      document.getElementById("longestDaysNote").innerText =
-        longestEntry.days.toLocaleString("sv-SE") + " dagar";
+      document.getElementById("longestYears").innerText = longest.yearsDecimal;
+      document.getElementById("longestDetail").innerText = longest.detail;
+      document.getElementById("longestDaysNote").innerText = longest.daysText;
 
-      document.getElementById("shortest").innerText = formatCalendarTimeFromDate(shortestEntry.clean_date);
-      document.getElementById("shortestDaysNote").innerText =
-        shortestEntry.days.toLocaleString("sv-SE") + " dagar";
+      if (shortestShortValue !== null) {
+        document.getElementById("shortestYears").innerText = shortestShortValue;
+        document.getElementById("shortestDetail").innerText = "";
+      } else {
+        document.getElementById("shortestYears").innerText = shortest.yearsDecimal;
+        document.getElementById("shortestDetail").innerText = shortest.detail;
+      }
+
+      document.getElementById("shortestDaysNote").innerText = shortest.daysText;
     }
 
     document.getElementById("cleanForm").addEventListener("submit", async function(e) {
