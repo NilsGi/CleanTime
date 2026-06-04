@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Drogfri tid</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    .hero {
+      background: #111827;
+      color: white;
+      padding: 50px 20px;
+    }
+
+    .hero h1 {
+      font-size: 22px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .counter {
+      font-size: 42px;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    input, button {
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #111827;
+      color: white;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .stat-box {
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .stat-box strong {
+      display: block;
+      font-size: 22px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <h1>TILLSAMMANS HAR VI</h1>
+    <div class="counter" id="mainCounter">
+      Laddar...
+    </div>
+    <h1>AV DROGFRIHET</h1>
+  </section>
+
+  <div class="container">
+    <h2>Registrera din drogfria tid</h2>
+
+    <form id="cleanForm">
+      <label>Datum då du blev drogfri:</label><br>
+      <input type="date" id="cleanDate" required>
+      <br>
+      <button type="submit">Registrera</button>
+    </form>
+
+    <h2>Statistik</h2>
+
+    <div class="stats">
+      <div class="stat-box">
+        Antal registrerade personer
+        <strong id="count">0</strong>
+      </div>
+
+      <div class="stat-box">
+        Total drogfri tid
+        <strong id="total">0 dagar</strong>
+      </div>
+
+      <div class="stat-box">
+        Medelvärde
+        <strong id="average">0 dagar</strong>
+      </div>
+
+      <div class="stat-box">
+        Längsta drogfria tid
+        <strong id="longest">0 dagar</strong>
+      </div>
+
+      <div class="stat-box">
+        Kortaste drogfria tid
+        <strong id="shortest">0 dagar</strong>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5Y2VrdGhtdWlxY3FlZ3BxdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODg0MDMsImV4cCI6MjA5NjE2NDQwM30.LWzn1gJgLxf45uog7zveOz0qgJ19RNQgOL-k3UIP01Q";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let cleanEntries = [];
+
+    function daysBetween(dateString) {
+      const cleanDate = new Date(dateString);
+      const today = new Date();
+
+      return Math.floor((today - cleanDate) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatTime(totalDays) {
+      if (totalDays <= 0) {
+        return "0 dagar";
+      }
+
+      const years = Math.floor(totalDays / 365.25);
+      const remainingAfterYears = totalDays - (years * 365.25);
+
+      const months = Math.floor(remainingAfterYears / 30.4375);
+      const days = Math.floor(remainingAfterYears - (months * 30.4375));
+
+      let parts = [];
+
+      if (years > 0) {
+        parts.push(years + " år");
+      }
+
+      if (months > 0) {
+        parts.push(months + " månader");
+      }
+
+      if (days > 0 || parts.length === 0) {
+        parts.push(days + " dagar");
+      }
+
+      return parts.join(" ");
+    }
+
+    async function loadStats() {
+      const { data, error } = await supabase
+        .from("clean_time_entries")
+        .select("clean_date")
+        .eq("is_active", true);
+
+      if (error) {
+        alert("Kunde inte hämta statistik");
+        return;
+      }
+
+      cleanEntries = data;
+
+      if (data.length === 0) {
+        document.getElementById("mainCounter").innerText = "0 dagar";
+        return;
+      }
+
+      updateStats();
+    }
+
+    function updateStats() {
+      const times = cleanEntries.map(entry => daysBetween(entry.clean_date));
+
+      const count = times.length;
+      const totalDays = times.reduce((sum, days) => sum + days, 0);
+      const averageDays = Math.floor(totalDays / count);
+      const longestDays = Math.max(...times);
+      const shortestDays = Math.min(...times);
+
+      document.getElementById("mainCounter").innerText = formatTime(totalDays);
+      document.getElementById("count").innerText = count;
+      document.getElementById("total").innerText = formatTime(totalDays);
+      document.getElementById("average").innerText = formatTime(averageDays);
+      document.getElementById("longest").innerText = formatTime(longestDays);
+      document.getElementById("shortest").innerText = formatTime(shortestDays);
+    }
+
+    document.getElementById("cleanForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const cleanDate = document.getElementById("cleanDate").value;
+
+      const { error } = await supabase
+        .from("clean_time_entries")
+        .insert([{ clean_date: cleanDate }]);
+
+      if (error) {
+        alert("Något gick fel");
+      } else {
+        alert("Din drogfria tid är registrerad ❤️");
+        document.getElementById("cleanForm").reset();
+        loadStats();
+      }
+    });
+
+    loadStats();
+  </script>
+
+</body>
+</html>
