@@ -80,9 +80,7 @@
 
   <section class="hero">
     <h1>TILLSAMMANS HAR VI</h1>
-    <div class="counter" id="mainCounter">
-      Laddar...
-    </div>
+    <div class="counter" id="mainCounter">Laddar...</div>
     <h1>AV DROGFRIHET</h1>
   </section>
 
@@ -128,7 +126,7 @@
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5Y2VrdGhtdWlxY3FlZ3BxdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODg0MDMsImV4cCI6MjA5NjE2NDQwM30.LWzn1gJgLxf45uog7zveOz0qgJ19RNQgOL-k3UIP01Q";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -154,17 +152,9 @@
 
       let parts = [];
 
-      if (years > 0) {
-        parts.push(years + " år");
-      }
-
-      if (months > 0) {
-        parts.push(months + " månader");
-      }
-
-      if (days > 0 || parts.length === 0) {
-        parts.push(days + " dagar");
-      }
+      if (years > 0) parts.push(years + " år");
+      if (months > 0) parts.push(months + " månader");
+      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
 
       return parts.join(" ");
     }
@@ -176,7 +166,8 @@
         .eq("is_active", true);
 
       if (error) {
-        alert("Kunde inte hämta statistik");
+        alert("Kunde inte hämta statistik: " + error.message);
+        console.log(error);
         return;
       }
 
@@ -217,7 +208,8 @@
         .insert([{ clean_date: cleanDate }]);
 
       if (error) {
-        alert("Något gick fel");
+        alert("Något gick fel: " + error.message);
+        console.log(error);
       } else {
         alert("Din drogfria tid är registrerad ❤️");
         document.getElementById("cleanForm").reset();
