@@ -96,6 +96,12 @@
       margin-bottom: 24px;
     }
 
+    .register-card {
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     .card h2 {
       color: #14532d;
       font-size: clamp(1.35rem, 4vw, 1.8rem);
@@ -110,6 +116,7 @@
 
     .form-row {
       display: flex;
+      flex-direction: column;
       gap: 12px;
       align-items: stretch;
     }
@@ -135,6 +142,7 @@
       font-weight: 700;
       transition: 0.2s ease;
       white-space: nowrap;
+      width: 100%;
     }
 
     button:hover {
@@ -231,15 +239,12 @@
       }
 
       .card {
-        padding: 22px 18px;
+        padding: 20px 16px;
         border-radius: 20px;
       }
 
-      .form-row {
-        flex-direction: column;
-      }
-
-      button {
+      .register-card {
+        max-width: none;
         width: 100%;
       }
 
@@ -266,7 +271,7 @@
   </section>
 
   <main class="container">
-    <section class="card">
+    <section class="card register-card">
       <h2>Registrera din drogfria tid</h2>
       <p>Välj datumet då du blev drogfri. Sidan sparar bara datumet och använder det för anonym statistik.</p>
 
@@ -331,13 +336,31 @@
       message.className = "message";
     }
 
-    function daysBetween(dateString) {
-      const cleanDate = new Date(dateString + "T00:00:00");
-      const today = new Date();
-      return Math.max(0, Math.floor((today - cleanDate) / (1000 * 60 * 60 * 24)));
+    function parseDateParts(dateString) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return { year, month, day };
     }
 
-    function formatTime(totalDays) {
+    function todayParts() {
+      const today = new Date();
+      return {
+        year: today.getFullYear(),
+        month: today.getMonth() + 1,
+        day: today.getDate()
+      };
+    }
+
+    function daysBetween(dateString) {
+      const start = parseDateParts(dateString);
+      const end = todayParts();
+
+      const startUtc = Date.UTC(start.year, start.month - 1, start.day);
+      const endUtc = Date.UTC(end.year, end.month - 1, end.day);
+
+      return Math.max(0, Math.round((endUtc - startUtc) / (1000 * 60 * 60 * 24)));
+    }
+
+    function formatApproxTime(totalDays) {
       if (!Number.isFinite(totalDays) || totalDays <= 0) return "0 dagar";
 
       const years = Math.floor(totalDays / 365.25);
@@ -351,6 +374,36 @@
       if (days > 0 || parts.length === 0) parts.push(days + " dagar");
 
       return parts.join(" ");
+    }
+
+    function formatCalendarFromDate(dateString) {
+      const start = parseDateParts(dateString);
+      const end = todayParts();
+
+      let years = end.year - start.year;
+      let months = end.month - start.month;
+      let days = end.day - start.day;
+
+      if (days < 0) {
+        months--;
+        days += new Date(end.year, end.month - 1, 0).getDate();
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      const parts = [];
+      if (years > 0) parts.push(years + " år");
+      if (months > 0) parts.push(months + " månader");
+      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
+
+      return parts.join(" ");
+    }
+
+    function formatDisplayFromDays(totalDays) {
+      return formatApproxTime(totalDays);
     }
 
     function setEmptyStats() {
@@ -387,20 +440,32 @@
     }
 
     function updateStats() {
-      const times = cleanEntries.map(entry => daysBetween(entry.clean_date));
-      const count = times.length;
-      const totalDays = times.reduce((sum, days) => sum + days, 0);
-      const averageDays = Math.floor(totalDays / count);
-      const longestDays = Math.max(...times);
-      const shortestDays = Math.min(...times);
+      const entriesWithDays = cleanEntries.map(entry => ({
+        clean_date: entry.clean_date,
+        days: daysBetween(entry.clean_date)
+      }));
 
-      document.getElementById("mainCounter").textContent = formatTime(totalDays);
+      const count = entriesWithDays.length;
+      const totalDays = entriesWithDays.reduce((sum, entry) => sum + entry.days, 0);
+      const averageDays = Math.floor(totalDays / count);
+      const longestEntry = entriesWithDays.reduce((max, entry) => entry.days > max.days ? entry : max, entriesWithDays[0]);
+      const shortestEntry = entriesWithDays.reduce((min, entry) => entry.days < min.days ? entry : min, entriesWithDays[0]);
+
+      const totalDisplay = count === 1
+        ? formatCalendarFromDate(entriesWithDays[0].clean_date)
+        : formatDisplayFromDays(totalDays);
+
+      const averageDisplay = count === 1
+        ? formatCalendarFromDate(entriesWithDays[0].clean_date)
+        : formatDisplayFromDays(averageDays);
+
+      document.getElementById("mainCounter").textContent = totalDisplay;
       document.getElementById("countHero").textContent = count.toLocaleString("sv-SE");
       document.getElementById("count").textContent = count.toLocaleString("sv-SE");
-      document.getElementById("total").textContent = formatTime(totalDays);
-      document.getElementById("average").textContent = formatTime(averageDays);
-      document.getElementById("longest").textContent = formatTime(longestDays);
-      document.getElementById("shortest").textContent = formatTime(shortestDays);
+      document.getElementById("total").textContent = totalDisplay + " (" + totalDays.toLocaleString("sv-SE") + " dagar)";
+      document.getElementById("average").textContent = averageDisplay;
+      document.getElementById("longest").textContent = formatCalendarFromDate(longestEntry.clean_date) + " (" + longestEntry.days.toLocaleString("sv-SE") + " dagar)";
+      document.getElementById("shortest").textContent = formatCalendarFromDate(shortestEntry.clean_date) + " (" + shortestEntry.days.toLocaleString("sv-SE") + " dagar)";
     }
 
     document.getElementById("cleanForm").addEventListener("submit", async function(event) {
@@ -415,10 +480,12 @@
         return;
       }
 
-      const selectedDate = new Date(cleanDate + "T00:00:00");
-      const today = new Date();
+      const selected = parseDateParts(cleanDate);
+      const today = todayParts();
+      const selectedUtc = Date.UTC(selected.year, selected.month - 1, selected.day);
+      const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
 
-      if (selectedDate > today) {
+      if (selectedUtc > todayUtc) {
         showMessage("Datumet kan inte ligga i framtiden.", "error");
         return;
       }
