@@ -2,6 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drogfri tid</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -13,147 +14,272 @@
     }
 
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: "Segoe UI", Arial, sans-serif;
       background: #f4f7f8;
-      color: #333;
+      color: #1f2937;
+      min-height: 100vh;
     }
 
     .hero {
-      background: linear-gradient(135deg, #0f172a, #166534);
+      background: linear-gradient(135deg, #0f172a, #14532d, #166534);
       color: white;
       text-align: center;
-      padding: 80px 20px;
+      padding: 70px 18px 80px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .hero h1 {
-      font-size: 20px;
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 35%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-size: 15px;
       letter-spacing: 4px;
-      margin-bottom: 20px;
+      text-transform: uppercase;
+      opacity: 0.95;
+      margin-bottom: 18px;
+      font-weight: 700;
     }
 
     .counter {
-      font-size: 4rem;
-      font-weight: bold;
-      margin-bottom: 20px;
-      line-height: 1.2;
+      font-size: clamp(2.35rem, 8vw, 5.4rem);
+      font-weight: 900;
+      line-height: 1.08;
+      margin: 0 auto 18px;
+      max-width: 950px;
+      word-break: normal;
     }
 
-    .hero p {
-      font-size: 1.2rem;
-      opacity: 0.9;
+    .hero-subtitle {
+      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      opacity: 0.95;
+      margin-bottom: 18px;
+    }
+
+    .hero-persons {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 10px 16px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      font-size: 16px;
     }
 
     .container {
-      max-width: 1100px;
-      margin: -40px auto 40px;
-      padding: 20px;
+      max-width: 1120px;
+      margin: -45px auto 40px;
+      padding: 0 18px;
+      position: relative;
+      z-index: 2;
     }
 
     .card {
       background: white;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      margin-bottom: 25px;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+      margin-bottom: 24px;
     }
 
     .card h2 {
-      margin-bottom: 20px;
-      color: #166534;
+      color: #14532d;
+      font-size: clamp(1.35rem, 4vw, 1.8rem);
+      margin-bottom: 10px;
     }
 
-    input[type=date] {
+    .card p {
+      color: #64748b;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    input[type="date"] {
       width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      margin-bottom: 15px;
-      font-size: 16px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      font-size: 18px;
+      background: #f8fafc;
+      color: #0f172a;
     }
 
     button {
       background: #16a34a;
       color: white;
       border: none;
-      padding: 14px 25px;
-      border-radius: 10px;
+      padding: 16px 24px;
+      border-radius: 14px;
       cursor: pointer;
-      font-size: 16px;
-      transition: .2s;
+      font-size: 17px;
+      font-weight: 700;
+      transition: 0.2s ease;
+      white-space: nowrap;
     }
 
     button:hover {
       background: #15803d;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .message {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .message.success {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .message.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 18px;
     }
 
     .stat-card {
       background: white;
-      border-radius: 20px;
-      padding: 25px;
+      border-radius: 22px;
+      padding: 24px 20px;
       text-align: center;
-      box-shadow: 0 5px 20px rgba(0,0,0,.08);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(15, 23, 42, 0.04);
     }
 
     .stat-title {
       color: #64748b;
       margin-bottom: 10px;
+      font-size: 15px;
+      font-weight: 700;
     }
 
     .stat-value {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #166534;
+      font-size: clamp(1.35rem, 4.5vw, 2rem);
+      line-height: 1.2;
+      font-weight: 900;
+      color: #14532d;
     }
 
     .footer {
       text-align: center;
-      color: #666;
-      padding: 30px;
+      color: #64748b;
+      padding: 24px 18px 36px;
+      font-weight: 600;
     }
 
-    @media(max-width: 768px) {
-      .counter {
-        font-size: 2.5rem;
+    @media (max-width: 768px) {
+      .hero {
+        padding: 48px 14px 62px;
       }
 
-      .hero {
-        padding: 50px 20px;
+      .eyebrow {
+        font-size: 13px;
+        letter-spacing: 2.4px;
+        margin-bottom: 14px;
+      }
+
+      .counter {
+        font-size: clamp(2.25rem, 11vw, 3.2rem);
+        line-height: 1.12;
+      }
+
+      .hero-persons {
+        font-size: 15px;
+        padding: 9px 13px;
+      }
+
+      .container {
+        margin-top: -30px;
+        padding: 0 12px;
+      }
+
+      .card {
+        padding: 22px 18px;
+        border-radius: 20px;
+      }
+
+      .form-row {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .stat-card {
+        padding: 20px 16px;
       }
     }
   </style>
 </head>
 
 <body>
-
-  <div class="hero">
-    <h1>TILLSAMMANS HAR VI</h1>
-
-    <div class="counter" id="mainCounter">
-      Laddar...
+  <section class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">Tillsammans har vi</div>
+      <div class="counter" id="mainCounter">Laddar...</div>
+      <div class="hero-subtitle">En dag i taget ❤️</div>
+      <div class="hero-persons">👥 <span id="countHero">0</span> registrerade personer</div>
     </div>
+  </section>
 
-    <p>Av drogfrihet</p>
-  </div>
-
-  <div class="container">
-
-    <div class="card">
-      <h2>❤️ Registrera din drogfria tid</h2>
+  <main class="container">
+    <section class="card">
+      <h2>Registrera din drogfria tid</h2>
+      <p>Välj datumet då du blev drogfri. Sidan sparar bara datumet och använder det för anonym statistik.</p>
 
       <form id="cleanForm">
-        <input type="date" id="cleanDate" required>
-        <button type="submit">Registrera</button>
+        <div class="form-row">
+          <input type="date" id="cleanDate" required aria-label="Datum då du blev drogfri" />
+          <button type="submit" id="submitButton">Registrera</button>
+        </div>
+        <div id="message" class="message"></div>
       </form>
-    </div>
+    </section>
 
-    <div class="stats-grid">
-
+    <section class="stats-grid" aria-label="Statistik">
       <div class="stat-card">
         <div class="stat-title">👥 Personer</div>
         <div class="stat-value" id="count">0</div>
@@ -161,76 +287,80 @@
 
       <div class="stat-card">
         <div class="stat-title">⏳ Total tid</div>
-        <div class="stat-value" id="total">0</div>
+        <div class="stat-value" id="total">0 dagar</div>
       </div>
 
       <div class="stat-card">
         <div class="stat-title">📊 Medel</div>
-        <div class="stat-value" id="average">0</div>
+        <div class="stat-value" id="average">0 dagar</div>
       </div>
 
       <div class="stat-card">
         <div class="stat-title">🏆 Längsta tid</div>
-        <div class="stat-value" id="longest">0</div>
+        <div class="stat-value" id="longest">0 dagar</div>
       </div>
 
       <div class="stat-card">
         <div class="stat-title">🌱 Kortaste tid</div>
-        <div class="stat-value" id="shortest">0</div>
+        <div class="stat-value" id="shortest">0 dagar</div>
       </div>
+    </section>
+  </main>
 
-    </div>
-
-  </div>
-
-  <div class="footer">
+  <footer class="footer">
     Tillsammans blir vi starkare ❤️
-  </div>
+  </footer>
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let cleanEntries = [];
 
-    function daysBetween(dateString) {
-      const cleanDate = new Date(dateString);
-      const today = new Date();
+    function showMessage(text, type) {
+      const message = document.getElementById("message");
+      message.textContent = text;
+      message.className = "message " + type;
+    }
 
-      return Math.floor((today - cleanDate) / (1000 * 60 * 60 * 24));
+    function clearMessage() {
+      const message = document.getElementById("message");
+      message.textContent = "";
+      message.className = "message";
+    }
+
+    function daysBetween(dateString) {
+      const cleanDate = new Date(dateString + "T00:00:00");
+      const today = new Date();
+      return Math.max(0, Math.floor((today - cleanDate) / (1000 * 60 * 60 * 24)));
     }
 
     function formatTime(totalDays) {
-      if (totalDays <= 0) {
-        return "0 dagar";
-      }
+      if (!Number.isFinite(totalDays) || totalDays <= 0) return "0 dagar";
 
       const years = Math.floor(totalDays / 365.25);
       const remainingAfterYears = totalDays - (years * 365.25);
-
       const months = Math.floor(remainingAfterYears / 30.4375);
       const days = Math.floor(remainingAfterYears - (months * 30.4375));
 
-      let parts = [];
-
-      if (years > 0) {
-        parts.push(years + " år");
-      }
-
-      if (months > 0) {
-        parts.push(months + " månader");
-      }
-
-      if (days > 0 || parts.length === 0) {
-        parts.push(days + " dagar");
-      }
+      const parts = [];
+      if (years > 0) parts.push(years + " år");
+      if (months > 0) parts.push(months + " månader");
+      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
 
       return parts.join(" ");
+    }
+
+    function setEmptyStats() {
+      document.getElementById("mainCounter").textContent = "0 dagar";
+      document.getElementById("countHero").textContent = "0";
+      document.getElementById("count").textContent = "0";
+      document.getElementById("total").textContent = "0 dagar";
+      document.getElementById("average").textContent = "0 dagar";
+      document.getElementById("longest").textContent = "0 dagar";
+      document.getElementById("shortest").textContent = "0 dagar";
     }
 
     async function loadStats() {
@@ -240,20 +370,16 @@
         .eq("is_active", true);
 
       if (error) {
-        alert("Kunde inte hämta statistik: " + error.message);
-        console.log(error);
+        showMessage("Kunde inte hämta statistik: " + error.message, "error");
+        console.error(error);
+        setEmptyStats();
         return;
       }
 
       cleanEntries = data || [];
 
       if (cleanEntries.length === 0) {
-        document.getElementById("mainCounter").innerText = "0 dagar";
-        document.getElementById("count").innerText = "0";
-        document.getElementById("total").innerText = "0 dagar";
-        document.getElementById("average").innerText = "0 dagar";
-        document.getElementById("longest").innerText = "0 dagar";
-        document.getElementById("shortest").innerText = "0 dagar";
+        setEmptyStats();
         return;
       }
 
@@ -262,42 +388,63 @@
 
     function updateStats() {
       const times = cleanEntries.map(entry => daysBetween(entry.clean_date));
-
       const count = times.length;
       const totalDays = times.reduce((sum, days) => sum + days, 0);
       const averageDays = Math.floor(totalDays / count);
       const longestDays = Math.max(...times);
       const shortestDays = Math.min(...times);
 
-      document.getElementById("mainCounter").innerText = formatTime(totalDays);
-      document.getElementById("count").innerText = count;
-      document.getElementById("total").innerText = formatTime(totalDays);
-      document.getElementById("average").innerText = formatTime(averageDays);
-      document.getElementById("longest").innerText = formatTime(longestDays);
-      document.getElementById("shortest").innerText = formatTime(shortestDays);
+      document.getElementById("mainCounter").textContent = formatTime(totalDays);
+      document.getElementById("countHero").textContent = count.toLocaleString("sv-SE");
+      document.getElementById("count").textContent = count.toLocaleString("sv-SE");
+      document.getElementById("total").textContent = formatTime(totalDays);
+      document.getElementById("average").textContent = formatTime(averageDays);
+      document.getElementById("longest").textContent = formatTime(longestDays);
+      document.getElementById("shortest").textContent = formatTime(shortestDays);
     }
 
-    document.getElementById("cleanForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
+    document.getElementById("cleanForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+      clearMessage();
 
       const cleanDate = document.getElementById("cleanDate").value;
+      const submitButton = document.getElementById("submitButton");
+
+      if (!cleanDate) {
+        showMessage("Välj ett datum först.", "error");
+        return;
+      }
+
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const today = new Date();
+
+      if (selectedDate > today) {
+        showMessage("Datumet kan inte ligga i framtiden.", "error");
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Sparar...";
 
       const { error } = await supabaseClient
         .from("clean_time_entries")
         .insert([{ clean_date: cleanDate }]);
 
+      submitButton.disabled = false;
+      submitButton.textContent = "Registrera";
+
       if (error) {
-        alert("Något gick fel: " + error.message);
-        console.log(error);
-      } else {
-        alert("Din drogfria tid är registrerad ❤️");
-        document.getElementById("cleanForm").reset();
-        loadStats();
+        showMessage("Något gick fel: " + error.message, "error");
+        console.error(error);
+        return;
       }
+
+      showMessage("Din drogfria tid är registrerad ❤️", "success");
+      document.getElementById("cleanForm").reset();
+      loadStats();
     });
 
     loadStats();
   </script>
-
 </body>
 </html>
