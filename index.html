@@ -4,9 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drogfri tid</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --na-blue-light: #EAF1FB;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -15,276 +28,261 @@
 
     body {
       font-family: "Segoe UI", Arial, sans-serif;
-      background: #f4f7f8;
-      color: #1f2937;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
     }
 
     .hero {
-      background: linear-gradient(135deg, #0f172a, #14532d, #166534);
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
       color: white;
       text-align: center;
-      padding: 70px 18px 80px;
-      position: relative;
-      overflow: hidden;
+      padding: 42px 18px 75px;
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 35%);
-      pointer-events: none;
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .eyebrow {
-      font-size: 15px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      opacity: 0.95;
+    .hero h1 {
+      font-size: clamp(15px, 4vw, 21px);
+      letter-spacing: 3px;
       margin-bottom: 18px;
-      font-weight: 700;
+      text-transform: uppercase;
+      opacity: 0.96;
     }
 
     .counter {
-      font-size: clamp(2.35rem, 8vw, 5.4rem);
-      font-weight: 900;
-      line-height: 1.08;
-      margin: 0 auto 18px;
-      max-width: 950px;
-      word-break: normal;
+      font-size: clamp(2.4rem, 11vw, 5rem);
+      font-weight: 800;
+      line-height: 1.12;
+      margin-bottom: 16px;
+      word-break: break-word;
     }
 
     .hero-subtitle {
-      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      font-size: clamp(17px, 4vw, 22px);
       opacity: 0.95;
       margin-bottom: 18px;
     }
 
-    .hero-persons {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.14);
+    .hero-count {
+      display: inline-block;
+      background: rgba(255,255,255,0.16);
       border: 1px solid rgba(255,255,255,0.25);
-      padding: 10px 16px;
       border-radius: 999px;
+      padding: 10px 17px;
+      font-size: 15px;
       backdrop-filter: blur(8px);
-      font-size: 16px;
     }
 
-    .container {
-      max-width: 1120px;
-      margin: -45px auto 40px;
-      padding: 0 18px;
-      position: relative;
-      z-index: 2;
+    .wrap {
+      width: min(100%, 560px);
+      margin: -45px auto 42px;
+      padding: 0 16px;
+    }
+
+    .card,
+    .stat-card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
     }
 
     .card {
-      background: white;
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
-      margin-bottom: 24px;
-    }
-
-    .register-card {
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
+      padding: 24px;
+      margin-bottom: 18px;
     }
 
     .card h2 {
-      color: #14532d;
-      font-size: clamp(1.35rem, 4vw, 1.8rem);
+      color: var(--na-blue);
+      font-size: 22px;
       margin-bottom: 10px;
     }
 
-    .card p {
-      color: #64748b;
-      margin-bottom: 20px;
-      line-height: 1.5;
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
     }
 
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: stretch;
+    label {
+      display: block;
+      text-align: left;
+      color: var(--text);
+      font-weight: 650;
+      margin-bottom: 8px;
     }
 
     input[type="date"] {
       width: 100%;
+      display: block;
       padding: 16px;
       border-radius: 14px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border);
       font-size: 18px;
-      background: #f8fafc;
-      color: #0f172a;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    input[type="date"]:focus {
+      outline: 3px solid rgba(30,79,154,0.18);
+      border-color: var(--na-blue);
     }
 
     button {
-      background: #16a34a;
+      width: 100%;
+      background: var(--na-blue);
       color: white;
       border: none;
-      padding: 16px 24px;
+      padding: 16px 22px;
       border-radius: 14px;
       cursor: pointer;
       font-size: 17px;
-      font-weight: 700;
-      transition: 0.2s ease;
-      white-space: nowrap;
-      width: 100%;
+      font-weight: 750;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
 
     button:hover {
-      background: #15803d;
+      background: var(--na-blue-dark);
       transform: translateY(-1px);
     }
 
     button:disabled {
-      opacity: 0.7;
+      opacity: 0.65;
       cursor: not-allowed;
       transform: none;
     }
 
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .stat-card {
+      padding: 22px;
+      text-align: center;
+    }
+
+    .stat-title {
+      color: var(--muted);
+      margin-bottom: 9px;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .stat-value {
+      color: var(--na-blue);
+      font-size: clamp(1.45rem, 6vw, 2.05rem);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .stat-note {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .message {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: 14px;
       display: none;
-      font-weight: 600;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
     }
 
     .message.success {
       display: block;
-      background: #dcfce7;
-      color: #166534;
+      background: #eef7ff;
+      color: var(--na-blue-dark);
+      border: 1px solid #cfe2ff;
     }
 
     .message.error {
       display: block;
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 18px;
-    }
-
-    .stat-card {
-      background: white;
-      border-radius: 22px;
-      padding: 24px 20px;
-      text-align: center;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-      border: 1px solid rgba(15, 23, 42, 0.04);
-    }
-
-    .stat-title {
-      color: #64748b;
-      margin-bottom: 10px;
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .stat-value {
-      font-size: clamp(1.35rem, 4.5vw, 2rem);
-      line-height: 1.2;
-      font-weight: 900;
-      color: #14532d;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
     }
 
     .footer {
       text-align: center;
-      color: #64748b;
-      padding: 24px 18px 36px;
-      font-weight: 600;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 430px) {
       .hero {
-        padding: 48px 14px 62px;
+        padding-top: 34px;
+        padding-bottom: 68px;
       }
 
-      .eyebrow {
-        font-size: 13px;
-        letter-spacing: 2.4px;
-        margin-bottom: 14px;
-      }
-
-      .counter {
-        font-size: clamp(2.25rem, 11vw, 3.2rem);
-        line-height: 1.12;
-      }
-
-      .hero-persons {
-        font-size: 15px;
-        padding: 9px 13px;
-      }
-
-      .container {
-        margin-top: -30px;
+      .wrap {
+        margin-top: -38px;
         padding: 0 12px;
       }
 
-      .card {
-        padding: 20px 16px;
-        border-radius: 20px;
-      }
-
-      .register-card {
-        max-width: none;
-        width: 100%;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 14px;
-      }
-
+      .card,
       .stat-card {
-        padding: 20px 16px;
+        border-radius: 18px;
+      }
+
+      .card {
+        padding: 19px;
+      }
+
+      input[type="date"],
+      button {
+        font-size: 17px;
+        padding: 15px;
       }
     }
   </style>
 </head>
 
 <body>
+
   <section class="hero">
-    <div class="hero-content">
-      <div class="eyebrow">Tillsammans har vi</div>
-      <div class="counter" id="mainCounter">Laddar...</div>
-      <div class="hero-subtitle">En dag i taget ❤️</div>
-      <div class="hero-persons">👥 <span id="countHero">0</span> registrerade personer</div>
+    <h1>Tillsammans har vi</h1>
+
+    <div class="counter" id="mainCounter">
+      Laddar...
+    </div>
+
+    <div class="hero-subtitle">
+      av drogfrihet
+    </div>
+
+    <div class="hero-count">
+      👥 <strong id="countHero">0</strong> registrerade personer
     </div>
   </section>
 
-  <main class="container">
-    <section class="card register-card">
+  <main class="wrap">
+
+    <section class="card">
       <h2>Registrera din drogfria tid</h2>
-      <p>Välj datumet då du blev drogfri. Sidan sparar bara datumet och använder det för anonym statistik.</p>
+
+      <p class="helper-text">
+        Välj datumet då du blev drogfri. Inga namn eller e-postadresser sparas.
+      </p>
 
       <form id="cleanForm">
-        <div class="form-row">
-          <input type="date" id="cleanDate" required aria-label="Datum då du blev drogfri" />
-          <button type="submit" id="submitButton">Registrera</button>
-        </div>
-        <div id="message" class="message"></div>
+        <label for="cleanDate">Datum då du blev drogfri</label>
+        <input type="date" id="cleanDate" required />
+        <button type="submit" id="submitButton">Registrera</button>
       </form>
+
+      <div id="messageBox" class="message"></div>
     </section>
 
-    <section class="stats-grid" aria-label="Statistik">
+    <section class="stats-grid">
+
       <div class="stat-card">
         <div class="stat-title">👥 Personer</div>
         <div class="stat-value" id="count">0</div>
@@ -293,6 +291,7 @@
       <div class="stat-card">
         <div class="stat-title">⏳ Total tid</div>
         <div class="stat-value" id="total">0 dagar</div>
+        <div class="stat-note" id="totalDaysNote"></div>
       </div>
 
       <div class="stat-card">
@@ -309,59 +308,44 @@
         <div class="stat-title">🌱 Kortaste tid</div>
         <div class="stat-value" id="shortest">0 dagar</div>
       </div>
+
     </section>
+
   </main>
 
   <footer class="footer">
-    Tillsammans blir vi starkare ❤️
+    En dag i taget ❤️
   </footer>
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
 
     let cleanEntries = [];
 
-    function showMessage(text, type) {
-      const message = document.getElementById("message");
-      message.textContent = text;
-      message.className = "message " + type;
+    function parseDateOnly(dateString) {
+      const parts = dateString.split("-").map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
     }
 
-    function clearMessage() {
-      const message = document.getElementById("message");
-      message.textContent = "";
-      message.className = "message";
-    }
-
-    function parseDateParts(dateString) {
-      const [year, month, day] = dateString.split("-").map(Number);
-      return { year, month, day };
-    }
-
-    function todayParts() {
-      const today = new Date();
-      return {
-        year: today.getFullYear(),
-        month: today.getMonth() + 1,
-        day: today.getDate()
-      };
+    function todayDateOnly() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
     function daysBetween(dateString) {
-      const start = parseDateParts(dateString);
-      const end = todayParts();
-
-      const startUtc = Date.UTC(start.year, start.month - 1, start.day);
-      const endUtc = Date.UTC(end.year, end.month - 1, end.day);
-
-      return Math.max(0, Math.round((endUtc - startUtc) / (1000 * 60 * 60 * 24)));
+      const cleanDate = parseDateOnly(dateString);
+      const today = todayDateOnly();
+      return Math.floor((today - cleanDate) / 86400000);
     }
 
     function formatApproxTime(totalDays) {
-      if (!Number.isFinite(totalDays) || totalDays <= 0) return "0 dagar";
+      if (totalDays <= 0) return "0 dagar";
 
       const years = Math.floor(totalDays / 365.25);
       const remainingAfterYears = totalDays - (years * 365.25);
@@ -369,6 +353,7 @@
       const days = Math.floor(remainingAfterYears - (months * 30.4375));
 
       const parts = [];
+
       if (years > 0) parts.push(years + " år");
       if (months > 0) parts.push(months + " månader");
       if (days > 0 || parts.length === 0) parts.push(days + " dagar");
@@ -376,17 +361,20 @@
       return parts.join(" ");
     }
 
-    function formatCalendarFromDate(dateString) {
-      const start = parseDateParts(dateString);
-      const end = todayParts();
+    function formatCalendarTimeFromDate(dateString) {
+      const start = parseDateOnly(dateString);
+      const end = todayDateOnly();
 
-      let years = end.year - start.year;
-      let months = end.month - start.month;
-      let days = end.day - start.day;
+      if (start > end) return "0 dagar";
+
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
 
       if (days < 0) {
         months--;
-        days += new Date(end.year, end.month - 1, 0).getDate();
+        const daysInPreviousMonth = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+        days += daysInPreviousMonth;
       }
 
       if (months < 0) {
@@ -395,6 +383,7 @@
       }
 
       const parts = [];
+
       if (years > 0) parts.push(years + " år");
       if (months > 0) parts.push(months + " månader");
       if (days > 0 || parts.length === 0) parts.push(days + " dagar");
@@ -402,18 +391,27 @@
       return parts.join(" ");
     }
 
-    function formatDisplayFromDays(totalDays) {
-      return formatApproxTime(totalDays);
+    function showMessage(text, type) {
+      const box = document.getElementById("messageBox");
+      box.textContent = text;
+      box.className = "message " + type;
+    }
+
+    function clearMessage() {
+      const box = document.getElementById("messageBox");
+      box.textContent = "";
+      box.className = "message";
     }
 
     function setEmptyStats() {
-      document.getElementById("mainCounter").textContent = "0 dagar";
-      document.getElementById("countHero").textContent = "0";
-      document.getElementById("count").textContent = "0";
-      document.getElementById("total").textContent = "0 dagar";
-      document.getElementById("average").textContent = "0 dagar";
-      document.getElementById("longest").textContent = "0 dagar";
-      document.getElementById("shortest").textContent = "0 dagar";
+      document.getElementById("mainCounter").innerText = "0 dagar";
+      document.getElementById("countHero").innerText = "0";
+      document.getElementById("count").innerText = "0";
+      document.getElementById("total").innerText = "0 dagar";
+      document.getElementById("average").innerText = "0 dagar";
+      document.getElementById("longest").innerText = "0 dagar";
+      document.getElementById("shortest").innerText = "0 dagar";
+      document.getElementById("totalDaysNote").innerText = "";
     }
 
     async function loadStats() {
@@ -424,7 +422,7 @@
 
       if (error) {
         showMessage("Kunde inte hämta statistik: " + error.message, "error");
-        console.error(error);
+        console.log(error);
         setEmptyStats();
         return;
       }
@@ -440,78 +438,74 @@
     }
 
     function updateStats() {
-      const entriesWithDays = cleanEntries.map(entry => ({
-        clean_date: entry.clean_date,
-        days: daysBetween(entry.clean_date)
-      }));
+      const validEntries = cleanEntries
+        .map(entry => ({
+          clean_date: entry.clean_date,
+          days: daysBetween(entry.clean_date)
+        }))
+        .filter(entry => entry.days >= 0);
 
-      const count = entriesWithDays.length;
-      const totalDays = entriesWithDays.reduce((sum, entry) => sum + entry.days, 0);
-      const averageDays = Math.floor(totalDays / count);
-      const longestEntry = entriesWithDays.reduce((max, entry) => entry.days > max.days ? entry : max, entriesWithDays[0]);
-      const shortestEntry = entriesWithDays.reduce((min, entry) => entry.days < min.days ? entry : min, entriesWithDays[0]);
-
-      const totalDisplay = count === 1
-        ? formatCalendarFromDate(entriesWithDays[0].clean_date)
-        : formatDisplayFromDays(totalDays);
-
-      const averageDisplay = count === 1
-        ? formatCalendarFromDate(entriesWithDays[0].clean_date)
-        : formatDisplayFromDays(averageDays);
-
-      document.getElementById("mainCounter").textContent = totalDisplay;
-      document.getElementById("countHero").textContent = count.toLocaleString("sv-SE");
-      document.getElementById("count").textContent = count.toLocaleString("sv-SE");
-      document.getElementById("total").textContent = totalDisplay + " (" + totalDays.toLocaleString("sv-SE") + " dagar)";
-      document.getElementById("average").textContent = averageDisplay;
-      document.getElementById("longest").textContent = formatCalendarFromDate(longestEntry.clean_date) + " (" + longestEntry.days.toLocaleString("sv-SE") + " dagar)";
-      document.getElementById("shortest").textContent = formatCalendarFromDate(shortestEntry.clean_date) + " (" + shortestEntry.days.toLocaleString("sv-SE") + " dagar)";
-    }
-
-    document.getElementById("cleanForm").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      clearMessage();
-
-      const cleanDate = document.getElementById("cleanDate").value;
-      const submitButton = document.getElementById("submitButton");
-
-      if (!cleanDate) {
-        showMessage("Välj ett datum först.", "error");
+      if (validEntries.length === 0) {
+        setEmptyStats();
         return;
       }
 
-      const selected = parseDateParts(cleanDate);
-      const today = todayParts();
-      const selectedUtc = Date.UTC(selected.year, selected.month - 1, selected.day);
-      const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
+      const count = validEntries.length;
+      const totalDays = validEntries.reduce((sum, entry) => sum + entry.days, 0);
+      const averageDays = Math.floor(totalDays / count);
 
-      if (selectedUtc > todayUtc) {
+      const longestEntry = validEntries.reduce((a, b) => a.days >= b.days ? a : b);
+      const shortestEntry = validEntries.reduce((a, b) => a.days <= b.days ? a : b);
+
+      document.getElementById("mainCounter").innerText = formatApproxTime(totalDays);
+      document.getElementById("countHero").innerText = count.toLocaleString("sv-SE");
+      document.getElementById("count").innerText = count.toLocaleString("sv-SE");
+
+      document.getElementById("total").innerText = formatApproxTime(totalDays);
+      document.getElementById("totalDaysNote").innerText =
+        totalDays.toLocaleString("sv-SE") + " dagar totalt";
+
+      document.getElementById("average").innerText = formatApproxTime(averageDays);
+      document.getElementById("longest").innerText = formatCalendarTimeFromDate(longestEntry.clean_date);
+      document.getElementById("shortest").innerText = formatCalendarTimeFromDate(shortestEntry.clean_date);
+    }
+
+    document.getElementById("cleanForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      clearMessage();
+
+      const cleanDate = document.getElementById("cleanDate").value;
+      const selectedDate = parseDateOnly(cleanDate);
+      const today = todayDateOnly();
+
+      if (selectedDate > today) {
         showMessage("Datumet kan inte ligga i framtiden.", "error");
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = "Sparar...";
+      const button = document.getElementById("submitButton");
+      button.disabled = true;
+      button.innerText = "Registrerar...";
 
       const { error } = await supabaseClient
         .from("clean_time_entries")
         .insert([{ clean_date: cleanDate }]);
 
-      submitButton.disabled = false;
-      submitButton.textContent = "Registrera";
+      button.disabled = false;
+      button.innerText = "Registrera";
 
       if (error) {
         showMessage("Något gick fel: " + error.message, "error");
-        console.error(error);
-        return;
+        console.log(error);
+      } else {
+        showMessage("Din drogfria tid är registrerad ❤️");
+        document.getElementById("cleanForm").reset();
+        loadStats();
       }
-
-      showMessage("Din drogfria tid är registrerad ❤️", "success");
-      document.getElementById("cleanForm").reset();
-      loadStats();
     });
 
     loadStats();
   </script>
+
 </body>
 </html>
