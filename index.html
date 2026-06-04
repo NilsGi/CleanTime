@@ -4,26 +4,188 @@
   <meta charset="UTF-8" />
   <title>Drogfri tid</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f7f8;
+      color: #333;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a, #166534);
+      color: white;
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .hero h1 {
+      font-size: 20px;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+
+    .counter {
+      font-size: 4rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: -40px auto 40px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      margin-bottom: 25px;
+    }
+
+    .card h2 {
+      margin-bottom: 20px;
+      color: #166534;
+    }
+
+    input[type=date] {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 14px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: .2s;
+    }
+
+    button:hover {
+      background: #15803d;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,.08);
+    }
+
+    .stat-title {
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #166534;
+    }
+
+    .footer {
+      text-align: center;
+      color: #666;
+      padding: 30px;
+    }
+
+    @media(max-width: 768px) {
+      .counter {
+        font-size: 2.5rem;
+      }
+
+      .hero {
+        padding: 50px 20px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <h1>TILLSAMMANS HAR VI</h1>
-  <h2 id="mainCounter">Laddar...</h2>
-  <h1>AV DROGFRIHET</h1>
 
-  <h2>Registrera din drogfria tid</h2>
+  <div class="hero">
+    <h1>TILLSAMMANS HAR VI</h1>
 
-  <form id="cleanForm">
-    <input type="date" id="cleanDate" required>
-    <button type="submit">Registrera</button>
-  </form>
+    <div class="counter" id="mainCounter">
+      Laddar...
+    </div>
 
-  <h2>Statistik</h2>
-  <p>Antal personer: <span id="count">0</span></p>
-  <p>Total drogfri tid: <span id="total">0 dagar</span></p>
-  <p>Medelvärde: <span id="average">0 dagar</span></p>
-  <p>Längsta tid: <span id="longest">0 dagar</span></p>
-  <p>Kortaste tid: <span id="shortest">0 dagar</span></p>
+    <p>Av drogfrihet</p>
+  </div>
+
+  <div class="container">
+
+    <div class="card">
+      <h2>❤️ Registrera din drogfria tid</h2>
+
+      <form id="cleanForm">
+        <input type="date" id="cleanDate" required>
+        <button type="submit">Registrera</button>
+      </form>
+    </div>
+
+    <div class="stats-grid">
+
+      <div class="stat-card">
+        <div class="stat-title">👥 Personer</div>
+        <div class="stat-value" id="count">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">⏳ Total tid</div>
+        <div class="stat-value" id="total">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">📊 Medel</div>
+        <div class="stat-value" id="average">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">🏆 Längsta tid</div>
+        <div class="stat-value" id="longest">0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">🌱 Kortaste tid</div>
+        <div class="stat-value" id="shortest">0</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Tillsammans blir vi starkare ❤️
+  </div>
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
@@ -39,21 +201,34 @@
     function daysBetween(dateString) {
       const cleanDate = new Date(dateString);
       const today = new Date();
+
       return Math.floor((today - cleanDate) / (1000 * 60 * 60 * 24));
     }
 
     function formatTime(totalDays) {
-      if (totalDays <= 0) return "0 dagar";
+      if (totalDays <= 0) {
+        return "0 dagar";
+      }
 
       const years = Math.floor(totalDays / 365.25);
-      const remainingAfterYears = totalDays - years * 365.25;
+      const remainingAfterYears = totalDays - (years * 365.25);
+
       const months = Math.floor(remainingAfterYears / 30.4375);
-      const days = Math.floor(remainingAfterYears - months * 30.4375);
+      const days = Math.floor(remainingAfterYears - (months * 30.4375));
 
       let parts = [];
-      if (years > 0) parts.push(years + " år");
-      if (months > 0) parts.push(months + " månader");
-      if (days > 0 || parts.length === 0) parts.push(days + " dagar");
+
+      if (years > 0) {
+        parts.push(years + " år");
+      }
+
+      if (months > 0) {
+        parts.push(months + " månader");
+      }
+
+      if (days > 0 || parts.length === 0) {
+        parts.push(days + " dagar");
+      }
 
       return parts.join(" ");
     }
@@ -74,6 +249,11 @@
 
       if (cleanEntries.length === 0) {
         document.getElementById("mainCounter").innerText = "0 dagar";
+        document.getElementById("count").innerText = "0";
+        document.getElementById("total").innerText = "0 dagar";
+        document.getElementById("average").innerText = "0 dagar";
+        document.getElementById("longest").innerText = "0 dagar";
+        document.getElementById("shortest").innerText = "0 dagar";
         return;
       }
 
@@ -118,5 +298,6 @@
 
     loadStats();
   </script>
+
 </body>
 </html>
