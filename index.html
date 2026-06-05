@@ -356,7 +356,7 @@
     function daysBetween(dateString) {
       const cleanDate = parseDateOnly(dateString);
       const today = todayDateOnly();
-      return Math.floor((today - cleanDate) / 86400000);
+      return Math.floor((today - cleanDate) / 86400000) + 1;
     }
 
     function pluralize(value, singular, plural) {
