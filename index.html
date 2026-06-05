@@ -318,11 +318,11 @@
     <section class="card">
       <h2>Hur räknas tiden?</h2>
       <p class="helper-text">
-        Drogfri tid räknas från det registrerade datumet fram till dagens datum.
-        Den stora räknaren visar totalt antal dagar för alla registreringar tillsammans.
-        I statistikrutorna räknas år som 365,25 dagar (skottår var 4:e år) och visas med en decimal.
-        Texten inom parentes visar samma tid omräknad till år, månader och dagar,
-        där en månad räknas som cirka 30,44 dagar i genomsnitt.
+        Drogfri tid räknas i databasen utifrån registrerat datum fram till dagens datum.
+        Startdagen räknas med, vilket innebär att första dagen räknas som dag 1.
+        Sidan hämtar färdigräknad statistik från databasen och visar antal dagar,
+        antal personer, total tid, medelvärde, längsta tid och kortaste tid.
+        I statistikrutorna räknas år som 365,25 dagar och en månad som cirka 30,44 dagar.
       </p>
     </section>
 
@@ -341,30 +341,12 @@
       SUPABASE_KEY
     );
 
-    let cleanEntries = [];
-
-    function parseDateOnly(dateString) {
-      const parts = dateString.split("-").map(Number);
-      return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-
-    function todayDateOnly() {
-      const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    }
-
-    function daysBetween(dateString) {
-      const cleanDate = parseDateOnly(dateString);
-      const today = todayDateOnly();
-      return Math.floor((today - cleanDate) / 86400000) + 1;
-    }
-
     function pluralize(value, singular, plural) {
       return value === 1 ? singular : plural;
     }
 
     function formatDetailFromDays(days) {
-      const totalDays = Math.max(0, Math.floor(days));
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const years = Math.floor(totalDays / 365.25);
       const daysAfterYears = totalDays - Math.floor(years * 365.25);
 
@@ -383,7 +365,7 @@
     }
 
     function formatShortValue(days) {
-      const totalDays = Math.max(0, Math.floor(days));
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const averageMonthDays = 30.4375;
 
       if (totalDays < averageMonthDays) {
@@ -405,7 +387,7 @@
     }
 
     function formatStatsFromDays(days) {
-      const totalDays = Math.max(0, Math.floor(days));
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const decimalYears = (totalDays / 365.25).toFixed(1).replace(".", ",");
 
       return {
@@ -450,44 +432,12 @@
       document.getElementById("shortestDaysNote").innerText = zero.daysText;
     }
 
-    async function loadStats() {
-      const { data, error } = await supabaseClient
-        .from("clean_time_entries")
-        .select("clean_date")
-        .eq("is_active", true);
-
-      if (error) {
-        showMessage("Kunde inte hämta statistik: " + error.message, "error");
-        console.log(error);
-        setEmptyStats();
-        return;
-      }
-
-      cleanEntries = data || [];
-
-      if (cleanEntries.length === 0) {
-        setEmptyStats();
-        return;
-      }
-
-      updateStats();
-    }
-
-    function updateStats() {
-      const daysList = cleanEntries
-        .map(entry => daysBetween(entry.clean_date))
-        .filter(days => days >= 0);
-
-      if (daysList.length === 0) {
-        setEmptyStats();
-        return;
-      }
-
-      const count = daysList.length;
-      const totalDays = daysList.reduce((sum, days) => sum + days, 0);
-      const averageDays = Math.floor(totalDays / count);
-      const longestDays = Math.max(...daysList);
-      const shortestDays = Math.min(...daysList);
+    function updateStatsFromDatabase(row) {
+      const personCount = Number(row.person_count || 0);
+      const totalDays = Number(row.total_days || 0);
+      const averageDays = Math.floor(Number(row.average_days || 0));
+      const longestDays = Number(row.longest_days || 0);
+      const shortestDays = Number(row.shortest_days || 0);
 
       const total = formatStatsFromDays(totalDays);
       const average = formatStatsFromDays(averageDays);
@@ -495,8 +445,11 @@
       const shortest = formatStatsFromDays(shortestDays);
       const shortestShortValue = formatShortValue(shortestDays);
 
-      document.getElementById("mainCounter").innerText = totalDays.toLocaleString("sv-SE");
-      document.getElementById("count").innerText = count.toLocaleString("sv-SE") + " personer";
+      document.getElementById("mainCounter").innerText =
+        totalDays.toLocaleString("sv-SE");
+
+      document.getElementById("count").innerText =
+        personCount.toLocaleString("sv-SE") + " " + pluralize(personCount, "person", "personer");
 
       document.getElementById("totalYears").innerText = total.yearsDecimal;
       document.getElementById("totalDetail").innerText = total.detail;
@@ -522,13 +475,36 @@
       document.getElementById("shortestDaysNote").innerText = shortest.daysText;
     }
 
+    async function loadStats() {
+      const { data, error } = await supabaseClient
+        .from("clean_time_summary")
+        .select("person_count,total_days,average_days,longest_days,shortest_days")
+        .single();
+
+      if (error) {
+        showMessage("Kunde inte hämta statistik från databasen: " + error.message, "error");
+        console.log(error);
+        setEmptyStats();
+        return;
+      }
+
+      if (!data || Number(data.person_count || 0) === 0) {
+        setEmptyStats();
+        return;
+      }
+
+      updateStatsFromDatabase(data);
+    }
+
     document.getElementById("cleanForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       clearMessage();
 
       const cleanDate = document.getElementById("cleanDate").value;
-      const selectedDate = parseDateOnly(cleanDate);
-      const today = todayDateOnly();
+
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       if (selectedDate > today) {
         showMessage("Datumet kan inte ligga i framtiden.", "error");
