@@ -27,7 +27,7 @@
 
     body {
       font-family: "Segoe UI", Arial, sans-serif;
-      background: var(--bg);20
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
@@ -45,6 +45,15 @@
       margin-bottom: 18px;
       text-transform: uppercase;
       opacity: 0.96;
+    }
+
+    .event-title {
+      font-size: clamp(20px, 5vw, 30px);
+      font-weight: 800;
+      margin-bottom: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: white;
     }
 
     .counter {
@@ -254,6 +263,10 @@
 <body>
 
   <section class="hero">
+    <div id="eventTitle" class="event-title">
+      Laddar event...
+    </div>
+
     <h1>Tillsammans har vi</h1>
 
     <div class="counter" id="mainCounter">
@@ -269,6 +282,8 @@
 
     <section class="card">
       <h2>Registrera din drogfria tid</h2>
+
+      <p class="helper-text" id="eventInfo">Hämtar event...</p>
 
       <form id="cleanForm">
         <label for="cleanDate">Skriv in det datum du blev drogfri, ange datum som ÅÅÅÅMMDD</label>
@@ -337,17 +352,21 @@
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let deviceId = localStorage.getItem("deviceId");
-
     if (!deviceId) {
       deviceId = crypto.randomUUID();
       localStorage.setItem("deviceId", deviceId);
     }
+
+    let eventId = null;
+    let eventSlug = null;
+    let eventName = null;
+
+    const cleanDateInput = document.getElementById("cleanDate");
+    const submitButton = document.getElementById("submitButton");
+    const eventInfo = document.getElementById("eventInfo");
 
     function pluralize(value, singular, plural) {
       return value === 1 ? singular : plural;
@@ -357,47 +376,34 @@
       const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const years = Math.floor(totalDays / 365.25);
       const daysAfterYears = totalDays - Math.floor(years * 365.25);
-
       const averageMonthDays = 30.4375;
       const months = Math.floor(daysAfterYears / averageMonthDays);
       const remainingDays = Math.round(daysAfterYears - (months * averageMonthDays));
-
       let parts = [];
       if (years > 0) parts.push(years + " år");
       if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
-      if (remainingDays > 0 || parts.length === 0) {
-        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
-      }
-
+      if (remainingDays > 0 || parts.length === 0) parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
       return parts.join(" ");
     }
 
     function formatShortValue(days) {
       const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const averageMonthDays = 30.4375;
-
-      if (totalDays < averageMonthDays) {
-        return totalDays + " " + pluralize(totalDays, "dag", "dagar");
-      }
-
+      if (totalDays < averageMonthDays) return totalDays + " " + pluralize(totalDays, "dag", "dagar");
       if (totalDays < 365.25) {
         const months = Math.floor(totalDays / averageMonthDays);
         const remainingDays = Math.round(totalDays - (months * averageMonthDays));
-
         let parts = [];
         if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
         if (remainingDays > 0) parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
-
         return parts.join(" ");
       }
-
       return null;
     }
 
     function formatStatsFromDays(days) {
       const totalDays = Math.max(0, Math.floor(Number(days) || 0));
       const decimalYears = (totalDays / 365.25).toFixed(1).replace(".", ",");
-
       return {
         yearsDecimal: decimalYears + " år",
         detail: "(" + formatDetailFromDays(totalDays) + ")",
@@ -419,22 +425,17 @@
 
     function setEmptyStats() {
       const zero = formatStatsFromDays(0);
-
       document.getElementById("mainCounter").innerText = "0";
       document.getElementById("count").innerText = "0 personer";
-
       document.getElementById("totalYears").innerText = zero.yearsDecimal;
       document.getElementById("totalDetail").innerText = zero.detail;
       document.getElementById("totalDaysNote").innerText = zero.daysText + " totalt";
-
       document.getElementById("averageYears").innerText = zero.yearsDecimal;
       document.getElementById("averageDetail").innerText = zero.detail;
       document.getElementById("averageDaysNote").innerText = zero.daysText + " i genomsnitt";
-
       document.getElementById("longestYears").innerText = zero.yearsDecimal;
       document.getElementById("longestDetail").innerText = zero.detail;
       document.getElementById("longestDaysNote").innerText = zero.daysText;
-
       document.getElementById("shortestYears").innerText = "0 dagar";
       document.getElementById("shortestDetail").innerText = "";
       document.getElementById("shortestDaysNote").innerText = zero.daysText;
@@ -446,32 +447,22 @@
       const averageDays = Math.floor(Number(row.average_days || 0));
       const longestDays = Number(row.longest_days || 0);
       const shortestDays = Number(row.shortest_days || 0);
-
       const total = formatStatsFromDays(totalDays);
       const average = formatStatsFromDays(averageDays);
       const longest = formatStatsFromDays(longestDays);
       const shortest = formatStatsFromDays(shortestDays);
       const shortestShortValue = formatShortValue(shortestDays);
-
-      document.getElementById("mainCounter").innerText =
-        totalDays.toLocaleString("sv-SE");
-
-      document.getElementById("count").innerText =
-        personCount.toLocaleString("sv-SE") + " " + pluralize(personCount, "person", "personer");
-
+      document.getElementById("mainCounter").innerText = totalDays.toLocaleString("sv-SE");
+      document.getElementById("count").innerText = personCount.toLocaleString("sv-SE") + " " + pluralize(personCount, "person", "personer");
       document.getElementById("totalYears").innerText = total.yearsDecimal;
       document.getElementById("totalDetail").innerText = total.detail;
       document.getElementById("totalDaysNote").innerText = total.daysText + " totalt";
-
       document.getElementById("averageYears").innerText = average.yearsDecimal;
       document.getElementById("averageDetail").innerText = average.detail;
-      document.getElementById("averageDaysNote").innerText =
-        average.daysText + " i genomsnitt";
-
+      document.getElementById("averageDaysNote").innerText = average.daysText + " i genomsnitt";
       document.getElementById("longestYears").innerText = longest.yearsDecimal;
       document.getElementById("longestDetail").innerText = longest.detail;
       document.getElementById("longestDaysNote").innerText = longest.daysText;
-
       if (shortestShortValue !== null) {
         document.getElementById("shortestYears").innerText = shortestShortValue;
         document.getElementById("shortestDetail").innerText = "";
@@ -479,112 +470,85 @@
         document.getElementById("shortestYears").innerText = shortest.yearsDecimal;
         document.getElementById("shortestDetail").innerText = shortest.detail;
       }
-
       document.getElementById("shortestDaysNote").innerText = shortest.daysText;
     }
 
-    async function loadStats() {
-      const { data, error } = await supabaseClient
-        .from("clean_time_summary")
-        .select("person_count,total_days,average_days,longest_days,shortest_days")
-        .single();
+    async function loadEvent() {
+      const params = new URLSearchParams(window.location.search);
+      eventSlug = params.get("event");
+      if (!eventSlug) {
+        eventInfo.innerText = "Ingen event-länk angiven. Använd exempelvis ?event=na40 i adressen.";
+        document.getElementById("eventTitle").innerText = "EVENT SAKNAS";
+        submitButton.disabled = true;
+        setEmptyStats();
+        return false;
+      }
+      const { data, error } = await supabaseClient.from("events").select("id,name,slug,is_active").eq("slug", eventSlug).eq("is_active", true).single();
+      if (error || !data) {
+        eventInfo.innerText = "Kunde inte hitta eventet: " + eventSlug;
+        document.getElementById("eventTitle").innerText = "EVENT HITTADES INTE";
+        submitButton.disabled = true;
+        setEmptyStats();
+        console.log(error);
+        return false;
+      }
+      eventId = data.id;
+      eventName = data.name;
+      eventInfo.innerText = "Event: " + eventName;
+      document.getElementById("eventTitle").innerText = eventName.toUpperCase();
+      document.title = "Drogfri tid - " + eventName;
+      return true;
+    }
 
+    async function loadStats() {
+      if (!eventId) { setEmptyStats(); return; }
+      const { data, error } = await supabaseClient.from("clean_time_summary_by_event").select("person_count,total_days,average_days,longest_days,shortest_days").eq("event_id", eventId).single();
       if (error) {
-        showMessage("Kunde inte hämta statistik från databasen: " + error.message, "error");
+        showMessage("Kunde inte hämta statistik för eventet: " + error.message, "error");
         console.log(error);
         setEmptyStats();
         return;
       }
-
-      if (!data || Number(data.person_count || 0) === 0) {
-        setEmptyStats();
-        return;
-      }
-
+      if (!data || Number(data.person_count || 0) === 0) { setEmptyStats(); return; }
       updateStatsFromDatabase(data);
     }
+
+    function sanitizeDateInput(input) {
+      let value = input.value.replace(/\D/g, "");
+      if (value.length > 8) value = value.substring(0, 8);
+      input.value = value;
+    }
+    cleanDateInput.addEventListener("input", function () { sanitizeDateInput(this); });
 
     document.getElementById("cleanForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       clearMessage();
-
-      const { data: existingEntry } = await supabaseClient
-        .from("clean_time_entries")
-        .select("id")
-        .eq("device_id", deviceId)
-        .limit(1);
-
-      if (existingEntry && existingEntry.length > 0) {
-        showMessage("Denna enhet har redan registrerat sin drogfria tid.", "error");
-        return;
-      }
-
-      const rawDate = document.getElementById("cleanDate").value;
-
-      if (rawDate.length !== 8) {
-        showMessage("Ange datum som ÅÅÅÅMMDD", "error");
-        return;
-      }
-
-      const cleanDate =
-        rawDate.substring(0,4) + "-" +
-        rawDate.substring(4,6) + "-" +
-        rawDate.substring(6,8);
-
+      if (!eventId) { showMessage("Event saknas. Kontrollera länken.", "error"); return; }
+      const { data: existingEntry, error: existingError } = await supabaseClient.from("clean_time_entries").select("id").eq("device_id", deviceId).eq("event_id", eventId).limit(1);
+      if (existingError) { showMessage("Kunde inte kontrollera tidigare registrering: " + existingError.message, "error"); console.log(existingError); return; }
+      if (existingEntry && existingEntry.length > 0) { showMessage("Denna enhet har redan registrerat drogfri tid för detta event.", "error"); return; }
+      const rawDate = cleanDateInput.value;
+      if (rawDate.length !== 8) { showMessage("Ange datum som ÅÅÅÅMMDD", "error"); return; }
+      const cleanDate = rawDate.substring(0,4) + "-" + rawDate.substring(4,6) + "-" + rawDate.substring(6,8);
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      if (selectedDate > today) {
-        showMessage("Datumet kan inte ligga i framtiden.", "error");
-        return;
-      }
-
-      const button = document.getElementById("submitButton");
-      button.disabled = true;
-      button.innerText = "Registrerar...";
-
-      const { error } = await supabaseClient
-        .from("clean_time_entries")
-        .insert([{
-          clean_date: cleanDate,
-          device_id: deviceId
-          event_id: eventId
-        }]);
-
-      button.disabled = false;
-      button.innerText = "Registrera";
-
-      if (error) {
-        showMessage("Något gick fel: " + error.message, "error");
-        console.log(error);
-      } else {        showMessage("Din drogfria tid är registrerad ❤️", "success");
-        document.getElementById("cleanForm").reset();
-    
-    const cleanDateInput = document.getElementById("cleanDate");
-
-    cleanDateInput.addEventListener("input", function () {
-      let value = this.value.replace(/\D/g, "");
-      if (value.length > 8) value = value.substring(0, 8);
-      this.value = value;
+      if (Number.isNaN(selectedDate.getTime())) { showMessage("Datumet är ogiltigt.", "error"); return; }
+      if (selectedDate > today) { showMessage("Datumet kan inte ligga i framtiden.", "error"); return; }
+      submitButton.disabled = true;
+      submitButton.innerText = "Registrerar...";
+      const { error } = await supabaseClient.from("clean_time_entries").insert([{ clean_date: cleanDate, device_id: deviceId, event_id: eventId, created_by: "user" }]);
+      submitButton.disabled = false;
+      submitButton.innerText = "Registrera";
+      if (error) { showMessage("Något gick fel: " + error.message, "error"); console.log(error); }
+      else { showMessage("Din drogfria tid är registrerad ❤️", "success"); document.getElementById("cleanForm").reset(); await loadStats(); }
     });
 
-
-    loadStats();
-      }
-    });
-
-
-    const cleanDateInput = document.getElementById("cleanDate");
-
-    cleanDateInput.addEventListener("input", function () {
-      let value = this.value.replace(/\D/g, "");
-      if (value.length > 8) value = value.substring(0, 8);
-      this.value = value;
-    });
-
-
-    loadStats();
+    async function init() {
+      const eventLoaded = await loadEvent();
+      if (eventLoaded) await loadStats();
+    }
+    init();
   </script>
 
 </body>
