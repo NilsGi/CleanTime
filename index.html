@@ -501,16 +501,32 @@
     }
 
     async function loadStats() {
-      if (!eventId) { setEmptyStats(); return; }
-      const { data, error } = await supabaseClient.from("clean_time_summary_by_event").select("person_count,total_days,average_days,longest_days,shortest_days").eq("event_id", eventId).single();
+      if (!eventId) {
+        setEmptyStats();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("clean_time_summary_by_event")
+        .select("person_count,total_days,average_days,longest_days,shortest_days")
+        .eq("event_id", eventId)
+        .limit(1);
+
       if (error) {
         showMessage("Kunde inte hämta statistik för eventet: " + error.message, "error");
         console.log(error);
         setEmptyStats();
         return;
       }
-      if (!data || Number(data.person_count || 0) === 0) { setEmptyStats(); return; }
-      updateStatsFromDatabase(data);
+
+      const row = data && data.length > 0 ? data[0] : null;
+
+      if (!row || Number(row.person_count || 0) === 0) {
+        setEmptyStats();
+        return;
+      }
+
+      updateStatsFromDatabase(row);
     }
 
     function sanitizeDateInput(input) {
@@ -540,7 +556,19 @@
       const { error } = await supabaseClient.from("clean_time_entries").insert([{ clean_date: cleanDate, device_id: deviceId, event_id: eventId, created_by: "user" }]);
       submitButton.disabled = false;
       submitButton.innerText = "Registrera";
-      if (error) { showMessage("Något gick fel: " + error.message, "error"); console.log(error); }
+      if (error) {
+        if (error.message && error.message.includes("clean_time_device_unique")) {
+          showMessage(
+            "Denna enhet är redan registrerad i databasen. För flera event behöver databasen ändras till unikt index på device_id + event_id.",
+            "error"
+          );
+        } else if (error.message && error.message.includes("clean_time_device_event_unique")) {
+          showMessage("Denna enhet har redan registrerat drogfri tid för detta event.", "error");
+        } else {
+          showMessage("Något gick fel: " + error.message, "error");
+        }
+        console.log(error);
+      }
       else { showMessage("Din drogfria tid är registrerad ❤️", "success"); document.getElementById("cleanForm").reset(); await loadStats(); }
     });
 
