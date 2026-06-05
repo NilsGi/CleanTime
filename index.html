@@ -27,7 +27,7 @@
 
     body {
       font-family: "Segoe UI", Arial, sans-serif;
-      background: var(--bg);
+      background: var(--bg);20
       color: var(--text);
       min-height: 100vh;
     }
@@ -271,9 +271,9 @@
       <h2>Registrera din drogfria tid</h2>
 
       <form id="cleanForm">
-        <label for="cleanDate">Välj det datum då du blev drogfri</label>
-        <input type="text" id="cleanDate" placeholder="ÅÅÅÅ-MM-DD" inputmode="numeric" maxlength="10" required />
-        <p class="helper-text">Ange datum som ÅÅÅÅ-MM-DD, exempelvis 2020-01-21.</p>
+        <label for="cleanDate">Skriv in det datum du blev drogfri, ange datum som ÅÅÅÅMMDD</label>
+        <input type="text" id="cleanDate" placeholder="ÅÅÅÅMMDD" inputmode="numeric" maxlength="8" required />
+        <p class="helper-text">Skriv endast siffror, exempelvis 20200121.</p>
         <button type="submit" id="submitButton">Registrera</button>
       </form>
 
@@ -501,14 +501,22 @@
       e.preventDefault();
       clearMessage();
 
-      const cleanDate = document.getElementById("cleanDate").value;
-
-      const regex = /^\d{4}-\d{2}-\d{2}$/;
-
-      if (!regex.test(cleanDate)) {
-        showMessage("Ange datum som ÅÅÅÅ-MM-DD", "error");
+      if (localStorage.getItem("hasRegisteredCleanTime") === "true") {
+        showMessage("Du har redan registrerat din drogfria tid från denna enhet.", "error");
         return;
       }
+
+      const rawDate = document.getElementById("cleanDate").value;
+
+      if (rawDate.length !== 8) {
+        showMessage("Ange datum som ÅÅÅÅMMDD", "error");
+        return;
+      }
+
+      const cleanDate =
+        rawDate.substring(0,4) + "-" +
+        rawDate.substring(4,6) + "-" +
+        rawDate.substring(6,8);
 
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
@@ -534,11 +542,32 @@
         showMessage("Något gick fel: " + error.message, "error");
         console.log(error);
       } else {
+        localStorage.setItem("hasRegisteredCleanTime", "true");
         showMessage("Din drogfria tid är registrerad ❤️", "success");
         document.getElementById("cleanForm").reset();
-        loadStats();
+    
+    const cleanDateInput = document.getElementById("cleanDate");
+
+    cleanDateInput.addEventListener("input", function () {
+      let value = this.value.replace(/\D/g, "");
+      if (value.length > 8) value = value.substring(0, 8);
+      this.value = value;
+    });
+
+
+    loadStats();
       }
     });
+
+
+    const cleanDateInput = document.getElementById("cleanDate");
+
+    cleanDateInput.addEventListener("input", function () {
+      let value = this.value.replace(/\D/g, "");
+      if (value.length > 8) value = value.substring(0, 8);
+      this.value = value;
+    });
+
 
     loadStats();
   </script>
