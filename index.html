@@ -108,7 +108,7 @@
       margin-bottom: 8px;
     }
 
-    input[type="date"] {
+    input[type="text"] {
     display: block;
     width: calc(100% - 32px);
     margin-left: auto;
@@ -123,7 +123,7 @@
     box-sizing: border-box;
 }
 
-    input[type="date"]:focus {
+    input[type="text"]:focus {
       outline: 3px solid rgba(30,79,154,0.18);
       border-color: var(--na-blue);
     }
@@ -242,7 +242,7 @@
         padding: 19px;
       }
 
-      input[type="date"],
+      input[type="text"],
       button {
         font-size: 17px;
         padding: 15px;
@@ -272,7 +272,8 @@
 
       <form id="cleanForm">
         <label for="cleanDate">Välj det datum då du blev drogfri</label>
-        <input type="date" id="cleanDate" required />
+        <input type="text" id="cleanDate" placeholder="ÅÅÅÅ-MM-DD" inputmode="numeric" maxlength="10" required />
+        <p class="helper-text">Ange datum som ÅÅÅÅ-MM-DD, exempelvis 2020-01-21.</p>
         <button type="submit" id="submitButton">Registrera</button>
       </form>
 
@@ -501,6 +502,13 @@
       clearMessage();
 
       const cleanDate = document.getElementById("cleanDate").value;
+
+      const regex = /^\d{4}-\d{2}-\d{2}$/;
+
+      if (!regex.test(cleanDate)) {
+        showMessage("Ange datum som ÅÅÅÅ-MM-DD", "error");
+        return;
+      }
 
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
