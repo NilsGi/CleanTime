@@ -342,6 +342,13 @@
       SUPABASE_KEY
     );
 
+    let deviceId = localStorage.getItem("deviceId");
+
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
+
     function pluralize(value, singular, plural) {
       return value === 1 ? singular : plural;
     }
@@ -501,8 +508,14 @@
       e.preventDefault();
       clearMessage();
 
-      if (localStorage.getItem("hasRegisteredCleanTime") === "true") {
-        showMessage("Du har redan registrerat din drogfria tid från denna enhet.", "error");
+      const { data: existingEntry } = await supabaseClient
+        .from("clean_time_entries")
+        .select("id")
+        .eq("device_id", deviceId)
+        .limit(1);
+
+      if (existingEntry && existingEntry.length > 0) {
+        showMessage("Denna enhet har redan registrerat sin drogfria tid.", "error");
         return;
       }
 
@@ -533,7 +546,10 @@
 
       const { error } = await supabaseClient
         .from("clean_time_entries")
-        .insert([{ clean_date: cleanDate }]);
+        .insert([{
+          clean_date: cleanDate,
+          device_id: deviceId
+        }]);
 
       button.disabled = false;
       button.innerText = "Registrera";
@@ -541,9 +557,7 @@
       if (error) {
         showMessage("Något gick fel: " + error.message, "error");
         console.log(error);
-      } else {
-        localStorage.setItem("hasRegisteredCleanTime", "true");
-        showMessage("Din drogfria tid är registrerad ❤️", "success");
+      } else {        showMessage("Din drogfria tid är registrerad ❤️", "success");
         document.getElementById("cleanForm").reset();
     
     const cleanDateInput = document.getElementById("cleanDate");
