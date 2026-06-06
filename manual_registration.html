@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Manuell registrering - Drogfri tid</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+      color: white;
+      text-align: center;
+      padding: 42px 18px 75px;
+    }
+
+    .hero h1 {
+      font-size: clamp(22px, 5vw, 34px);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      opacity: 0.96;
+    }
+
+    .hero p {
+      font-size: 16px;
+      opacity: 0.92;
+    }
+
+    .wrap {
+      width: min(100%, 560px);
+      margin: -45px auto 42px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 11;
+    }
+
+    .card h2 {
+      color: var(--na-blue);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      color: var(--text);
+      font-weight: 650;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      display: block;
+      width: calc(100% - 32px);
+      margin-left: auto;
+      margin-right: auto;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid rgba(30,79,154,0.18);
+      border-color: var(--na-blue);
+    }
+
+    button {
+      width: 100%;
+      background: var(--na-blue);
+      color: white;
+      border: none;
+      padding: 16px 22px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 750;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--na-blue-dark);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .message.success {
+      display: block;
+      background: #eef7ff;
+      color: var(--na-blue-dark);
+      border: 1px solid #cfe2ff;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+    }
+
+    .selected-event {
+      background: #eef7ff;
+      border: 1px solid #cfe2ff;
+      color: var(--na-blue-dark);
+      padding: 13px;
+      border-radius: 14px;
+      margin-top: 12px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .result-box {
+      display: none;
+      background: #f4f7fb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .result-days {
+      color: var(--na-blue);
+      font-size: 32px;
+      font-weight: 850;
+      margin-bottom: 6px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 430px) {
+      .hero {
+        padding-top: 34px;
+        padding-bottom: 68px;
+      }
+
+      .wrap {
+        margin-top: -38px;
+        padding: 0 12px;
+      }
+
+      .card {
+        border-radius: 18px;
+        padding: 19px;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      select,
+      button {
+        font-size: 17px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <h1>Manuell registrering</h1>
+    <p>Registrera drogfri tid åt någon annan</p>
+  </section>
+
+  <main class="wrap">
+
+    <section class="card" id="loginCard">
+      <h2>Logga in</h2>
+      <p class="helper-text">
+        Ange administratörslösenord för att göra en manuell registrering.
+      </p>
+
+      <form id="loginForm">
+        <label for="adminPassword">Lösenord</label>
+        <input type="password" id="adminPassword" placeholder="Lösenord" required />
+        <button type="submit">Logga in</button>
+      </form>
+
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section class="card hidden" id="manualCard">
+      <h2>Registrera tid</h2>
+
+      <p class="helper-text">
+        Välj event och skriv datumet personen blev drogfri. Skriv endast siffror i formatet ÅÅÅÅMMDD.
+      </p>
+
+      <label for="eventSelect">Välj event</label>
+      <select id="eventSelect">
+        <option value="">Laddar event...</option>
+      </select>
+
+      <div class="selected-event" id="selectedEventInfo">
+        Inget event valt.
+      </div>
+
+      <form id="manualForm">
+        <label for="cleanDate">Datum personen blev drogfri</label>
+        <input type="text" id="cleanDate" placeholder="ÅÅÅÅMMDD" inputmode="numeric" maxlength="8" required />
+
+        <button type="submit" id="submitButton">Registrera manuellt</button>
+      </form>
+
+      <div id="messageBox" class="message"></div>
+
+      <div class="result-box" id="resultBox">
+        <div class="result-days" id="resultDays">0 dagar</div>
+        <div id="resultDetail">0 dagar</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    En dag i taget ❤️
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const ADMIN_PASSWORD = "drogfri";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const loginCard = document.getElementById("loginCard");
+    const manualCard = document.getElementById("manualCard");
+    const loginMessage = document.getElementById("loginMessage");
+    const messageBox = document.getElementById("messageBox");
+    const cleanDateInput = document.getElementById("cleanDate");
+    const eventSelect = document.getElementById("eventSelect");
+    const selectedEventInfo = document.getElementById("selectedEventInfo");
+    const resultBox = document.getElementById("resultBox");
+
+    let events = [];
+    let selectedEventId = "";
+    let selectedEvent = null;
+
+    function showMessage(element, text, type) {
+      element.textContent = text;
+      element.className = "message " + type;
+    }
+
+    function clearMessage(element) {
+      element.textContent = "";
+      element.className = "message";
+    }
+
+    function pluralize(value, singular, plural) {
+      return value === 1 ? singular : plural;
+    }
+
+    function convertRawDate(rawDate) {
+      return rawDate.substring(0,4) + "-" +
+             rawDate.substring(4,6) + "-" +
+             rawDate.substring(6,8);
+    }
+
+    function isValidDateString(cleanDate) {
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (Number.isNaN(selectedDate.getTime())) {
+        return false;
+      }
+
+      return selectedDate <= today;
+    }
+
+    function daysBetween(cleanDate) {
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.floor((today - selectedDate) / 86400000) + 1;
+    }
+
+    function formatDetailFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
+      const years = Math.floor(totalDays / 365.25);
+      const daysAfterYears = totalDays - Math.floor(years * 365.25);
+
+      const averageMonthDays = 30.4375;
+      const months = Math.floor(daysAfterYears / averageMonthDays);
+      const remainingDays = Math.round(daysAfterYears - (months * averageMonthDays));
+
+      let parts = [];
+      if (years > 0) parts.push(years + " år");
+      if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
+      if (remainingDays > 0 || parts.length === 0) {
+        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+      }
+
+      return parts.join(" ");
+    }
+
+    function sanitizeDateInput(input) {
+      let value = input.value.replace(/\D/g, "");
+      if (value.length > 8) value = value.substring(0, 8);
+      input.value = value;
+    }
+
+    cleanDateInput.addEventListener("input", function () {
+      sanitizeDateInput(this);
+    });
+
+    function updateSelectedEventInfo() {
+      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+
+      if (!selectedEvent) {
+        selectedEventInfo.innerText = "Inget event valt.";
+        return;
+      }
+
+      selectedEventInfo.innerText =
+        "Valt event: " + selectedEvent.name +
+        " | Event-ID: " + selectedEvent.slug;
+    }
+
+    async function loadEvents() {
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name,slug,is_active,created_at")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        eventSelect.innerHTML = '<option value="">Kunde inte hämta event</option>';
+        showMessage(messageBox, "Kunde inte hämta event: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      events = data || [];
+
+      eventSelect.innerHTML =
+        '<option value="">Välj event...</option>' +
+        events.map(event => `<option value="${event.id}">${event.name} (${event.slug})</option>`).join("");
+
+      const params = new URLSearchParams(window.location.search);
+      const eventSlug = params.get("event") || localStorage.getItem("selectedEventSlug");
+
+      if (eventSlug) {
+        const event = events.find(item => item.slug === eventSlug);
+        if (event) {
+          selectedEventId = event.id;
+          eventSelect.value = selectedEventId;
+        }
+      }
+
+      updateSelectedEventInfo();
+    }
+
+    eventSelect.addEventListener("change", function () {
+      selectedEventId = this.value;
+      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+
+      if (selectedEvent) {
+        localStorage.setItem("selectedEventSlug", selectedEvent.slug);
+      }
+
+      updateSelectedEventInfo();
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      clearMessage(loginMessage);
+
+      const password = document.getElementById("adminPassword").value;
+
+      if (password !== ADMIN_PASSWORD) {
+        showMessage(loginMessage, "Fel lösenord.", "error");
+        return;
+      }
+
+      loginCard.classList.add("hidden");
+      manualCard.classList.remove("hidden");
+
+      await loadEvents();
+    });
+
+    document.getElementById("manualForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      clearMessage(messageBox);
+      resultBox.style.display = "none";
+
+      if (!selectedEventId) {
+        showMessage(messageBox, "Välj ett event först.", "error");
+        return;
+      }
+
+      const rawDate = cleanDateInput.value;
+
+      if (rawDate.length !== 8) {
+        showMessage(messageBox, "Ange datum som ÅÅÅÅMMDD.", "error");
+        return;
+      }
+
+      const cleanDate = convertRawDate(rawDate);
+
+      if (!isValidDateString(cleanDate)) {
+        showMessage(messageBox, "Datumet är ogiltigt eller ligger i framtiden.", "error");
+        return;
+      }
+
+      const button = document.getElementById("submitButton");
+      button.disabled = true;
+      button.innerText = "Registrerar...";
+
+      const { error } = await supabaseClient
+        .from("clean_time_entries")
+        .insert([{
+          clean_date: cleanDate,
+          event_id: selectedEventId,
+          device_id: "manual-" + crypto.randomUUID(),
+          created_by: "manual"
+        }]);
+
+      button.disabled = false;
+      button.innerText = "Registrera manuellt";
+
+      if (error) {
+        showMessage(messageBox, "Något gick fel: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      const days = daysBetween(cleanDate);
+
+      document.getElementById("resultDays").innerText =
+        days.toLocaleString("sv-SE") + " " + pluralize(days, "dag", "dagar");
+
+      document.getElementById("resultDetail").innerText =
+        formatDetailFromDays(days);
+
+      resultBox.style.display = "block";
+
+      showMessage(messageBox, "Tiden är registrerad ❤️", "success");
+      document.getElementById("manualForm").reset();
+    });
+  </script>
+
+</body>
+</html>
