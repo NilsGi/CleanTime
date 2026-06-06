@@ -41,6 +41,37 @@
       width: min(100%, 1150px);
     }
 
+    .language-toggle {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 50;
+      display: flex;
+      gap: 6px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 5px;
+      backdrop-filter: blur(8px);
+    }
+
+    .language-toggle button {
+      width: auto;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: transparent;
+      color: white;
+      border: none;
+      font-size: 15px;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .language-toggle button.active {
+      background: white;
+      color: var(--blue);
+    }
+
     .event-title {
       font-size: clamp(28px, 5vw, 60px);
       font-weight: 800;
@@ -134,17 +165,22 @@
 
 <body>
 
+  <div class="language-toggle">
+    <button type="button" id="langSv">SV</button>
+    <button type="button" id="langEn">EN</button>
+  </div>
+
   <main class="screen">
 
     <div id="eventTitle" class="event-title">
       Laddar event...
     </div>
 
-    <div class="top-text">Tillsammans har vi</div>
+    <div class="top-text" id="topText">Tillsammans har vi</div>
 
     <div class="days" id="totalDays">Laddar...</div>
 
-    <div class="bottom-text">dagar av drogfrihet</div>
+    <div class="bottom-text" id="bottomText">dagar av drogfrihet</div>
 
     <div class="info-row">
       <div class="pill" id="personCount">0 personer</div>
@@ -167,8 +203,85 @@
       SUPABASE_KEY
     );
 
+    const texts = {
+      sv: {
+        pageTitle: "Drogfri tid - Total",
+        loadingEvent: "Laddar event...",
+        loading: "Laddar...",
+        allEvents: "ALLA EVENT",
+        eventNotFound: "EVENT HITTADES INTE",
+        topText: "Tillsammans har vi",
+        bottomText: "dagar av drogfrihet",
+        person: "person",
+        persons: "personer",
+        day: "dag",
+        days: "dagar",
+        month: "månad",
+        months: "månader",
+        year: "år",
+        updatedPrefix: "Senast uppdaterad",
+        updatedSuffix: "uppdateras automatiskt var 30:e sekund",
+        errorStats: "Kunde inte hämta statistik:"
+      },
+      en: {
+        pageTitle: "Clean Time - Total",
+        loadingEvent: "Loading event...",
+        loading: "Loading...",
+        allEvents: "ALL EVENTS",
+        eventNotFound: "EVENT NOT FOUND",
+        topText: "Together we have",
+        bottomText: "days of clean time",
+        person: "person",
+        persons: "people",
+        day: "day",
+        days: "days",
+        month: "month",
+        months: "months",
+        year: "year",
+        updatedPrefix: "Last updated",
+        updatedSuffix: "updates automatically every 30 seconds",
+        errorStats: "Could not load statistics:"
+      }
+    };
+
+    let language = localStorage.getItem("language") || "sv";
+    let eventId = null;
+    let eventSlug = null;
+    let eventName = null;
+    let latestTotalDays = 0;
+    let latestPersonCount = 0;
+
+    function t(key) {
+      return texts[language][key];
+    }
+
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.innerText = value;
+    }
+
     function pluralize(value, singular, plural) {
       return value === 1 ? singular : plural;
+    }
+
+    function setLanguage(lang) {
+      language = lang;
+      localStorage.setItem("language", lang);
+      document.documentElement.lang = lang;
+
+      document.getElementById("langSv").classList.toggle("active", lang === "sv");
+      document.getElementById("langEn").classList.toggle("active", lang === "en");
+
+      setText("topText", t("topText"));
+      setText("bottomText", t("bottomText"));
+
+      if (eventName) {
+        document.title = eventName + " - " + t("pageTitle");
+      } else {
+        document.title = t("pageTitle");
+      }
+
+      renderTotals(latestTotalDays, latestPersonCount);
     }
 
     function formatDetailFromDays(days) {
@@ -184,15 +297,15 @@
       const parts = [];
 
       if (years > 0) {
-        parts.push(years + " år");
+        parts.push(years + " " + t("year"));
       }
 
       if (months > 0) {
-        parts.push(months + " " + pluralize(months, "månad", "månader"));
+        parts.push(months + " " + pluralize(months, t("month"), t("months")));
       }
 
       if (remainingDays > 0 || parts.length === 0) {
-        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+        parts.push(remainingDays + " " + pluralize(remainingDays, t("day"), t("days")));
       }
 
       return parts.join(" ");
@@ -218,22 +331,35 @@
       errorBox.innerText = "";
     }
 
-    function setEmpty() {
-      document.getElementById("totalDays").innerText = "0";
-      document.getElementById("personCount").innerText = "0 personer";
-      document.getElementById("detailTime").innerText = "0 dagar";
+    function renderTotals(totalDays, personCount) {
+      document.getElementById("totalDays").innerText =
+        totalDays.toLocaleString("sv-SE");
+
+      document.getElementById("personCount").innerText =
+        personCount.toLocaleString("sv-SE") +
+        " " +
+        pluralize(personCount, t("person"), t("persons"));
+
+      document.getElementById("detailTime").innerText =
+        formatDetailFromDays(totalDays);
+
+      document.getElementById("updatedText").innerText =
+        t("updatedPrefix") + " " + formatClock(new Date()) +
+        " • " + t("updatedSuffix");
     }
 
-    let eventId = null;
-    let eventSlug = null;
-    let eventName = null;
+    function setEmpty() {
+      latestTotalDays = 0;
+      latestPersonCount = 0;
+      renderTotals(0, 0);
+    }
 
     async function loadEvent() {
       const params = new URLSearchParams(window.location.search);
       eventSlug = params.get("event");
 
       if (!eventSlug) {
-        document.getElementById("eventTitle").innerText = "ALLA EVENT";
+        document.getElementById("eventTitle").innerText = t("allEvents");
         return false;
       }
 
@@ -244,7 +370,7 @@
         .single();
 
       if (error || !data) {
-        document.getElementById("eventTitle").innerText = "EVENT HITTADES INTE";
+        document.getElementById("eventTitle").innerText = t("eventNotFound");
         console.log(error);
         return false;
       }
@@ -255,7 +381,7 @@
       document.getElementById("eventTitle").innerText =
         eventName.toUpperCase();
 
-      document.title = eventName + " - Drogfri tid";
+      document.title = eventName + " - " + t("pageTitle");
 
       return true;
     }
@@ -274,39 +400,32 @@
           .select("person_count,total_days");
       }
 
-      const { data, error } = await query.single();
+      const { data, error } = await query.limit(1);
 
       if (error) {
-        showError("Kunde inte hämta statistik: " + error.message);
+        showError(t("errorStats") + " " + error.message);
         setEmpty();
         return;
       }
 
       hideError();
 
-      const totalDays = Math.max(0, Math.floor(Number(data.total_days) || 0));
-      const personCount = Math.max(0, Math.floor(Number(data.person_count) || 0));
+      const row = data && data.length > 0 ? data[0] : null;
 
-      document.getElementById("totalDays").innerText =
-        totalDays.toLocaleString("sv-SE");
+      latestTotalDays = Math.max(0, Math.floor(Number(row?.total_days) || 0));
+      latestPersonCount = Math.max(0, Math.floor(Number(row?.person_count) || 0));
 
-      document.getElementById("personCount").innerText =
-        personCount.toLocaleString("sv-SE") +
-        " " +
-        pluralize(personCount, "person", "personer");
-
-      document.getElementById("detailTime").innerText =
-        formatDetailFromDays(totalDays);
-
-      document.getElementById("updatedText").innerText =
-        "Senast uppdaterad " + formatClock(new Date()) +
-        " • uppdateras automatiskt var 30:e sekund";
+      renderTotals(latestTotalDays, latestPersonCount);
     }
 
     async function init() {
+      setLanguage(language);
       await loadEvent();
       await loadTotalTime();
     }
+
+    document.getElementById("langSv").addEventListener("click", () => setLanguage("sv"));
+    document.getElementById("langEn").addEventListener("click", () => setLanguage("en"));
 
     init();
 
