@@ -2,7 +2,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Räkna fram datum - Drogfri tid</title>
+  <title>Ad hoc-registrering - Drogfri tid</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
@@ -88,7 +90,8 @@
       margin-bottom: 8px;
     }
 
-    input {
+    input,
+    select {
       display: block;
       width: 100%;
       padding: 16px;
@@ -100,7 +103,8 @@
       margin-bottom: 14px;
     }
 
-    input:focus {
+    input:focus,
+    select:focus {
       outline: 3px solid rgba(30,79,154,0.18);
       border-color: var(--na-blue);
     }
@@ -123,6 +127,11 @@
     button {
       background: var(--na-blue);
       color: white;
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
 
     .back-button {
@@ -170,11 +179,6 @@
       line-height: 1.4;
     }
 
-    .copy-button {
-      background: var(--na-blue-dark);
-      margin-top: 14px;
-    }
-
     .message {
       display: none;
       margin-top: 14px;
@@ -189,6 +193,25 @@
       background: #eef7ff;
       color: var(--na-blue-dark);
       border: 1px solid #cfe2ff;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+    }
+
+    .selected-event {
+      background: #eef7ff;
+      border: 1px solid #cfe2ff;
+      color: var(--na-blue-dark);
+      padding: 13px;
+      border-radius: 14px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.35;
     }
 
     .footer {
@@ -215,6 +238,7 @@
       }
 
       input,
+      select,
       button,
       .back-button {
         font-size: 17px;
@@ -227,17 +251,29 @@
 <body>
 
   <section class="hero">
-    <h1>Räkna fram datum</h1>
-    <p>Fyll i år, månader och dagar så räknas startdatumet fram</p>
+    <h1>Ad hoc-registrering</h1>
+    <p>Räkna fram clean_date och spara direkt på valt event</p>
   </section>
 
   <main class="wrap">
 
     <section class="card">
-      <h2>Ad hoc till datum</h2>
+      <h2>Välj event</h2>
       <p class="helper-text">
-        Sidan räknar bakåt från dagens datum. Resultatet blir ett datum som kan sparas som
-        <strong>clean_date</strong> i den befintliga tabellen.
+        Välj vilket event registreringen ska kopplas till.
+      </p>
+
+      <label for="eventSelect">Event</label>
+      <select id="eventSelect"><option value="">Välj event...</option><option value="48074a29-6988-410e-ae4e-3d9179400a40">Gullbranna 2026 (gullbranna-2026)</option><option value="5db2d06a-568d-41e4-9cba-0c7754c03f96">Orhem (orhem)</option></select>
+
+      <div class="selected-event" id="selectedEventInfo">Inget event valt.</div>
+    </section>
+
+    <section class="card">
+      <h2>Räkna fram datum</h2>
+      <p class="helper-text">
+        Fyll i personens tid i år, månader och dagar. Sidan räknar bakåt från dagens datum
+        och sparar det framräknade datumet som <strong>clean_date</strong>.
       </p>
 
       <form id="dateForm">
@@ -250,7 +286,7 @@
         <label for="days">Dagar</label>
         <input type="number" id="days" min="0" step="1" placeholder="0" inputmode="numeric">
 
-        <button type="submit">Räkna fram datum</button>
+        <button type="submit" id="calculateButton">Räkna fram datum</button>
       </form>
 
       <div class="result-box" id="resultBox">
@@ -258,21 +294,12 @@
         <div class="result-date" id="cleanDateResult">0000-00-00</div>
         <div class="result-detail" id="detailText"></div>
         <div class="result-note" id="noteText"></div>
-        <button type="button" class="copy-button" id="copyButton">Kopiera datum</button>
+        <button type="button" id="saveButton">Spara i databasen</button>
       </div>
 
       <div id="messageBox" class="message"></div>
 
       <a href="/" class="back-button">← Till huvudmenyn</a>
-    </section>
-
-    <section class="card">
-      <h2>Hur räknas det?</h2>
-      <p class="helper-text">
-        Beräkningen utgår från dagens datum och använder kalenderlogik:
-        först dras år bort, sedan månader och sist dagar.
-        På så sätt får du ett riktigt datum, inte ett uppskattat antal dagar.
-      </p>
     </section>
 
   </main>
@@ -282,7 +309,34 @@
   </footer>
 
   <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    let events = [];
+    let selectedEventId = "";
+    let selectedEvent = null;
     let latestCleanDate = "";
+
+    const eventSelect = document.getElementById("eventSelect");
+    const selectedEventInfo = document.getElementById("selectedEventInfo");
+    const messageBox = document.getElementById("messageBox");
+    const resultBox = document.getElementById("resultBox");
+    const saveButton = document.getElementById("saveButton");
+
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = "message " + type;
+    }
+
+    function clearMessage() {
+      messageBox.textContent = "";
+      messageBox.className = "message";
+    }
 
     function numberValue(id) {
       const value = Number(document.getElementById(id).value);
@@ -321,12 +375,77 @@
       return Math.floor((today - selectedDate) / 86400000) + 1;
     }
 
+    function updateSelectedEventInfo() {
+      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+
+      if (!selectedEvent) {
+        selectedEventInfo.innerText = "Inget event valt.";
+        return;
+      }
+
+      selectedEventInfo.innerText =
+        "Valt event: " + selectedEvent.name + " | Event-ID: " + selectedEvent.slug;
+    }
+
+    async function loadEvents() {
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name,slug,is_active")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        eventSelect.innerHTML = '<option value="">Kunde inte hämta event</option>';
+        showMessage("Kunde inte hämta event: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      events = data || [];
+
+      eventSelect.innerHTML =
+        '<option value="">Välj event...</option>' +
+        events.map(event => `<option value="${event.id}">${event.name} (${event.slug})</option>`).join("");
+
+      const params = new URLSearchParams(window.location.search);
+      const eventSlug = params.get("event") || localStorage.getItem("selectedEventSlug");
+
+      if (eventSlug) {
+        const event = events.find(item => item.slug === eventSlug);
+        if (event) {
+          selectedEventId = event.id;
+          eventSelect.value = selectedEventId;
+        }
+      }
+
+      updateSelectedEventInfo();
+    }
+
+    eventSelect.addEventListener("change", function () {
+      selectedEventId = this.value;
+      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+
+      if (selectedEvent) {
+        localStorage.setItem("selectedEventSlug", selectedEvent.slug);
+      } else {
+        localStorage.removeItem("selectedEventSlug");
+      }
+
+      updateSelectedEventInfo();
+    });
+
     document.getElementById("dateForm").addEventListener("submit", function(e) {
       e.preventDefault();
+      clearMessage();
 
       const years = numberValue("years");
       const months = numberValue("months");
       const days = numberValue("days");
+
+      if (years === 0 && months === 0 && days === 0) {
+        showMessage("Ange minst ett värde.", "error");
+        return;
+      }
 
       const calculatedDate = calculateCleanDate(years, months, days);
       latestCleanDate = formatDate(calculatedDate);
@@ -347,29 +466,50 @@
         pluralize(totalDays, "dag", "dagar") +
         " inklusive startdagen.";
 
-      document.getElementById("resultBox").style.display = "block";
-      document.getElementById("messageBox").className = "message";
-      document.getElementById("messageBox").innerText = "";
+      resultBox.style.display = "block";
     });
 
-    document.getElementById("copyButton").addEventListener("click", async function() {
-      if (!latestCleanDate) return;
+    saveButton.addEventListener("click", async function() {
+      clearMessage();
 
-      try {
-        await navigator.clipboard.writeText(latestCleanDate);
-      } catch (error) {
-        const input = document.createElement("input");
-        input.value = latestCleanDate;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand("copy");
-        document.body.removeChild(input);
+      if (!selectedEventId) {
+        showMessage("Välj ett event först.", "error");
+        return;
       }
 
-      const box = document.getElementById("messageBox");
-      box.innerText = "Datum kopierat: " + latestCleanDate;
-      box.className = "message success";
+      if (!latestCleanDate) {
+        showMessage("Räkna fram ett datum först.", "error");
+        return;
+      }
+
+      saveButton.disabled = true;
+      saveButton.innerText = "Sparar...";
+
+      const { error } = await supabaseClient
+        .from("clean_time_entries")
+        .insert([{
+          clean_date: latestCleanDate,
+          event_id: selectedEventId,
+          device_id: "adhoc-" + crypto.randomUUID(),
+          created_by: "adhoc"
+        }]);
+
+      saveButton.disabled = false;
+      saveButton.innerText = "Spara i databasen";
+
+      if (error) {
+        showMessage("Kunde inte spara: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      showMessage("Registreringen är sparad ❤️", "success");
+      document.getElementById("dateForm").reset();
+      resultBox.style.display = "none";
+      latestCleanDate = "";
     });
+
+    loadEvents();
   </script>
 
 
