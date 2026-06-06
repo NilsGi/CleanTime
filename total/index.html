@@ -345,7 +345,7 @@
     let latestTotalDays = 0;
     let latestPersonCount = 0;
     let currentTotalDays = 0;
-    let firstRender = true;
+    let firstRender = false;
     let isAnimating = false;
 
     function t(key) {
@@ -627,8 +627,11 @@
 
     async function init() {
       setLanguage(language);
-      await renderAll(0, 0, false);
+
+      currentTotalDays = 0;
+
       await loadEvent();
+
       await loadTotalTime();
     }
 
