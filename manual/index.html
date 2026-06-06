@@ -369,7 +369,7 @@
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return Math.floor((today - selectedDate) / 86400000) + 1;
+      return Math.floor((today - selectedDate) / 86400000);
     }
 
     function formatDetailFromDays(days) {
