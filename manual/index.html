@@ -196,6 +196,20 @@
       display: none;
     }
 
+    .back-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: #64748b;
+      color: white;
+      padding: 16px 22px;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 750;
+      margin-top: 12px;
+    }
+
     .footer {
       text-align: center;
       color: var(--muted);
@@ -251,6 +265,8 @@
         <button type="submit">Logga in</button>
       </form>
 
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+
       <div id="loginMessage" class="message"></div>
     </section>
 
@@ -277,6 +293,8 @@
         <button type="submit" id="submitButton">Registrera manuellt</button>
       </form>
 
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+
       <div id="messageBox" class="message"></div>
 
       <div class="result-box" id="resultBox">
@@ -288,7 +306,7 @@
   </main>
 
   <footer class="footer">
-    Bara för idag ❤️
+    En dag i taget ❤️
   </footer>
 
   <script>
