@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Drogfri tid - Total</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --blue: #1E4F9A;
+      --blue-dark: #163D78;
+      --white: #ffffff;
+      --soft-white: rgba(255, 255, 255, 0.88);
+      --glass: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .screen {
+      width: min(100%, 1150px);
+    }
+
+    .event-title {
+      font-size: clamp(28px, 5vw, 60px);
+      font-weight: 800;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: white;
+    }
+
+    .top-text {
+      font-size: clamp(30px, 6vw, 66px);
+      font-weight: 750;
+      letter-spacing: 1px;
+      margin-bottom: 28px;
+    }
+
+    .days {
+      font-size: clamp(88px, 22vw, 245px);
+      font-weight: 900;
+      line-height: 0.92;
+      letter-spacing: -5px;
+      margin-bottom: 28px;
+      text-shadow: 0 14px 38px rgba(0,0,0,0.28);
+    }
+
+    .bottom-text {
+      font-size: clamp(30px, 6vw, 66px);
+      font-weight: 750;
+      margin-bottom: 30px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      padding: 16px 30px;
+      font-size: clamp(20px, 4vw, 38px);
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+    }
+
+    .updated {
+      color: var(--soft-white);
+      font-size: clamp(13px, 2vw, 18px);
+      opacity: 0.85;
+    }
+
+    .error {
+      margin-top: 22px;
+      display: none;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 18px;
+      padding: 14px 18px;
+      font-size: 16px;
+      color: white;
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 18px;
+        overflow: auto;
+      }
+
+      .days {
+        letter-spacing: -2px;
+      }
+
+      .pill {
+        border-radius: 26px;
+        line-height: 1.35;
+        width: 100%;
+      }
+
+      .info-row {
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="screen">
+
+    <div id="eventTitle" class="event-title">
+      Laddar event...
+    </div>
+
+    <div class="top-text">Tillsammans har vi</div>
+
+    <div class="days" id="totalDays">Laddar...</div>
+
+    <div class="bottom-text">dagar av drogfrihet</div>
+
+    <div class="info-row">
+      <div class="pill" id="personCount">0 personer</div>
+      <div class="pill" id="detailTime">0 år 0 månader 0 dagar</div>
+    </div>
+
+    <div class="updated" id="updatedText">
+      Uppdateras automatiskt var 30:e sekund
+    </div>
+
+    <div class="error" id="errorBox"></div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    function pluralize(value, singular, plural) {
+      return value === 1 ? singular : plural;
+    }
+
+    function formatDetailFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
+
+      const years = Math.floor(totalDays / 365.25);
+      const daysAfterYears = totalDays - Math.floor(years * 365.25);
+
+      const averageMonthDays = 30.4375;
+      const months = Math.floor(daysAfterYears / averageMonthDays);
+      const remainingDays = Math.round(daysAfterYears - (months * averageMonthDays));
+
+      const parts = [];
+
+      if (years > 0) {
+        parts.push(years + " år");
+      }
+
+      if (months > 0) {
+        parts.push(months + " " + pluralize(months, "månad", "månader"));
+      }
+
+      if (remainingDays > 0 || parts.length === 0) {
+        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+      }
+
+      return parts.join(" ");
+    }
+
+    function formatClock(date) {
+      return date.toLocaleTimeString("sv-SE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function showError(message) {
+      const errorBox = document.getElementById("errorBox");
+      errorBox.style.display = "inline-block";
+      errorBox.innerText = message;
+    }
+
+    function hideError() {
+      const errorBox = document.getElementById("errorBox");
+      errorBox.style.display = "none";
+      errorBox.innerText = "";
+    }
+
+    function setEmpty() {
+      document.getElementById("totalDays").innerText = "0";
+      document.getElementById("personCount").innerText = "0 personer";
+      document.getElementById("detailTime").innerText = "0 dagar";
+    }
+
+    let eventId = null;
+    let eventSlug = null;
+    let eventName = null;
+
+    async function loadEvent() {
+      const params = new URLSearchParams(window.location.search);
+      eventSlug = params.get("event");
+
+      if (!eventSlug) {
+        document.getElementById("eventTitle").innerText = "ALLA EVENT";
+        return false;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name")
+        .eq("slug", eventSlug)
+        .single();
+
+      if (error || !data) {
+        document.getElementById("eventTitle").innerText = "EVENT HITTADES INTE";
+        console.log(error);
+        return false;
+      }
+
+      eventId = data.id;
+      eventName = data.name;
+
+      document.getElementById("eventTitle").innerText =
+        eventName.toUpperCase();
+
+      document.title = eventName + " - Drogfri tid";
+
+      return true;
+    }
+
+    async function loadTotalTime() {
+      let query;
+
+      if (eventId) {
+        query = supabaseClient
+          .from("clean_time_summary_by_event")
+          .select("person_count,total_days")
+          .eq("event_id", eventId);
+      } else {
+        query = supabaseClient
+          .from("clean_time_summary")
+          .select("person_count,total_days");
+      }
+
+      const { data, error } = await query.single();
+
+      if (error) {
+        showError("Kunde inte hämta statistik: " + error.message);
+        setEmpty();
+        return;
+      }
+
+      hideError();
+
+      const totalDays = Math.max(0, Math.floor(Number(data.total_days) || 0));
+      const personCount = Math.max(0, Math.floor(Number(data.person_count) || 0));
+
+      document.getElementById("totalDays").innerText =
+        totalDays.toLocaleString("sv-SE");
+
+      document.getElementById("personCount").innerText =
+        personCount.toLocaleString("sv-SE") +
+        " " +
+        pluralize(personCount, "person", "personer");
+
+      document.getElementById("detailTime").innerText =
+        formatDetailFromDays(totalDays);
+
+      document.getElementById("updatedText").innerText =
+        "Senast uppdaterad " + formatClock(new Date()) +
+        " • uppdateras automatiskt var 30:e sekund";
+    }
+
+    async function init() {
+      await loadEvent();
+      await loadTotalTime();
+    }
+
+    init();
+
+    setInterval(loadTotalTime, 30000);
+  </script>
+
+</body>
+</html>

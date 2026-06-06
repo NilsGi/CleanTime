@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Drogfri tid</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+      color: white;
+      text-align: center;
+      padding: 42px 18px 88px;
+    }
+
+    .language-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 6px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 5px;
+      backdrop-filter: blur(8px);
+    }
+
+    .language-toggle button {
+      width: auto;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: transparent;
+      color: white;
+      border: none;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .language-toggle button.active {
+      background: white;
+      color: var(--na-blue);
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 8vw, 54px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-top: 22px;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: clamp(16px, 4vw, 22px);
+      opacity: 0.92;
+      line-height: 1.35;
+    }
+
+    .wrap {
+      width: min(100%, 560px);
+      margin: -50px auto 42px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 11;
+    }
+
+    h2 {
+      color: var(--na-blue);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: 750;
+      margin-bottom: 8px;
+    }
+
+    select {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 17px;
+      background: white;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    select:focus {
+      outline: 3px solid rgba(30,79,154,0.18);
+      border-color: var(--na-blue);
+    }
+
+    .selected-info {
+      background: #eef7ff;
+      color: var(--na-blue-dark);
+      border: 1px solid #cfe2ff;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .nav-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: var(--na-blue);
+      color: white;
+      border: none;
+      padding: 17px 20px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 800;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .nav-button:hover {
+      background: var(--na-blue-dark);
+      transform: translateY(-1px);
+    }
+
+    .nav-button.secondary { background: #64748b; }
+    .nav-button.secondary:hover { background: #475569; }
+    .nav-button.admin { background: #334155; }
+    .nav-button.admin:hover { background: #1e293b; }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 430px) {
+      .hero { padding-top: 42px; padding-bottom: 78px; }
+      .wrap { margin-top: -44px; padding: 0 12px; }
+      .card { border-radius: 20px; padding: 19px; }
+      .language-toggle { top: 12px; right: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <div class="language-toggle">
+      <button type="button" id="langSv">SV</button>
+      <button type="button" id="langEn">EN</button>
+    </div>
+
+    <h1 id="pageTitle">Drogfri tid</h1>
+    <p id="pageSubtitle">Välj event och gå vidare</p>
+  </section>
+
+  <main class="wrap">
+
+    <section class="card">
+      <h2 id="eventHeading">Välj event</h2>
+      <p class="helper-text" id="eventHelp">
+        Välj vilket event du vill använda. Valet sparas på denna enhet.
+      </p>
+
+      <label for="eventSelect" id="eventLabel">Event</label>
+      <select id="eventSelect">
+        <option value="">Laddar event...</option>
+      </select>
+
+      <div class="selected-info" id="selectedInfo"></div>
+      <div class="message" id="messageBox"></div>
+    </section>
+
+    <section class="card">
+      <h2 id="goHeading">Gå vidare</h2>
+
+      <div class="button-grid">
+        <a href="#" class="nav-button" id="registerButton">Registrera tid</a>
+        <a href="#" class="nav-button" id="totalButton">Visa total tid</a>
+        <a href="#" class="nav-button secondary" id="yearButton">Manuell registrering</a>
+        <a href="#" class="nav-button admin" id="adminButton">Admin</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer" id="footerText">
+    En dag i taget ❤️
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const texts = {
+      sv: {
+        pageTitle: "Drogfri tid",
+        pageSubtitle: "Välj event och gå vidare",
+        eventHeading: "Välj event",
+        eventHelp: "Välj vilket event du vill använda. Valet sparas på denna enhet.",
+        eventLabel: "Event",
+        loading: "Laddar event...",
+        choose: "Välj event...",
+        selected: "Valt event:",
+        goHeading: "Gå vidare",
+        register: "Registrera tid",
+        total: "Visa total tid",
+        year: "Manuell registrering",
+        admin: "Admin",
+        missingEvent: "Välj ett event först.",
+        noEvents: "Inga aktiva event finns ännu.",
+        errorLoading: "Kunde inte hämta event:",
+        footer: "En dag i taget ❤️"
+      },
+      en: {
+        pageTitle: "Clean Time",
+        pageSubtitle: "Choose an event and continue",
+        eventHeading: "Choose event",
+        eventHelp: "Choose which event you want to use. The choice is saved on this device.",
+        eventLabel: "Event",
+        loading: "Loading events...",
+        choose: "Choose event...",
+        selected: "Selected event:",
+        goHeading: "Continue",
+        register: "Register clean time",
+        total: "Show total time",
+        year: "Manual registration",
+        admin: "Admin",
+        missingEvent: "Please choose an event first.",
+        noEvents: "No active events found.",
+        errorLoading: "Could not load events:",
+        footer: "Just for today ❤️"
+      }
+    };
+
+    let language = localStorage.getItem("language") || "sv";
+    let events = [];
+    let selectedSlug = localStorage.getItem("selectedEventSlug") || "";
+
+    const eventSelect = document.getElementById("eventSelect");
+    const selectedInfo = document.getElementById("selectedInfo");
+    const messageBox = document.getElementById("messageBox");
+
+    function t(key) {
+      return texts[language][key];
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).innerText = value;
+    }
+
+    function setLanguage(lang) {
+      language = lang;
+      localStorage.setItem("language", lang);
+
+      document.documentElement.lang = lang;
+      document.getElementById("langSv").classList.toggle("active", lang === "sv");
+      document.getElementById("langEn").classList.toggle("active", lang === "en");
+
+      setText("pageTitle", t("pageTitle"));
+      setText("pageSubtitle", t("pageSubtitle"));
+      setText("eventHeading", t("eventHeading"));
+      setText("eventHelp", t("eventHelp"));
+      setText("eventLabel", t("eventLabel"));
+      setText("goHeading", t("goHeading"));
+      setText("registerButton", t("register"));
+      setText("totalButton", t("total"));
+      setText("yearButton", t("year"));
+      setText("adminButton", t("admin"));
+      setText("footerText", t("footer"));
+
+      renderEvents();
+      updateSelectedInfo();
+    }
+
+    function showError(text) {
+      messageBox.textContent = text;
+      messageBox.className = "message error";
+    }
+
+    function clearError() {
+      messageBox.textContent = "";
+      messageBox.className = "message";
+    }
+
+    function getSelectedEvent() {
+      return events.find(event => event.slug === selectedSlug) || null;
+    }
+
+    function renderEvents() {
+      if (events.length === 0) {
+        eventSelect.innerHTML = `<option value="">${t("noEvents")}</option>`;
+        return;
+      }
+
+      eventSelect.innerHTML =
+        `<option value="">${t("choose")}</option>` +
+        events.map(event =>
+          `<option value="${event.slug}">${event.name}</option>`
+        ).join("");
+
+      eventSelect.value = selectedSlug;
+    }
+
+    function updateSelectedInfo() {
+      const selectedEvent = getSelectedEvent();
+
+      if (!selectedEvent) {
+        selectedInfo.style.display = "none";
+        updateButtons();
+        return;
+      }
+
+      selectedInfo.style.display = "block";
+      selectedInfo.innerText = t("selected") + " " + selectedEvent.name;
+      updateButtons();
+    }
+
+    function buildUrl(path) {
+      if (!selectedSlug) return "#";
+      return path + "?event=" + encodeURIComponent(selectedSlug);
+    }
+
+    function updateButtons() {
+      document.getElementById("registerButton").href = buildUrl("/register/");
+      document.getElementById("totalButton").href = buildUrl("/total/");
+      document.getElementById("yearButton").href = buildUrl("/manual/");
+      document.getElementById("adminButton").href = "/admin/";
+    }
+
+    function handleNavClick(e) {
+      const id = e.currentTarget.id;
+
+      if (id === "adminButton") {
+        return;
+      }
+
+      if (!selectedSlug) {
+        e.preventDefault();
+        showError(t("missingEvent"));
+      }
+    }
+
+    async function loadEvents() {
+      eventSelect.innerHTML = `<option value="">${t("loading")}</option>`;
+
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name,slug,is_active")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        showError(t("errorLoading") + " " + error.message);
+        console.log(error);
+        events = [];
+        renderEvents();
+        return;
+      }
+
+      events = data || [];
+
+      if (selectedSlug && !events.some(event => event.slug === selectedSlug)) {
+        selectedSlug = "";
+        localStorage.removeItem("selectedEventSlug");
+      }
+
+      renderEvents();
+      updateSelectedInfo();
+    }
+
+    eventSelect.addEventListener("change", function () {
+      clearError();
+      selectedSlug = this.value;
+
+      if (selectedSlug) {
+        localStorage.setItem("selectedEventSlug", selectedSlug);
+      } else {
+        localStorage.removeItem("selectedEventSlug");
+      }
+
+      updateSelectedInfo();
+    });
+
+    document.getElementById("langSv").addEventListener("click", () => setLanguage("sv"));
+    document.getElementById("langEn").addEventListener("click", () => setLanguage("en"));
+
+    document.getElementById("registerButton").addEventListener("click", handleNavClick);
+    document.getElementById("totalButton").addEventListener("click", handleNavClick);
+    document.getElementById("yearButton").addEventListener("click", handleNavClick);
+
+    setLanguage(language);
+    loadEvents();
+  </script>
+
+</body>
+</html>
