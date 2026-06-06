@@ -1,0 +1,377 @@
+<html lang="sv"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Räkna fram datum - Drogfri tid</title>
+
+  <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+      color: white;
+      text-align: center;
+      padding: 42px 18px 75px;
+    }
+
+    .hero h1 {
+      font-size: clamp(26px, 7vw, 44px);
+      margin-bottom: 12px;
+      font-weight: 850;
+    }
+
+    .hero p {
+      font-size: 17px;
+      opacity: 0.92;
+      line-height: 1.4;
+    }
+
+    .wrap {
+      width: min(100%, 560px);
+      margin: -45px auto 42px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 11;
+    }
+
+    .card h2 {
+      color: var(--na-blue);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    input:focus {
+      outline: 3px solid rgba(30,79,154,0.18);
+      border-color: var(--na-blue);
+    }
+
+    button,
+    .back-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      border: none;
+      padding: 16px 22px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 800;
+      margin-top: 12px;
+    }
+
+    button {
+      background: var(--na-blue);
+      color: white;
+    }
+
+    .back-button {
+      background: #64748b;
+      color: white;
+    }
+
+    .result-box {
+      display: none;
+      background: #eef7ff;
+      border: 1px solid #cfe2ff;
+      border-radius: 18px;
+      padding: 20px;
+      margin-top: 18px;
+      text-align: center;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .result-date {
+      color: var(--na-blue);
+      font-size: clamp(34px, 9vw, 54px);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    .result-detail {
+      font-size: 18px;
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .result-note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .copy-button {
+      background: var(--na-blue-dark);
+      margin-top: 14px;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .message.success {
+      display: block;
+      background: #eef7ff;
+      color: var(--na-blue-dark);
+      border: 1px solid #cfe2ff;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 430px) {
+      .hero {
+        padding-top: 34px;
+        padding-bottom: 68px;
+      }
+
+      .wrap {
+        margin-top: -38px;
+        padding: 0 12px;
+      }
+
+      .card {
+        border-radius: 18px;
+        padding: 19px;
+      }
+
+      input,
+      button,
+      .back-button {
+        font-size: 17px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <h1>Räkna fram datum</h1>
+    <p>Fyll i år, månader och dagar så räknas startdatumet fram</p>
+  </section>
+
+  <main class="wrap">
+
+    <section class="card">
+      <h2>Ad hoc till datum</h2>
+      <p class="helper-text">
+        Sidan räknar bakåt från dagens datum. Resultatet blir ett datum som kan sparas som
+        <strong>clean_date</strong> i den befintliga tabellen.
+      </p>
+
+      <form id="dateForm">
+        <label for="years">År</label>
+        <input type="number" id="years" min="0" step="1" placeholder="0" inputmode="numeric">
+
+        <label for="months">Månader</label>
+        <input type="number" id="months" min="0" step="1" placeholder="0" inputmode="numeric">
+
+        <label for="days">Dagar</label>
+        <input type="number" id="days" min="0" step="1" placeholder="0" inputmode="numeric">
+
+        <button type="submit">Räkna fram datum</button>
+      </form>
+
+      <div class="result-box" id="resultBox">
+        <div class="result-label">Beräknat clean_date</div>
+        <div class="result-date" id="cleanDateResult">0000-00-00</div>
+        <div class="result-detail" id="detailText"></div>
+        <div class="result-note" id="noteText"></div>
+        <button type="button" class="copy-button" id="copyButton">Kopiera datum</button>
+      </div>
+
+      <div id="messageBox" class="message"></div>
+
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+    </section>
+
+    <section class="card">
+      <h2>Hur räknas det?</h2>
+      <p class="helper-text">
+        Beräkningen utgår från dagens datum och använder kalenderlogik:
+        först dras år bort, sedan månader och sist dagar.
+        På så sätt får du ett riktigt datum, inte ett uppskattat antal dagar.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    En dag i taget ❤️
+  </footer>
+
+  <script>
+    let latestCleanDate = "";
+
+    function numberValue(id) {
+      const value = Number(document.getElementById(id).value);
+      return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+    }
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function formatDate(date) {
+      return date.getFullYear() + "-" +
+        pad(date.getMonth() + 1) + "-" +
+        pad(date.getDate());
+    }
+
+    function pluralize(value, singular, plural) {
+      return value === 1 ? singular : plural;
+    }
+
+    function calculateCleanDate(years, months, days) {
+      const today = new Date();
+      const calculated = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      calculated.setFullYear(calculated.getFullYear() - years);
+      calculated.setMonth(calculated.getMonth() - months);
+      calculated.setDate(calculated.getDate() - days);
+
+      return calculated;
+    }
+
+    function daysBetween(cleanDate) {
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.floor((today - selectedDate) / 86400000) + 1;
+    }
+
+    document.getElementById("dateForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const years = numberValue("years");
+      const months = numberValue("months");
+      const days = numberValue("days");
+
+      const calculatedDate = calculateCleanDate(years, months, days);
+      latestCleanDate = formatDate(calculatedDate);
+
+      const totalDays = daysBetween(latestCleanDate);
+
+      document.getElementById("cleanDateResult").innerText = latestCleanDate;
+
+      document.getElementById("detailText").innerText =
+        years + " " + pluralize(years, "år", "år") + ", " +
+        months + " " + pluralize(months, "månad", "månader") + " och " +
+        days + " " + pluralize(days, "dag", "dagar") +
+        " bakåt från idag.";
+
+      document.getElementById("noteText").innerText =
+        "Om detta sparas i databasen räknas det som " +
+        totalDays.toLocaleString("sv-SE") + " " +
+        pluralize(totalDays, "dag", "dagar") +
+        " inklusive startdagen.";
+
+      document.getElementById("resultBox").style.display = "block";
+      document.getElementById("messageBox").className = "message";
+      document.getElementById("messageBox").innerText = "";
+    });
+
+    document.getElementById("copyButton").addEventListener("click", async function() {
+      if (!latestCleanDate) return;
+
+      try {
+        await navigator.clipboard.writeText(latestCleanDate);
+      } catch (error) {
+        const input = document.createElement("input");
+        input.value = latestCleanDate;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      const box = document.getElementById("messageBox");
+      box.innerText = "Datum kopierat: " + latestCleanDate;
+      box.className = "message success";
+    });
+  </script>
+
+
+
+</body></html>
