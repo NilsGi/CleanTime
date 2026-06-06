@@ -302,6 +302,61 @@
       line-height: 1.35;
     }
 
+    .event-link-row {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #cfe2ff;
+    }
+
+    .event-link-label {
+      font-weight: 750;
+      margin-bottom: 5px;
+    }
+
+    .event-link-url {
+      word-break: break-all;
+      color: var(--na-blue-dark);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .event-link-line {
+      display: grid;
+      grid-template-columns: 1fr 42px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .event-link-url a {
+      color: var(--na-blue-dark);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .event-link-url a:hover {
+      text-decoration: underline;
+    }
+
+    .copy-icon-button {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      padding: 0;
+      border-radius: 12px;
+      background: var(--na-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .copy-icon-button svg {
+      width: 23px;
+      height: 23px;
+      stroke: white;
+      stroke-width: 2.4;
+      fill: none;
+    }
+
     .back-button {
       display: block;
       width: 100%;
@@ -630,15 +685,69 @@
       selectedEvent = events.find(event => event.id === selectedEventId) || null;
 
       if (!selectedEvent) {
-        selectedEventInfo.innerText = "Inget event valt.";
+        selectedEventInfo.innerHTML = "Inget event valt.";
         return;
       }
 
-      selectedEventInfo.innerText =
-        "Valt event: " + selectedEvent.name +
-        " | Event-ID: " + selectedEvent.slug +
-        " | Registreringslänk: https://cleantime-chm.pages.dev/?event=" + selectedEvent.slug +
-        " | Totalsida: https://total-time.pages.dev/?event=" + selectedEvent.slug;
+      const origin = window.location.origin;
+      const registerUrl = origin + "/register/?event=" + encodeURIComponent(selectedEvent.slug);
+      const totalUrl = origin + "/total/?event=" + encodeURIComponent(selectedEvent.slug);
+
+      selectedEventInfo.innerHTML = `
+        <div><strong>Valt event:</strong> ${selectedEvent.name}</div>
+        <div><strong>Event-ID:</strong> ${selectedEvent.slug}</div>
+
+        <div class="event-link-row">
+          <div class="event-link-label">Registreringslänk</div>
+          <div class="event-link-line">
+            <div class="event-link-url" id="registerUrl">
+              <a href="${registerUrl}" target="_blank" rel="noopener">${registerUrl}</a>
+            </div>
+            <button type="button" class="copy-icon-button" onclick="copyText('registerUrl')" title="Kopiera registreringslänk" aria-label="Kopiera registreringslänk">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="event-link-row">
+          <div class="event-link-label">Totalsida</div>
+          <div class="event-link-line">
+            <div class="event-link-url" id="totalUrl">
+              <a href="${totalUrl}" target="_blank" rel="noopener">${totalUrl}</a>
+            </div>
+            <button type="button" class="copy-icon-button" onclick="copyText('totalUrl')" title="Kopiera totalsida" aria-label="Kopiera totalsida">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function copyText(elementId) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      const link = element.querySelector("a");
+      const text = link ? link.href : element.innerText;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showMessage(eventMessage, "Länk kopierad.", "success");
+      } catch (error) {
+        const tempInput = document.createElement("input");
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        showMessage(eventMessage, "Länk kopierad.", "success");
+      }
     }
 
     async function loadEvents(keepSelection = true) {
