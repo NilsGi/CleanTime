@@ -371,10 +371,10 @@
         <button type="submit">Logga in</button>
       </form>
 
-      <a href="/" class="back-button">← Till huvudmenyn</a>
-
       <div id="loginMessage" class="message"></div>
     </section>
+
+    <a href="/" class="back-button hidden" id="topHomeButton">← Till huvudmenyn</a>
 
     <section class="card hidden" id="eventCard">
       <h2>Event</h2>
@@ -424,8 +424,6 @@
 
         <button type="submit" id="submitButton">Lägg till</button>
       </form>
-
-      <a href="/" class="back-button">← Till huvudmenyn</a>
 
       <div id="messageBox" class="message"></div>
     </section>
@@ -1031,6 +1029,7 @@
       }
 
       loginCard.classList.add("hidden");
+      document.getElementById("topHomeButton").classList.remove("hidden");
       eventCard.classList.remove("hidden");
       adminCard.classList.remove("hidden");
       dashboardCard.classList.remove("hidden");
