@@ -22,11 +22,7 @@
       --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: "Segoe UI", Arial, sans-serif;
@@ -47,13 +43,9 @@
       letter-spacing: 2px;
       margin-bottom: 12px;
       text-transform: uppercase;
-      opacity: 0.96;
     }
 
-    .hero p {
-      font-size: 16px;
-      opacity: 0.92;
-    }
+    .hero p { font-size: 16px; opacity: 0.92; }
 
     .wrap {
       width: min(100%, 620px);
@@ -71,8 +63,6 @@
       border: 1px solid rgba(30, 79, 154, 0.08);
       padding: 24px;
       margin-bottom: 18px;
-      position: relative;
-      z-index: 11;
     }
 
     .card h2 {
@@ -110,12 +100,6 @@
       background: #fff;
       color: var(--text);
       margin-bottom: 14px;
-      box-sizing: border-box;
-    }
-
-    input:focus {
-      outline: 3px solid rgba(30,79,154,0.18);
-      border-color: var(--na-blue);
     }
 
     button,
@@ -133,30 +117,10 @@
       text-align: center;
       display: block;
       margin-top: 12px;
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    button:hover,
-    .back-button:hover {
-      background: var(--na-blue-dark);
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
     }
 
     .secondary-button,
-    .back-button {
-      background: #64748b;
-    }
-
-    .secondary-button:hover,
-    .back-button:hover {
-      background: #475569;
-    }
+    .back-button { background: #64748b; }
 
     .message {
       display: none;
@@ -182,14 +146,12 @@
       border: 1px solid #fecdd3;
     }
 
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
 
     .event-title {
       text-align: center;
       color: var(--na-blue);
-      font-size: clamp(26px, 7vw, 42px);
+      font-size: clamp(30px, 8vw, 48px);
       font-weight: 900;
       text-transform: uppercase;
       line-height: 1.15;
@@ -246,6 +208,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-top: 0;
     }
 
     .copy-icon-button svg {
@@ -285,11 +248,6 @@
       margin-bottom: 12px;
     }
 
-    .qr-holder img,
-    .qr-holder canvas {
-      border-radius: 10px;
-    }
-
     .flyer-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -309,7 +267,7 @@
     .preview-title {
       color: var(--na-blue);
       font-weight: 900;
-      font-size: 30px;
+      font-size: 34px;
       text-transform: uppercase;
       line-height: 1.15;
       margin-bottom: 18px;
@@ -338,39 +296,14 @@
     }
 
     @media (max-width: 430px) {
-      .hero {
-        padding-top: 34px;
-        padding-bottom: 68px;
-      }
-
-      .wrap {
-        margin-top: -38px;
-        padding: 0 12px;
-      }
-
-      .card {
-        border-radius: 18px;
-        padding: 19px;
-      }
-
-      input[type="text"],
-      input[type="password"],
-      select,
-      button,
-      .back-button {
-        font-size: 17px;
-        padding: 15px;
-      }
-
-      .flyer-actions {
-        grid-template-columns: 1fr;
-      }
+      .wrap { padding: 0 12px; }
+      .card { border-radius: 18px; padding: 19px; }
+      .flyer-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 
 <body>
-
   <section class="hero">
     <h1>Skapa event</h1>
     <p>Länkar, QR-koder och flyer</p>
@@ -382,12 +315,9 @@
       <h2>Logga in</h2>
       <p class="helper-text">Ange lösenord för att skapa event.</p>
 
-      <form id="loginForm">
-        <label for="adminPassword">Lösenord</label>
-        <input type="password" id="adminPassword" placeholder="Lösenord" required />
-        <button type="button" id="loginButton">Logga in</button>
-      </form>
-
+      <label for="adminPassword">Lösenord</label>
+      <input type="password" id="adminPassword" placeholder="Lösenord" autocomplete="current-password" />
+      <button type="button" id="loginButton">Logga in</button>
       <a href="/" class="back-button">← Till huvudmenyn</a>
 
       <div id="loginMessage" class="message"></div>
@@ -395,19 +325,15 @@
 
     <section class="card hidden" id="createCard">
       <h2>Event</h2>
-      <p class="helper-text">
-        Skapa event och få färdiga länkar, QR-koder och flyer.
-      </p>
+      <p class="helper-text">Skapa event och få färdiga länkar, QR-koder och flyer.</p>
 
-      <form id="eventForm">
-        <label for="eventName">Eventnamn</label>
-        <input type="text" id="eventName" placeholder="Exempelvis Gullbranna 2027" required />
+      <label for="eventName">Eventnamn</label>
+      <input type="text" id="eventName" placeholder="Exempelvis Gullbranna 2027" />
 
-        <label for="eventSlug">Event-ID / slug</label>
-        <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027" required />
+      <label for="eventSlug">Event-ID / slug</label>
+      <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027" />
 
-        <button type="submit" id="createEventButton">Skapa event</button>
-      </form>
+      <button type="button" id="createEventButton">Skapa event</button>
 
       <a href="/" class="back-button">← Till huvudmenyn</a>
 
@@ -416,9 +342,7 @@
 
     <section class="card hidden" id="existingEventCard">
       <h2>Befintliga event</h2>
-      <p class="helper-text">
-        Välj ett redan skapat event för att få länkar, QR-koder och flyer.
-      </p>
+      <p class="helper-text">Välj ett redan skapat event för att få länkar, QR-koder och flyer.</p>
 
       <label for="eventSelect">Välj event</label>
       <select id="eventSelect">
@@ -440,7 +364,7 @@
         <div class="link-label">Registreringslänk</div>
         <div class="link-line">
           <div class="link-url" id="registerUrl"></div>
-          <button type="button" class="copy-icon-button" onclick="copyText('registerUrl')" title="Kopiera registreringslänk" aria-label="Kopiera registreringslänk">
+          <button type="button" class="copy-icon-button" data-copy="registerUrl">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="8" y="8" width="12" height="12" rx="2"></rect>
               <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
@@ -453,7 +377,7 @@
         <div class="link-label">Totalsida</div>
         <div class="link-line">
           <div class="link-url" id="totalUrl"></div>
-          <button type="button" class="copy-icon-button" onclick="copyText('totalUrl')" title="Kopiera totalsida" aria-label="Kopiera totalsida">
+          <button type="button" class="copy-icon-button" data-copy="totalUrl">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="8" y="8" width="12" height="12" rx="2"></rect>
               <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
@@ -466,7 +390,7 @@
         <div class="link-label">Statistik</div>
         <div class="link-line">
           <div class="link-url" id="statisticsUrl"></div>
-          <button type="button" class="copy-icon-button" onclick="copyText('statisticsUrl')" title="Kopiera statistik" aria-label="Kopiera statistik">
+          <button type="button" class="copy-icon-button" data-copy="statisticsUrl">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="8" y="8" width="12" height="12" rx="2"></rect>
               <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
@@ -500,9 +424,7 @@
 
     <section class="card hidden" id="flyerCard">
       <h2>Flyer</h2>
-      <p class="helper-text">
-        Skapa en A4-PDF med eventnamn, text och stor QR-kod.
-      </p>
+      <p class="helper-text">Skapa en A4-PDF med eventnamn, text och stor QR-kod.</p>
 
       <div class="flyer-actions">
         <button type="button" id="flyerSvButton">Skapa svensk PDF</button>
@@ -511,30 +433,22 @@
 
       <div class="preview-flyer">
         <div class="preview-title" id="previewTitle">EVENT</div>
-        <div class="preview-text" id="previewText">Registrera din drogfri tid här</div>
+        <div class="preview-text">Registrera din drogfri tid här</div>
         <div class="qr-holder" id="qrPreview"></div>
-        <div class="preview-help" id="previewHelp">
-          Behöver du hjälp? Prata med registreringen.
-        </div>
+        <div class="preview-help">Behöver du hjälp? Prata med registreringen.</div>
       </div>
     </section>
 
   </main>
 
-  <footer class="footer">
-    Bara för idag ❤️
-  </footer>
+  <footer class="footer">Bara för idag ❤️</footer>
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
-
     const ADMIN_PASSWORD = "drogfri";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentEvent = null;
     let currentLinks = null;
@@ -572,6 +486,30 @@
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
     }
+
+    function doLogin() {
+      clearMessage(loginMessage);
+
+      const password = document.getElementById("adminPassword").value;
+
+      if (password !== ADMIN_PASSWORD) {
+        showMessage(loginMessage, "Fel lösenord.", "error");
+        return;
+      }
+
+      loginCard.classList.add("hidden");
+      createCard.classList.remove("hidden");
+      existingEventCard.classList.remove("hidden");
+      loadExistingEvents();
+    }
+
+    document.getElementById("loginButton").addEventListener("click", doLogin);
+    document.getElementById("adminPassword").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        doLogin();
+      }
+    });
 
     document.getElementById("eventName").addEventListener("input", function () {
       const slugInput = document.getElementById("eventSlug");
@@ -613,72 +551,7 @@
         events.map(event => `<option value="${event.id}">${event.name} (${event.slug})</option>`).join("");
     }
 
-    function loadSelectedExistingEvent() {
-      clearMessage(existingEventMessage);
-
-      const selectedId = eventSelect.value;
-
-      if (!selectedId) {
-        showMessage(existingEventMessage, "Välj ett event först.", "error");
-        return;
-      }
-
-      const event = events.find(item => item.id === selectedId);
-
-      if (!event) {
-        showMessage(existingEventMessage, "Eventet hittades inte.", "error");
-        return;
-      }
-
-      currentEvent = event;
-      buildEventAssets(currentEvent);
-
-      await loadExistingEvents();
-
-      resultCard.classList.remove("hidden");
-      qrCard.classList.remove("hidden");
-      flyerCard.classList.remove("hidden");
-
-      showMessage(existingEventMessage, "Eventet är hämtat.", "success");
-      resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-
-    function doLogin() {
-      clearMessage(loginMessage);
-
-      const password = document.getElementById("adminPassword").value;
-
-      if (password !== ADMIN_PASSWORD) {
-        showMessage(loginMessage, "Fel lösenord.", "error");
-        return;
-      }
-
-      loginCard.classList.add("hidden");
-      createCard.classList.remove("hidden");
-
-      if (existingEventCard) {
-        existingEventCard.classList.remove("hidden");
-      }
-
-      try {
-        if (typeof loadExistingEvents === "function") {
-          loadExistingEvents();
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    }
-
-    document.getElementById("loginButton").addEventListener("click", doLogin);
-
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      doLogin();
-    });
-
-    document.getElementById("eventForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
+    async function createEvent() {
       clearMessage(eventMessage);
 
       const name = document.getElementById("eventName").value.trim();
@@ -695,11 +568,7 @@
 
       const { data, error } = await supabaseClient
         .from("events")
-        .insert([{
-          name: name,
-          slug: slug,
-          is_active: true
-        }])
+        .insert([{ name, slug, is_active: true }])
         .select("id,name,slug")
         .single();
 
@@ -714,19 +583,41 @@
 
       currentEvent = data;
       buildEventAssets(currentEvent);
-
-      showMessage(eventMessage, "Eventet är skapat.", "success");
-      document.getElementById("eventForm").reset();
-      document.getElementById("eventSlug").dataset.manual = "";
-
       await loadExistingEvents();
 
+      document.getElementById("eventName").value = "";
+      document.getElementById("eventSlug").value = "";
+      document.getElementById("eventSlug").dataset.manual = "";
+
+      showMessage(eventMessage, "Eventet är skapat.", "success");
+      showAssetCards();
+    }
+
+    function loadSelectedExistingEvent() {
+      clearMessage(existingEventMessage);
+
+      const event = events.find(item => item.id === eventSelect.value);
+
+      if (!event) {
+        showMessage(existingEventMessage, "Välj ett event först.", "error");
+        return;
+      }
+
+      currentEvent = event;
+      buildEventAssets(currentEvent);
+      showMessage(existingEventMessage, "Eventet är hämtat.", "success");
+      showAssetCards();
+    }
+
+    function showAssetCards() {
       resultCard.classList.remove("hidden");
       qrCard.classList.remove("hidden");
       flyerCard.classList.remove("hidden");
-
       resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    }
+
+    document.getElementById("createEventButton").addEventListener("click", createEvent);
+    document.getElementById("loadSelectedEventButton").addEventListener("click", loadSelectedExistingEvent);
 
     function buildEventAssets(event) {
       const origin = window.location.origin;
@@ -735,11 +626,7 @@
       const totalUrl = origin + "/total/?event=" + encodeURIComponent(event.slug);
       const statisticsUrl = origin + "/statistics/?event=" + encodeURIComponent(event.slug);
 
-      currentLinks = {
-        registerUrl,
-        totalUrl,
-        statisticsUrl
-      };
+      currentLinks = { registerUrl, totalUrl, statisticsUrl };
 
       document.getElementById("createdEventTitle").innerText = event.name;
       document.getElementById("createdEventSlug").innerText = "Event-ID: " + event.slug;
@@ -775,10 +662,10 @@
 
     async function copyText(elementId) {
       const element = document.getElementById(elementId);
-      if (!element) return;
+      const link = element ? element.querySelector("a") : null;
+      const text = link ? link.href : "";
 
-      const link = element.querySelector("a");
-      const text = link ? link.href : element.innerText;
+      if (!text) return;
 
       try {
         await navigator.clipboard.writeText(text);
@@ -794,13 +681,17 @@
       }
     }
 
+    document.querySelectorAll("[data-copy]").forEach(button => {
+      button.addEventListener("click", function() {
+        copyText(this.dataset.copy);
+      });
+    });
+
     function getQrDataUrl(elementId) {
       const element = document.getElementById(elementId);
       const canvas = element.querySelector("canvas");
 
-      if (canvas) {
-        return canvas.toDataURL("image/png");
-      }
+      if (canvas) return canvas.toDataURL("image/png");
 
       const img = element.querySelector("img");
       return img ? img.src : null;
@@ -812,7 +703,7 @@
 
     function createFlyer(language) {
       if (!currentEvent || !currentLinks) {
-        showMessage(eventMessage, "Skapa ett event först.", "error");
+        showMessage(eventMessage, "Välj eller skapa ett event först.", "error");
         return;
       }
 
@@ -824,23 +715,12 @@
       }
 
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
-      });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
       const isSv = language === "sv";
-
       const title = currentEvent.name.toUpperCase();
-      const mainText = isSv
-        ? "Registrera din\\ndrogfria tid här"
-        : "Register your\\nclean time here";
-
-      const helpText = isSv
-        ? "Behöver du hjälp?\\nPrata med registreringen."
-        : "Need help?\\nPlease speak with registration.";
-
+      const mainText = isSv ? "Registrera din\\ndrogfria tid här" : "Register your\\nclean time here";
+      const helpText = isSv ? "Behöver du hjälp?\\nPrata med registreringen." : "Need help?\\nPlease speak with registration.";
       const urlText = currentLinks.registerUrl;
 
       pdf.setFillColor(255, 255, 255);
@@ -853,31 +733,25 @@
 
       pdf.setTextColor(31, 41, 55);
       pdf.setFontSize(27);
-      const mainLines = mainText.split("\\n");
-      pdf.text(mainLines, 105, 72, { align: "center", lineHeightFactor: 1.18 });
+      pdf.text(mainText.split("\\n"), 105, 78, { align: "center", lineHeightFactor: 1.18 });
 
-      pdf.addImage(qrDataUrl, "PNG", 45, 102, 120, 120);
+      pdf.addImage(qrDataUrl, "PNG", 45, 108, 120, 120);
 
       pdf.setTextColor(30, 79, 154);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(13);
-      pdf.text(urlText, 105, 234, { align: "center", maxWidth: 180 });
+      pdf.text(urlText, 105, 240, { align: "center", maxWidth: 180 });
 
       pdf.setTextColor(31, 41, 55);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(18);
-      const helpLines = helpText.split("\\n");
-      pdf.text(helpLines, 105, 258, { align: "center", lineHeightFactor: 1.25 });
+      pdf.text(helpText.split("\\n"), 105, 264, { align: "center", lineHeightFactor: 1.25 });
 
-      const suffix = isSv ? "SV" : "EN";
-      pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + suffix + ".pdf");
+      pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + (isSv ? "SV" : "EN") + ".pdf");
     }
-
-    document.getElementById("loadSelectedEventButton").addEventListener("click", loadSelectedExistingEvent);
 
     document.getElementById("flyerSvButton").addEventListener("click", () => createFlyer("sv"));
     document.getElementById("flyerEnButton").addEventListener("click", () => createFlyer("en"));
   </script>
-
 </body>
 </html>
