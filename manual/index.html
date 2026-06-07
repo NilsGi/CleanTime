@@ -47,6 +47,14 @@
       opacity: 0.96;
     }
 
+    .event-title {
+      font-size: clamp(24px, 6vw, 40px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
     .hero p {
       font-size: 16px;
       opacity: 0.92;
@@ -76,6 +84,7 @@
       color: var(--na-blue);
       font-size: 22px;
       margin-bottom: 10px;
+      text-align: center;
     }
 
     .helper-text {
@@ -83,11 +92,12 @@
       line-height: 1.45;
       margin-bottom: 18px;
       font-size: 15px;
+      text-align: center;
     }
 
     label {
       display: block;
-      text-align: left;
+      text-align: center;
       color: var(--text);
       font-weight: 650;
       margin-bottom: 8px;
@@ -108,6 +118,7 @@
       color: var(--text);
       margin-bottom: 14px;
       box-sizing: border-box;
+      text-align: center;
     }
 
     input:focus,
@@ -147,6 +158,7 @@
       border-radius: 14px;
       font-size: 15px;
       line-height: 1.35;
+      text-align: center;
     }
 
     .message.success {
@@ -247,8 +259,8 @@
 <body>
 
   <section class="hero">
-    <h1>Manuell registrering</h1>
-    <p>Registrera drogfri tid åt någon annan</p>
+    <div id="eventTitle" class="event-title">MANUELL REGISTRERING</div>
+    <p>Manuell registrering</p>
   </section>
 
   <main class="wrap">
@@ -269,22 +281,13 @@
 
       <div id="loginMessage" class="message"></div>
     </section>
-
     <section class="card hidden" id="manualCard">
       <h2>Registrera tid</h2>
 
       <p class="helper-text">
-        Välj event och skriv datumet personen blev drogfri. Skriv endast siffror i formatet ÅÅÅÅMMDD.
+        Skriv in det datum personen blev drogfri<br>
+        Ange datum som ÅÅÅÅMMDD
       </p>
-
-      <label for="eventSelect">Välj event</label>
-      <select id="eventSelect">
-        <option value="">Laddar event...</option>
-      </select>
-
-      <div class="selected-event" id="selectedEventInfo">
-        Inget event valt.
-      </div>
 
       <form id="manualForm">
         <label for="cleanDate">Datum personen blev drogfri</label>
@@ -293,20 +296,15 @@
         <button type="submit" id="submitButton">Registrera manuellt</button>
       </form>
 
-      <a href="/" class="back-button">← Till huvudmenyn</a>
-
       <div id="messageBox" class="message"></div>
 
-      <div class="result-box" id="resultBox">
-        <div class="result-days" id="resultDays">0 dagar</div>
-        <div id="resultDetail">0 dagar</div>
-      </div>
+      <a href="/" class="back-button">← Till huvudmenyn</a>
     </section>
 
   </main>
 
   <footer class="footer">
-    En dag i taget ❤️
+    Bara för idag ❤️
   </footer>
 
   <script>
@@ -325,9 +323,7 @@
     const loginMessage = document.getElementById("loginMessage");
     const messageBox = document.getElementById("messageBox");
     const cleanDateInput = document.getElementById("cleanDate");
-    const eventSelect = document.getElementById("eventSelect");
-    const selectedEventInfo = document.getElementById("selectedEventInfo");
-    const resultBox = document.getElementById("resultBox");
+    const eventTitle = document.getElementById("eventTitle");
 
     let events = [];
     let selectedEventId = "";
@@ -369,7 +365,7 @@
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return Math.floor((today - selectedDate) / 86400000);
+      return Math.floor((today - selectedDate) / 86400000) + 1;
     }
 
     function formatDetailFromDays(days) {
@@ -405,13 +401,12 @@
       selectedEvent = events.find(event => event.id === selectedEventId) || null;
 
       if (!selectedEvent) {
-        selectedEventInfo.innerText = "Inget event valt.";
+        eventTitle.innerText = "EVENT SAKNAS";
         return;
       }
 
-      selectedEventInfo.innerText =
-        "Valt event: " + selectedEvent.name +
-        " | Event-ID: " + selectedEvent.slug;
+      eventTitle.innerText = selectedEvent.name.toUpperCase();
+      document.title = "Manuell registrering - " + selectedEvent.name;
     }
 
     async function loadEvents() {
@@ -422,17 +417,13 @@
         .order("name", { ascending: true });
 
       if (error) {
-        eventSelect.innerHTML = '<option value="">Kunde inte hämta event</option>';
+        eventTitle.innerText = "EVENT KUNDE INTE HÄMTAS";
         showMessage(messageBox, "Kunde inte hämta event: " + error.message, "error");
         console.log(error);
         return;
       }
 
       events = data || [];
-
-      eventSelect.innerHTML =
-        '<option value="">Välj event...</option>' +
-        events.map(event => `<option value="${event.id}">${event.name} (${event.slug})</option>`).join("");
 
       const params = new URLSearchParams(window.location.search);
       const eventSlug = params.get("event") || localStorage.getItem("selectedEventSlug");
@@ -441,14 +432,14 @@
         const event = events.find(item => item.slug === eventSlug);
         if (event) {
           selectedEventId = event.id;
-          eventSelect.value = selectedEventId;
+          localStorage.setItem("selectedEventSlug", event.slug);
         }
       }
 
       updateSelectedEventInfo();
     }
 
-    eventSelect.addEventListener("change", function () {
+("change", function () {
       selectedEventId = this.value;
       selectedEvent = events.find(event => event.id === selectedEventId) || null;
 
@@ -479,8 +470,6 @@
     document.getElementById("manualForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       clearMessage(messageBox);
-      resultBox.style.display = "none";
-
       if (!selectedEventId) {
         showMessage(messageBox, "Välj ett event först.", "error");
         return;
@@ -521,16 +510,6 @@
         console.log(error);
         return;
       }
-
-      const days = daysBetween(cleanDate);
-
-      document.getElementById("resultDays").innerText =
-        days.toLocaleString("sv-SE") + " " + pluralize(days, "dag", "dagar");
-
-      document.getElementById("resultDetail").innerText =
-        formatDetailFromDays(days);
-
-      resultBox.style.display = "block";
 
       showMessage(messageBox, "Tiden är registrerad ❤️", "success");
       document.getElementById("manualForm").reset();
