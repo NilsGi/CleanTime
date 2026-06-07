@@ -767,7 +767,7 @@
 
       pdf.setTextColor(100, 116, 139);
       pdf.setFontSize(12);
-      pdf.text(isSv ? "Bara för idag" : "Just for today", 105, 283, { align: "center" });
+
 
       const suffix = isSv ? "SV" : "EN";
       pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + suffix + ".pdf");
