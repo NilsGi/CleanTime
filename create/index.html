@@ -596,10 +596,18 @@
         return;
       }
 
+      console.log("Login ok");
+
       loginCard.classList.add("hidden");
       createCard.classList.remove("hidden");
-      existingEventCard.classList.remove("hidden");
-      loadExistingEvents();
+
+      if (existingEventCard) {
+        existingEventCard.classList.remove("hidden");
+      }
+
+      if (typeof loadExistingEvents === "function") {
+        loadExistingEvents();
+      }
     });
 
     async function loadExistingEvents() {
