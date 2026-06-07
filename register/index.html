@@ -137,6 +137,7 @@
       color: var(--na-blue);
       font-size: 22px;
       margin-bottom: 10px;
+      text-align: center;
     }
 
     .helper-text {
@@ -144,11 +145,12 @@
       line-height: 1.45;
       margin-bottom: 18px;
       font-size: 15px;
+      text-align: center;
     }
 
     label {
       display: block;
-      text-align: left;
+      text-align: center;
       color: var(--text);
       font-weight: 650;
       margin-bottom: 8px;
@@ -325,63 +327,21 @@
     <section class="card">
       <h2 id="registerHeading">Registrera din drogfria tid</h2>
 
-      <p class="helper-text" id="eventInfo">Hämtar event...</p>
-
       <form id="cleanForm">
         <label for="cleanDate" id="dateLabel">Skriv in det datum du blev drogfri, ange datum som ÅÅÅÅMMDD</label>
         <input type="text" id="cleanDate" placeholder="ÅÅÅÅMMDD" inputmode="numeric" maxlength="8" required />
-        <p class="helper-text" id="dateHelp">Skriv endast siffror, exempelvis 20200121.</p>
+        <p class="helper-text" id="dateHelp">Skriv endast siffror, exempelvis 20200121</p>
         <button type="submit" id="submitButton">Registrera</button>
       </form>
 
       <div id="messageBox" class="message"></div>
     </section>
-
     <section class="stats-grid">
 
       <div class="stat-card">
         <div class="stat-value" id="count">0 personer</div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-title" id="totalTitle">Total tid</div>
-        <div class="stat-value" id="totalYears">0,0 år</div>
-        <div class="stat-detail" id="totalDetail">(0 dagar)</div>
-        <div class="stat-note" id="totalDaysNote"></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-title" id="averageTitle">Medel</div>
-        <div class="stat-value" id="averageYears">0,0 år</div>
-        <div class="stat-detail" id="averageDetail">(0 dagar)</div>
-        <div class="stat-note" id="averageDaysNote"></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-title" id="longestTitle">Längsta tid</div>
-        <div class="stat-value" id="longestYears">0,0 år</div>
-        <div class="stat-detail" id="longestDetail">(0 dagar)</div>
-        <div class="stat-note" id="longestDaysNote"></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-title" id="shortestTitle">Kortaste tid</div>
-        <div class="stat-value" id="shortestYears">0 dagar</div>
-        <div class="stat-detail" id="shortestDetail"></div>
-        <div class="stat-note" id="shortestDaysNote"></div>
-      </div>
-
-    </section>
-
-    <section class="card">
-      <h2 id="howHeading">Hur räknas tiden?</h2>
-      <p class="helper-text" id="howText">
-        Drogfri tid räknas i databasen utifrån registrerat datum fram till dagens datum.
-        Startdagen räknas med, vilket innebär att första dagen räknas som dag 1.
-        Sidan hämtar färdigräknad statistik från databasen och visar antal dagar,
-        antal personer, total tid, medelvärde, längsta tid och kortaste tid.
-        I statistikrutorna räknas år som 365,25 dagar (pga skottår var 4:e år) och en månad som cirka 30,44 dagar.
-      </p>
     </section>
 
   </main>
@@ -411,7 +371,7 @@
         registerHeading: "Registrera din drogfria tid",
         dateLabel: "Skriv in det datum du blev drogfri, ange datum som ÅÅÅÅMMDD",
         datePlaceholder: "ÅÅÅÅMMDD",
-        dateHelp: "Skriv endast siffror, exempelvis 20200121.",
+        dateHelp: "Skriv endast siffror, exempelvis 20200121",
         registerButton: "Registrera",
         registering: "Registrerar...",
         totalTitle: "Total tid",
@@ -455,7 +415,7 @@
         registerHeading: "Register your clean time",
         dateLabel: "Enter the date you got clean, use YYYYMMDD",
         datePlaceholder: "YYYYMMDD",
-        dateHelp: "Use digits only, for example 20200121.",
+        dateHelp: "Use digits only, for example 20200121",
         registerButton: "Register",
         registering: "Registering...",
         totalTitle: "Total time",
@@ -501,7 +461,6 @@
 
     const cleanDateInput = document.getElementById("cleanDate");
     const submitButton = document.getElementById("submitButton");
-    const eventInfo = document.getElementById("eventInfo");
 
     function t(key) {
       return texts[language][key];
@@ -530,21 +489,13 @@
       setText("dateLabel", t("dateLabel"));
       setText("dateHelp", t("dateHelp"));
       setText("submitButton", t("registerButton"));
-      setText("totalTitle", t("totalTitle"));
-      setText("averageTitle", t("averageTitle"));
-      setText("longestTitle", t("longestTitle"));
-      setText("shortestTitle", t("shortestTitle"));
-      setText("howHeading", t("howHeading"));
-      setText("howText", t("howText"));
       setText("footerText", t("footer"));
 
       cleanDateInput.placeholder = t("datePlaceholder");
 
       if (eventName) {
-        eventInfo.innerText = t("eventLabel") + " " + eventName;
         document.title = t("pageTitle") + " - " + eventName;
       } else {
-        eventInfo.innerText = t("loadingEvent");
         document.title = t("pageTitle");
       }
 
@@ -622,26 +573,8 @@
     }
 
     function setEmptyStats() {
-      const zero = formatStatsFromDays(0);
-
       document.getElementById("mainCounter").innerText = "0";
       document.getElementById("count").innerText = "0 " + t("persons");
-
-      document.getElementById("totalYears").innerText = zero.yearsDecimal;
-      document.getElementById("totalDetail").innerText = zero.detail;
-      document.getElementById("totalDaysNote").innerText = zero.daysText + " " + t("total");
-
-      document.getElementById("averageYears").innerText = zero.yearsDecimal;
-      document.getElementById("averageDetail").innerText = zero.detail;
-      document.getElementById("averageDaysNote").innerText = zero.daysText + " " + t("averageNote");
-
-      document.getElementById("longestYears").innerText = zero.yearsDecimal;
-      document.getElementById("longestDetail").innerText = zero.detail;
-      document.getElementById("longestDaysNote").innerText = zero.daysText;
-
-      document.getElementById("shortestYears").innerText = "0 " + t("days");
-      document.getElementById("shortestDetail").innerText = "";
-      document.getElementById("shortestDaysNote").innerText = zero.daysText;
     }
 
     function updateStatsFromDatabase(row) {
@@ -649,42 +582,11 @@
 
       const personCount = Number(row.person_count || 0);
       const totalDays = Number(row.total_days || 0);
-      const averageDays = Math.floor(Number(row.average_days || 0));
-      const longestDays = Number(row.longest_days || 0);
-      const shortestDays = Number(row.shortest_days || 0);
-
-      const total = formatStatsFromDays(totalDays);
-      const average = formatStatsFromDays(averageDays);
-      const longest = formatStatsFromDays(longestDays);
-      const shortest = formatStatsFromDays(shortestDays);
-      const shortestShortValue = formatShortValue(shortestDays);
 
       document.getElementById("mainCounter").innerText = totalDays.toLocaleString("sv-SE");
 
       document.getElementById("count").innerText =
         personCount.toLocaleString("sv-SE") + " " + pluralize(personCount, t("person"), t("persons"));
-
-      document.getElementById("totalYears").innerText = total.yearsDecimal;
-      document.getElementById("totalDetail").innerText = total.detail;
-      document.getElementById("totalDaysNote").innerText = total.daysText + " " + t("total");
-
-      document.getElementById("averageYears").innerText = average.yearsDecimal;
-      document.getElementById("averageDetail").innerText = average.detail;
-      document.getElementById("averageDaysNote").innerText = average.daysText + " " + t("averageNote");
-
-      document.getElementById("longestYears").innerText = longest.yearsDecimal;
-      document.getElementById("longestDetail").innerText = longest.detail;
-      document.getElementById("longestDaysNote").innerText = longest.daysText;
-
-      if (shortestShortValue !== null) {
-        document.getElementById("shortestYears").innerText = shortestShortValue;
-        document.getElementById("shortestDetail").innerText = "";
-      } else {
-        document.getElementById("shortestYears").innerText = shortest.yearsDecimal;
-        document.getElementById("shortestDetail").innerText = shortest.detail;
-      }
-
-      document.getElementById("shortestDaysNote").innerText = shortest.daysText;
     }
 
     async function loadEvent() {
@@ -692,7 +594,6 @@
       eventSlug = params.get("event");
 
       if (!eventSlug) {
-        eventInfo.innerText = t("noEventLink");
         document.getElementById("eventTitle").innerText = t("eventMissingTitle");
         submitButton.disabled = true;
         setEmptyStats();
@@ -707,7 +608,6 @@
         .single();
 
       if (error || !data) {
-        eventInfo.innerText = t("eventNotFound") + " " + eventSlug;
         document.getElementById("eventTitle").innerText = t("eventNotFoundTitle");
         submitButton.disabled = true;
         setEmptyStats();
@@ -718,7 +618,6 @@
       eventId = data.id;
       eventName = data.name;
 
-      eventInfo.innerText = t("eventLabel") + " " + eventName;
       document.getElementById("eventTitle").innerText = eventName.toUpperCase();
       document.title = t("pageTitle") + " - " + eventName;
 
