@@ -97,7 +97,8 @@
     }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    select {
       display: block;
       width: calc(100% - 32px);
       margin-left: auto;
@@ -131,6 +132,7 @@
       text-decoration: none;
       text-align: center;
       display: block;
+      margin-top: 12px;
       transition: transform 0.15s ease, background 0.15s ease;
     }
 
@@ -353,6 +355,7 @@
 
       input[type="text"],
       input[type="password"],
+      select,
       button,
       .back-button {
         font-size: 17px;
@@ -409,6 +412,24 @@
       <a href="/" class="back-button">← Till huvudmenyn</a>
 
       <div id="eventMessage" class="message"></div>
+    </section>
+
+    <section class="card hidden" id="existingEventCard">
+      <h2>Befintliga event</h2>
+      <p class="helper-text">
+        Välj ett redan skapat event för att få länkar, QR-koder och flyer.
+      </p>
+
+      <label for="eventSelect">Välj event</label>
+      <select id="eventSelect">
+        <option value="">Laddar event...</option>
+      </select>
+
+      <button type="button" class="secondary-button" id="loadSelectedEventButton">
+        Hämta länkar, QR och flyer
+      </button>
+
+      <div id="existingEventMessage" class="message"></div>
     </section>
 
     <section class="card hidden" id="resultCard">
@@ -517,15 +538,19 @@
 
     let currentEvent = null;
     let currentLinks = null;
+    let events = [];
 
     const loginCard = document.getElementById("loginCard");
     const createCard = document.getElementById("createCard");
+    const existingEventCard = document.getElementById("existingEventCard");
     const resultCard = document.getElementById("resultCard");
     const qrCard = document.getElementById("qrCard");
     const flyerCard = document.getElementById("flyerCard");
 
     const loginMessage = document.getElementById("loginMessage");
     const eventMessage = document.getElementById("eventMessage");
+    const existingEventMessage = document.getElementById("existingEventMessage");
+    const eventSelect = document.getElementById("eventSelect");
 
     function showMessage(element, text, type) {
       element.textContent = text;
@@ -573,7 +598,67 @@
 
       loginCard.classList.add("hidden");
       createCard.classList.remove("hidden");
+      existingEventCard.classList.remove("hidden");
+      loadExistingEvents();
     });
+
+    async function loadExistingEvents() {
+      clearMessage(existingEventMessage);
+
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name,slug,is_active,created_at")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        eventSelect.innerHTML = '<option value="">Kunde inte hämta event</option>';
+        showMessage(existingEventMessage, "Kunde inte hämta event: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      events = data || [];
+
+      if (events.length === 0) {
+        eventSelect.innerHTML = '<option value="">Inga event finns</option>';
+        return;
+      }
+
+      eventSelect.innerHTML =
+        '<option value="">Välj event...</option>' +
+        events.map(event => `<option value="${event.id}">${event.name} (${event.slug})</option>`).join("");
+    }
+
+    function loadSelectedExistingEvent() {
+      clearMessage(existingEventMessage);
+
+      const selectedId = eventSelect.value;
+
+      if (!selectedId) {
+        showMessage(existingEventMessage, "Välj ett event först.", "error");
+        return;
+      }
+
+      const event = events.find(item => item.id === selectedId);
+
+      if (!event) {
+        showMessage(existingEventMessage, "Eventet hittades inte.", "error");
+        return;
+      }
+
+      currentEvent = event;
+      buildEventAssets(currentEvent);
+
+      await loadExistingEvents();
+
+      resultCard.classList.remove("hidden");
+      qrCard.classList.remove("hidden");
+      flyerCard.classList.remove("hidden");
+
+      showMessage(existingEventMessage, "Eventet är hämtat.", "success");
+      resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
     document.getElementById("eventForm").addEventListener("submit", async function(e) {
       e.preventDefault();
@@ -616,6 +701,8 @@
       showMessage(eventMessage, "Eventet är skapat.", "success");
       document.getElementById("eventForm").reset();
       document.getElementById("eventSlug").dataset.manual = "";
+
+      await loadExistingEvents();
 
       resultCard.classList.remove("hidden");
       qrCard.classList.remove("hidden");
@@ -744,7 +831,7 @@
 
       pdf.setTextColor(30, 79, 154);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(30);
+      pdf.setFontSize(38);
       pdf.text(title, 105, 38, { align: "center", maxWidth: 180 });
 
       pdf.setTextColor(31, 41, 55);
@@ -765,13 +852,11 @@
       const helpLines = helpText.split("\\n");
       pdf.text(helpLines, 105, 258, { align: "center", lineHeightFactor: 1.25 });
 
-      pdf.setTextColor(100, 116, 139);
-      pdf.setFontSize(12);
-
-
       const suffix = isSv ? "SV" : "EN";
       pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + suffix + ".pdf");
     }
+
+    document.getElementById("loadSelectedEventButton").addEventListener("click", loadSelectedExistingEvent);
 
     document.getElementById("flyerSvButton").addEventListener("click", () => createFlyer("sv"));
     document.getElementById("flyerEnButton").addEventListener("click", () => createFlyer("en"));
