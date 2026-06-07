@@ -732,7 +732,7 @@
       }
 
       entriesTableBody.innerHTML = entries.map(entry => {
-        const days = daysBetween(entry.clean_date);
+        const days = Number(entry.clean_days || 0);
         const rawDate = rawFromCleanDate(entry.clean_date);
         const createdBy = entry.created_by || "user";
 
@@ -783,8 +783,8 @@
       }
 
       const { data, error } = await supabaseClient
-        .from("clean_time_entries")
-        .select("id, clean_date, created_at, updated_at, created_by, device_id, event_id")
+        .from("clean_time_stats")
+        .select("id, clean_date, clean_days, created_at, updated_at, created_by, device_id, event_id, is_active")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
         .order("clean_date", { ascending: true });
@@ -889,7 +889,7 @@
         selectedEvent?.name || "",
         selectedEvent?.slug || "",
         entry.clean_date,
-        daysBetween(entry.clean_date),
+        Number(entry.clean_days || 0),
         entry.created_by || "user",
         formatDateTime(entry.created_at),
         formatDateTime(entry.updated_at),
