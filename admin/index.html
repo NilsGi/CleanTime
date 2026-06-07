@@ -368,7 +368,8 @@
       border-radius: 14px;
       font-size: 17px;
       font-weight: 750;
-      margin-top: 12px;
+      margin-top: 24px;
+      margin-bottom: 18px;
     }
 
     .footer {
@@ -430,27 +431,16 @@
     </section>
 
     <a href="/" class="back-button hidden" id="topHomeButton">← Till huvudmenyn</a>
-
     <section class="card hidden" id="eventCard">
-      <h2>Event</h2>
+      <h2>Välj event</h2>
 
       <p class="helper-text">
-        Skapa event och välj vilket event du vill arbeta med.
+        Välj vilket event du vill arbeta med.
       </p>
-
-      <form id="eventForm">
-        <label for="eventName">Eventnamn</label>
-        <input type="text" id="eventName" placeholder="Exempelvis Servicedagarna 2026" required />
-
-        <label for="eventSlug">Event-ID / slug</label>
-        <input type="text" id="eventSlug" placeholder="exempelvis servicedagarna-2026" required />
-
-        <button type="submit" id="createEventButton">Skapa event</button>
-      </form>
 
       <div id="eventMessage" class="message"></div>
 
-      <label for="eventSelect">Välj event</label>
+      <label for="eventSelect">Event</label>
       <select id="eventSelect">
         <option value="">Laddar event...</option>
       </select>
@@ -461,52 +451,7 @@
 
       <div class="admin-actions">
         <button type="button" class="secondary-button" id="refreshEventsButton">Uppdatera event</button>
-      </div>
-
-      <div id="eventList"></div>
-    </section>
-
-    <section class="card hidden" id="adminCard">
-      <h2>Lägg till drogfri tid</h2>
-
-      <p class="helper-text">
-        Lägg till tid manuellt för valt event. Skriv endast siffror i formatet ÅÅÅÅMMDD.
-      </p>
-
-      <form id="adminForm">
-        <label for="cleanDate">Datum personen blev drogfri</label>
-        <input type="text" id="cleanDate" placeholder="ÅÅÅÅMMDD" inputmode="numeric" maxlength="8" required />
-
-        <button type="submit" id="submitButton">Lägg till</button>
-      </form>
-
-      <div id="messageBox" class="message"></div>
-    </section>
-
-    <section class="card hidden" id="dashboardCard">
-      <h2>Översikt</h2>
-
-      <div class="dashboard-grid">
-        <div class="dashboard-box">
-          Registreringar
-          <div class="dashboard-value" id="dashboardCount">0</div>
-        </div>
-
-        <div class="dashboard-box">
-          Total drogfri tid
-          <div class="dashboard-value" id="dashboardTotal">0 dagar</div>
-        </div>
-
-        <div class="dashboard-box">
-          Senaste registrering
-          <div class="dashboard-value" id="dashboardLatest">-</div>
-        </div>
-      </div>
-
-      <div class="admin-actions">
-        <button type="button" class="secondary-button" id="refreshButton">Uppdatera lista</button>
-        <button type="button" class="secondary-button" id="exportButton">Exportera till Excel</button>
-        <button type="button" class="danger-button" id="deleteAllButton">Rensa valt event</button>
+        <button type="button" class="danger-button" id="deleteSelectedEventButton">Radera valt event</button>
       </div>
     </section>
 
@@ -540,10 +485,19 @@
       </div>
     </section>
 
+    <section class="card hidden" id="exportCard">
+      <h2>Export</h2>
+      <p class="helper-text">
+        Exportera alla registreringar för valt event som CSV-fil.
+      </p>
+
+      <button type="button" class="secondary-button" id="exportButton">Exportera CSV</button>
+    </section>
+
   </main>
 
   <footer class="footer">
-    Adminsida för manuell registrering
+    Admin för registreringar
   </footer>
 
   <script>
@@ -559,19 +513,15 @@
 
     const loginCard = document.getElementById("loginCard");
     const eventCard = document.getElementById("eventCard");
-    const adminCard = document.getElementById("adminCard");
-    const dashboardCard = document.getElementById("dashboardCard");
     const listCard = document.getElementById("listCard");
+    const exportCard = document.getElementById("exportCard");
 
     const loginMessage = document.getElementById("loginMessage");
     const eventMessage = document.getElementById("eventMessage");
-    const messageBox = document.getElementById("messageBox");
     const listMessage = document.getElementById("listMessage");
 
-    const cleanDateInput = document.getElementById("cleanDate");
     const entriesTableBody = document.getElementById("entriesTableBody");
     const eventSelect = document.getElementById("eventSelect");
-    const eventList = document.getElementById("eventList");
     const selectedEventInfo = document.getElementById("selectedEventInfo");
 
     let entries = [];
@@ -615,7 +565,7 @@
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return Math.floor((today - selectedDate) / 86400000);
+      return Math.floor((today - selectedDate) / 86400000) + 1;
     }
 
     function formatDateTime(value) {
@@ -653,22 +603,6 @@
         .replace(/^-+|-+$/g, "");
     }
 
-    cleanDateInput.addEventListener("input", function () {
-      sanitizeDateInput(this);
-    });
-
-    document.getElementById("eventName").addEventListener("input", function () {
-      const slugInput = document.getElementById("eventSlug");
-      if (!slugInput.dataset.manual) {
-        slugInput.value = sanitizeSlug(this.value);
-      }
-    });
-
-    document.getElementById("eventSlug").addEventListener("input", function () {
-      this.dataset.manual = "true";
-      this.value = sanitizeSlug(this.value);
-    });
-
     function pluralize(value, singular, plural) {
       return value === 1 ? singular : plural;
     }
@@ -689,67 +623,11 @@
         return;
       }
 
-      const origin = window.location.origin;
-      const registerUrl = origin + "/register/?event=" + encodeURIComponent(selectedEvent.slug);
-      const totalUrl = origin + "/total/?event=" + encodeURIComponent(selectedEvent.slug);
-
       selectedEventInfo.innerHTML = `
         <div><strong>Valt event:</strong> ${selectedEvent.name}</div>
         <div><strong>Event-ID:</strong> ${selectedEvent.slug}</div>
-
-        <div class="event-link-row">
-          <div class="event-link-label">Registreringslänk</div>
-          <div class="event-link-line">
-            <div class="event-link-url" id="registerUrl">
-              <a href="${registerUrl}" target="_blank" rel="noopener">${registerUrl}</a>
-            </div>
-            <button type="button" class="copy-icon-button" onclick="copyText('registerUrl')" title="Kopiera registreringslänk" aria-label="Kopiera registreringslänk">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
-                <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="event-link-row">
-          <div class="event-link-label">Totalsida</div>
-          <div class="event-link-line">
-            <div class="event-link-url" id="totalUrl">
-              <a href="${totalUrl}" target="_blank" rel="noopener">${totalUrl}</a>
-            </div>
-            <button type="button" class="copy-icon-button" onclick="copyText('totalUrl')" title="Kopiera totalsida" aria-label="Kopiera totalsida">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
-                <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
       `;
     }
-
-    async function copyText(elementId) {
-      const element = document.getElementById(elementId);
-      if (!element) return;
-
-      const link = element.querySelector("a");
-      const text = link ? link.href : element.innerText;
-
-      try {
-        await navigator.clipboard.writeText(text);
-        showMessage(eventMessage, "Länk kopierad.", "success");
-      } catch (error) {
-        const tempInput = document.createElement("input");
-        tempInput.value = text;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-        showMessage(eventMessage, "Länk kopierad.", "success");
-      }
-    }
-
     async function loadEvents(keepSelection = true) {
       clearMessage(eventMessage);
 
@@ -785,47 +663,8 @@
         selectedEventId = "";
       }
 
-      renderEventList();
       updateSelectedEventInfo();
       await loadEntries();
-    }
-
-    function renderEventList() {
-      if (events.length === 0) {
-        eventList.innerHTML = '<p class="helper-text">Inga event finns ännu.</p>';
-        return;
-      }
-
-      eventList.innerHTML = events.map(event => `
-        <div class="event-row">
-          <div>
-            <div class="event-name">${event.name}</div>
-            <div class="event-slug">Event-ID: ${event.slug}</div>
-          </div>
-          <button type="button" class="small-button danger-button" onclick="deleteEvent('${event.id}')">Radera event</button>
-        </div>
-      `).join("");
-    }
-
-    async function createEvent(name, slug) {
-      const { error } = await supabaseClient
-        .from("events")
-        .insert([{
-          name: name,
-          slug: slug,
-          is_active: true
-        }]);
-
-      if (error) {
-        showMessage(eventMessage, "Kunde inte skapa event: " + error.message, "error");
-        console.log(error);
-        return;
-      }
-
-      showMessage(eventMessage, "Eventet är skapat.", "success");
-      document.getElementById("eventForm").reset();
-      document.getElementById("eventSlug").dataset.manual = "";
-      await loadEvents(false);
     }
 
     async function deleteEvent(id) {
@@ -873,46 +712,6 @@
       await loadEvents(false);
     }
 
-    async function updateDashboard() {
-      const latest = entries.length > 0
-        ? [...entries].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0]
-        : null;
-
-      if (!selectedEventId) {
-        document.getElementById("dashboardCount").innerText = "0";
-        document.getElementById("dashboardTotal").innerText = "0 dagar";
-        document.getElementById("dashboardLatest").innerText = "-";
-        return;
-      }
-
-      const { data, error } = await supabaseClient
-        .from("clean_time_summary_by_event")
-        .select("person_count,total_days")
-        .eq("event_id", selectedEventId)
-        .single();
-
-      if (error) {
-        console.log(error);
-        document.getElementById("dashboardCount").innerText = "0";
-        document.getElementById("dashboardTotal").innerText = "0 dagar";
-        document.getElementById("dashboardLatest").innerText =
-          latest ? formatDateTime(latest.created_at) : "-";
-        return;
-      }
-
-      const count = Number(data?.person_count || 0);
-      const totalDays = Number(data?.total_days || 0);
-
-      document.getElementById("dashboardCount").innerText =
-        count.toLocaleString("sv-SE");
-
-      document.getElementById("dashboardTotal").innerText =
-        totalDays.toLocaleString("sv-SE") + " " + pluralize(totalDays, "dag", "dagar");
-
-      document.getElementById("dashboardLatest").innerText =
-        latest ? formatDateTime(latest.created_at) : "-";
-    }
-
     function renderEntries() {
       if (!selectedEventId) {
         entriesTableBody.innerHTML = `
@@ -920,7 +719,6 @@
             <td colspan="6">Välj ett event för att läsa in listan.</td>
           </tr>
         `;
-        updateDashboard();
         return;
       }
 
@@ -930,7 +728,6 @@
             <td colspan="6">Inga registreringar finns för valt event.</td>
           </tr>
         `;
-        updateDashboard();
         return;
       }
 
@@ -974,7 +771,6 @@
         }
       });
 
-      updateDashboard();
     }
 
     async function loadEntries() {
@@ -1140,27 +936,20 @@
       loginCard.classList.add("hidden");
       document.getElementById("topHomeButton").classList.remove("hidden");
       eventCard.classList.remove("hidden");
-      adminCard.classList.remove("hidden");
-      dashboardCard.classList.remove("hidden");
       listCard.classList.remove("hidden");
+      exportCard.classList.remove("hidden");
 
       await loadEvents();
     });
 
-    document.getElementById("eventForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      clearMessage(eventMessage);
-
-      const name = document.getElementById("eventName").value.trim();
-      const slug = sanitizeSlug(document.getElementById("eventSlug").value);
-
-      if (!name || !slug) {
-        showMessage(eventMessage, "Ange både eventnamn och event-ID.", "error");
+    async function deleteSelectedEvent() {
+      if (!selectedEventId || !selectedEvent) {
+        showMessage(eventMessage, "Välj ett event först.", "error");
         return;
       }
 
-      await createEvent(name, slug);
-    });
+      await deleteEvent(selectedEventId);
+    }
 
     eventSelect.addEventListener("change", async function () {
       selectedEventId = this.value;
@@ -1168,88 +957,9 @@
       await loadEntries();
     });
 
-    document.getElementById("adminForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      clearMessage(messageBox);
-
-      if (!selectedEventId) {
-        showMessage(messageBox, "Välj ett event först.", "error");
-        return;
-      }
-
-      const rawDate = cleanDateInput.value;
-
-      if (rawDate.length !== 8) {
-        showMessage(messageBox, "Ange datum som ÅÅÅÅMMDD.", "error");
-        return;
-      }
-
-      const cleanDate = convertRawDate(rawDate);
-
-      if (!isValidDateString(cleanDate)) {
-        showMessage(messageBox, "Datumet är ogiltigt eller ligger i framtiden.", "error");
-        return;
-      }
-
-      const button = document.getElementById("submitButton");
-      button.disabled = true;
-      button.innerText = "Lägger till...";
-
-      const { error } = await supabaseClient
-        .from("clean_time_entries")
-        .insert([{
-          clean_date: cleanDate,
-          event_id: selectedEventId,
-          device_id: "admin-" + crypto.randomUUID(),
-          created_by: "admin"
-        }]);
-
-      button.disabled = false;
-      button.innerText = "Lägg till";
-
-      if (error) {
-        showMessage(messageBox, "Något gick fel: " + error.message, "error");
-        console.log(error);
-      } else {
-        showMessage(messageBox, "Tiden är tillagd ❤️", "success");
-        document.getElementById("adminForm").reset();
-        await loadEntries();
-      }
-    });
-
-    async function deleteAllEntries() {
-      clearMessage(listMessage);
-
-      if (!requireSelectedEvent()) return;
-
-      const confirmation = prompt(
-        "Detta raderar ALLA registreringar för valt event.\n\nEvent: " +
-        (selectedEvent?.name || "") +
-        "\n\nSkriv RADERA för att fortsätta."
-      );
-
-      if (confirmation !== "RADERA") {
-        return;
-      }
-
-      const { error } = await supabaseClient
-        .from("clean_time_entries")
-        .delete()
-        .eq("event_id", selectedEventId);
-
-      if (error) {
-        showMessage(listMessage, "Kunde inte rensa valt event: " + error.message, "error");
-        return;
-      }
-
-      showMessage(listMessage, "Alla registreringar för valt event har raderats.", "success");
-      await loadEntries();
-    }
-
     document.getElementById("refreshEventsButton").addEventListener("click", () => loadEvents(true));
-    document.getElementById("refreshButton").addEventListener("click", loadEntries);
+    document.getElementById("deleteSelectedEventButton").addEventListener("click", deleteSelectedEvent);
     document.getElementById("exportButton").addEventListener("click", exportToExcel);
-    document.getElementById("deleteAllButton").addEventListener("click", deleteAllEntries);
   </script>
 
 </body>
