@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Statistik - Drogfri tid</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+      color: white;
+      text-align: center;
+      padding: 42px 18px 75px;
+    }
+
+    .hero h1 {
+      font-size: clamp(26px, 7vw, 44px);
+      margin-bottom: 12px;
+      font-weight: 850;
+    }
+
+    .hero p {
+      font-size: 17px;
+      opacity: 0.92;
+      line-height: 1.4;
+    }
+
+    .wrap {
+      width: min(100%, 760px);
+      margin: -45px auto 42px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 11;
+    }
+
+    .card h2 {
+      color: var(--na-blue);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    select {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .selected-event {
+      background: #eef7ff;
+      border: 1px solid #cfe2ff;
+      color: var(--na-blue-dark);
+      padding: 13px;
+      border-radius: 14px;
+      margin-top: 8px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .event-display-title {
+      text-align: center;
+      color: var(--na-blue);
+      font-size: clamp(28px, 7vw, 42px);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      text-align: center;
+      position: relative;
+      z-index: 11;
+    }
+
+    .stat-title {
+      color: var(--na-blue-dark);
+      font-size: 14px;
+      font-weight: 750;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      color: var(--na-blue);
+      font-size: clamp(28px, 7vw, 42px);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 7px;
+    }
+
+    .stat-detail {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+
+    .stat-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-box {
+      background: #f4f7fb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      color: var(--na-blue);
+      font-size: 25px;
+      font-weight: 850;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 360px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+    }
+
+    th {
+      background: #f4f7fb;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    td:last-child, th:last-child { text-align: right; font-weight: 800; }
+
+    .bar-cell { width: 45%; }
+
+    .bar {
+      height: 10px;
+      background: #dbeafe;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--na-blue);
+      border-radius: 999px;
+      min-width: 3px;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+    }
+
+    .back-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: #64748b;
+      color: white;
+      padding: 16px 22px;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 750;
+      margin-top: 12px;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 560px) {
+      .hero { padding-top: 34px; padding-bottom: 68px; }
+      .wrap { margin-top: -38px; padding: 0 12px; }
+      .card { border-radius: 18px; padding: 19px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      select { font-size: 17px; padding: 15px; }
+      th, td { font-size: 14px; padding: 10px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <h1>Drogfri tid - statistik</h1>
+    <p>Årtal, milstolpar och fördelning av drogfri tid</p>
+  </section>
+
+  <main class="wrap">
+
+    <section class="card">
+      <div class="event-display-title" id="selectedEventInfo">Laddar event...</div>
+      <div id="messageBox" class="message"></div>
+
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+    </section>
+
+    <section class="stat-card">
+      <div class="stat-value" id="statsPersonCount">0 personer</div>
+    </section>
+
+    <section class="stat-card">
+      <div class="stat-title">Total tid</div>
+      <div class="stat-value" id="statsTotalYears">0 år</div>
+      <div class="stat-detail" id="statsTotalDetail">(0 dagar)</div>
+      <div class="stat-note" id="statsTotalNote">0 dagar totalt</div>
+    </section>
+
+    <section class="stat-card">
+      <div class="stat-title">Medel</div>
+      <div class="stat-value" id="statsAverageYears">0 år</div>
+      <div class="stat-detail" id="statsAverageDetail">(0 dagar)</div>
+      <div class="stat-note" id="statsAverageNote">0 dagar i genomsnitt</div>
+    </section>
+
+    <section class="stat-card">
+      <div class="stat-title">Längsta tid</div>
+      <div class="stat-value" id="statsLongestYears">0 år</div>
+      <div class="stat-detail" id="statsLongestDetail">(0 dagar)</div>
+      <div class="stat-note" id="statsLongestNote">0 dagar</div>
+    </section>
+
+    <section class="stat-card">
+      <div class="stat-title">Kortaste tid</div>
+      <div class="stat-value" id="statsShortestYears">0 dagar</div>
+      <div class="stat-detail" id="statsShortestDetail"></div>
+      <div class="stat-note" id="statsShortestNote">0 dagar</div>
+    </section>
+
+    <section class="card">
+      <h2>Fördelning efter drogfri tid</h2>
+      <p class="helper-text">Antal personer i varje tidsintervall, från första månaden till hela år.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Clean time</th>
+              <th class="bar-cell"></th>
+              <th>Antal</th>
+            </tr>
+          </thead>
+          <tbody id="rangeTableBody">
+            <tr><td colspan="3">Välj ett event.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+
+<section class="card">
+      <h2>Årtal för drogfrihet</h2>
+      <p class="helper-text">Antal personer grupperat efter vilket år de blev clean.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Årtal</th>
+              <th class="bar-cell"></th>
+              <th>Antal</th>
+            </tr>
+          </thead>
+          <tbody id="yearTableBody">
+            <tr><td colspan="3">Välj ett event.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Hur räknas tiden?</h2>
+      <p class="helper-text">
+        Drogfri tid räknas i databasen utifrån registrerat datum fram till dagens datum.
+        Startdagen räknas med, vilket innebär att första dagen räknas som dag 1.
+        Sidan hämtar färdigräknad statistik från databasen och visar antal dagar,
+        antal personer, total tid, medelvärde, längsta tid och kortaste tid.
+        I statistikrutorna räknas år som 365,25 dagar och en månad som cirka 30,44 dagar.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">Bara för idag ❤️</footer>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const selectedEventInfo = document.getElementById("selectedEventInfo");
+    const messageBox = document.getElementById("messageBox");
+    const yearTableBody = document.getElementById("yearTableBody");
+    const rangeTableBody = document.getElementById("rangeTableBody");
+
+    let events = [];
+    let selectedEventId = "";
+    let selectedEvent = null;
+
+    function showError(text) {
+      messageBox.textContent = text;
+      messageBox.className = "message error";
+    }
+
+    function clearError() {
+      messageBox.textContent = "";
+      messageBox.className = "message";
+    }
+
+    function daysBetween(cleanDate) {
+      const selectedDate = new Date(cleanDate + "T00:00:00");
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.floor((today - selectedDate) / 86400000);
+    }
+
+    function pluralize(value, singular, plural) {
+      return value === 1 ? singular : plural;
+    }
+
+    function formatDetailFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
+      const years = Math.floor(totalDays / 365.25);
+      const daysAfterYears = totalDays - Math.floor(years * 365.25);
+      const averageMonthDays = 30.4375;
+      const months = Math.floor(daysAfterYears / averageMonthDays);
+      const remainingDays = Math.round(daysAfterYears - (months * averageMonthDays));
+
+      let parts = [];
+      if (years > 0) parts.push(years + " år");
+      if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
+      if (remainingDays > 0 || parts.length === 0) {
+        parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+      }
+
+      return parts.join(" ");
+    }
+
+    function formatShortValue(days) {
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
+      const averageMonthDays = 30.4375;
+
+      if (totalDays < averageMonthDays) {
+        return totalDays + " " + pluralize(totalDays, "dag", "dagar");
+      }
+
+      if (totalDays < 365.25) {
+        const months = Math.floor(totalDays / averageMonthDays);
+        const remainingDays = Math.round(totalDays - (months * averageMonthDays));
+
+        let parts = [];
+        if (months > 0) parts.push(months + " " + pluralize(months, "månad", "månader"));
+        if (remainingDays > 0) parts.push(remainingDays + " " + pluralize(remainingDays, "dag", "dagar"));
+
+        return parts.join(" ");
+      }
+
+      return null;
+    }
+
+    function formatStatsFromDays(days) {
+      const totalDays = Math.max(0, Math.floor(Number(days) || 0));
+      const decimalYears = (totalDays / 365.25).toFixed(1).replace(".", ",");
+
+      return {
+        yearsDecimal: decimalYears + " år",
+        detail: "(" + formatDetailFromDays(totalDays) + ")",
+        daysText: totalDays.toLocaleString("sv-SE") + " " + pluralize(totalDays, "dag", "dagar")
+      };
+    }
+
+    function resetTopStats() {
+      const zero = formatStatsFromDays(0);
+
+      document.getElementById("statsPersonCount").innerText = "0 personer";
+      document.getElementById("statsTotalYears").innerText = zero.yearsDecimal;
+      document.getElementById("statsTotalDetail").innerText = zero.detail;
+      document.getElementById("statsTotalNote").innerText = zero.daysText + " totalt";
+      document.getElementById("statsAverageYears").innerText = zero.yearsDecimal;
+      document.getElementById("statsAverageDetail").innerText = zero.detail;
+      document.getElementById("statsAverageNote").innerText = zero.daysText + " i genomsnitt";
+      document.getElementById("statsLongestYears").innerText = zero.yearsDecimal;
+      document.getElementById("statsLongestDetail").innerText = zero.detail;
+      document.getElementById("statsLongestNote").innerText = zero.daysText;
+      document.getElementById("statsShortestYears").innerText = "0 dagar";
+      document.getElementById("statsShortestDetail").innerText = "";
+      document.getElementById("statsShortestNote").innerText = zero.daysText;
+    }
+
+    function updateTopStats(entries) {
+      if (!entries.length) {
+        resetTopStats();
+        return;
+      }
+
+      const daysList = entries
+        .map(entry => daysBetween(entry.clean_date))
+        .filter(days => Number.isFinite(days))
+        .map(days => Math.max(0, Math.floor(days)));
+
+      const personCount = daysList.length;
+      const totalDays = daysList.reduce((sum, days) => sum + days, 0);
+      const averageDays = personCount > 0 ? Math.floor(totalDays / personCount) : 0;
+      const longestDays = personCount > 0 ? Math.max(...daysList) : 0;
+      const shortestDays = personCount > 0 ? Math.min(...daysList) : 0;
+
+      const total = formatStatsFromDays(totalDays);
+      const average = formatStatsFromDays(averageDays);
+      const longest = formatStatsFromDays(longestDays);
+      const shortest = formatStatsFromDays(shortestDays);
+      const shortestShortValue = formatShortValue(shortestDays);
+
+      document.getElementById("statsPersonCount").innerText =
+        personCount.toLocaleString("sv-SE") + " " + pluralize(personCount, "person", "personer");
+
+      document.getElementById("statsTotalYears").innerText = total.yearsDecimal;
+      document.getElementById("statsTotalDetail").innerText = total.detail;
+      document.getElementById("statsTotalNote").innerText = total.daysText + " totalt";
+
+      document.getElementById("statsAverageYears").innerText = average.yearsDecimal;
+      document.getElementById("statsAverageDetail").innerText = average.detail;
+      document.getElementById("statsAverageNote").innerText = average.daysText + " i genomsnitt";
+
+      document.getElementById("statsLongestYears").innerText = longest.yearsDecimal;
+      document.getElementById("statsLongestDetail").innerText = longest.detail;
+      document.getElementById("statsLongestNote").innerText = longest.daysText;
+
+      if (shortestShortValue !== null) {
+        document.getElementById("statsShortestYears").innerText = shortestShortValue;
+        document.getElementById("statsShortestDetail").innerText = "";
+      } else {
+        document.getElementById("statsShortestYears").innerText = shortest.yearsDecimal;
+        document.getElementById("statsShortestDetail").innerText = shortest.detail;
+      }
+
+      document.getElementById("statsShortestNote").innerText = shortest.daysText;
+    }
+
+
+    function updateSelectedEventInfo() {
+      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+
+      if (!selectedEvent) {
+        selectedEventInfo.innerText = "EVENT SAKNAS";
+        return;
+      }
+
+      selectedEventInfo.innerText = selectedEvent.name;
+    }
+
+    async function loadEvents() {
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,name,slug,is_active")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        selectedEventInfo.innerText = "EVENT KUNDE INTE HÄMTAS";
+        showError("Kunde inte hämta event: " + error.message);
+        return;
+      }
+
+      events = data || [];
+
+      const params = new URLSearchParams(window.location.search);
+      const eventSlug = params.get("event") || localStorage.getItem("selectedEventSlug");
+
+      if (eventSlug) {
+        const event = events.find(item => item.slug === eventSlug);
+        if (event) {
+          selectedEventId = event.id;
+          localStorage.setItem("selectedEventSlug", event.slug);
+        }
+      }
+
+      updateSelectedEventInfo();
+
+      if (selectedEventId) {
+        await loadStatistics();
+      } else {
+        resetStatistics();
+      }
+    }
+
+    function addMonths(date, months) {
+      const result = new Date(date.getTime());
+      const originalDay = result.getDate();
+
+      result.setMonth(result.getMonth() + months);
+
+      // Hantera datum som 31 januari + 1 månad, där JS annars kan hoppa in i mars.
+      if (result.getDate() < originalDay) {
+        result.setDate(0);
+      }
+
+      return result;
+    }
+
+    function addYears(date, years) {
+      const result = new Date(date.getTime());
+      result.setFullYear(result.getFullYear() + years);
+      return result;
+    }
+
+    function cleanDateToLocalDate(cleanDate) {
+      return new Date(cleanDate + "T00:00:00");
+    }
+
+    function todayLocalDate() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function fullYearsSince(cleanDate, today) {
+      const start = cleanDateToLocalDate(cleanDate);
+      let years = today.getFullYear() - start.getFullYear();
+
+      const anniversary = addYears(start, years);
+
+      if (today < anniversary) {
+        years--;
+      }
+
+      return Math.max(0, years);
+    }
+
+    function getExactRangeLabel(cleanDate) {
+      const start = cleanDateToLocalDate(cleanDate);
+      const today = todayLocalDate();
+      const days = daysBetween(cleanDate);
+
+      if (days <= 29) return "Mindre än 30 dagar";
+      if (days <= 59) return "30 dagar";
+      if (days <= 89) return "60 dagar";
+
+      const sixMonths = addMonths(start, 6);
+      const nineMonths = addMonths(start, 9);
+      const oneYear = addYears(start, 1);
+      const eighteenMonths = addMonths(start, 18);
+      const twoYears = addYears(start, 2);
+
+      if (today < sixMonths) return "90 dagar";
+      if (today < nineMonths) return "6 månader";
+      if (today < oneYear) return "9 månader";
+      if (today < eighteenMonths) return "1 år";
+      if (today < twoYears) return "18 månader";
+
+      const years = fullYearsSince(cleanDate, today);
+      return years + " år";
+    }
+
+    function getRangeSortOrder(label) {
+      const fixedOrder = {
+        "Mindre än 30 dagar": 1,
+        "30 dagar": 2,
+        "60 dagar": 3,
+        "90 dagar": 4,
+        "6 månader": 5,
+        "9 månader": 6,
+        "1 år": 7,
+        "18 månader": 8
+      };
+
+      if (fixedOrder[label]) {
+        return fixedOrder[label];
+      }
+
+      const yearMatch = label.match(/^(\d+) år$/);
+      if (yearMatch) {
+        return 1000 + Number(yearMatch[1]);
+      }
+
+      return 9999;
+    }
+
+    function groupByCleanYear(entries) {
+      const map = new Map();
+
+      entries.forEach(entry => {
+        const year = String(entry.clean_date || "").substring(0, 4);
+        if (!year || year.length !== 4) return;
+        map.set(year, (map.get(year) || 0) + 1);
+      });
+
+      return Array.from(map.entries())
+        .map(([year, count]) => ({ year, count }))
+        .sort((a, b) => Number(a.year) - Number(b.year));
+    }
+
+    function groupByRanges(entries) {
+      const map = new Map();
+
+      entries.forEach(entry => {
+        const label = getExactRangeLabel(entry.clean_date);
+        map.set(label, (map.get(label) || 0) + 1);
+      });
+
+      return Array.from(map.entries())
+        .map(([label, count]) => ({
+          label,
+          count,
+          sortOrder: getRangeSortOrder(label)
+        }))
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+
+    function renderRows(target, rows, labelKey, emptyText) {
+      if (!rows.length) {
+        target.innerHTML = `<tr><td colspan="3">${emptyText}</td></tr>`;
+        return;
+      }
+
+      const max = Math.max(...rows.map(row => row.count), 1);
+
+      target.innerHTML = rows.map(row => {
+        const width = Math.max(3, Math.round((row.count / max) * 100));
+        return `
+          <tr>
+            <td>${row[labelKey]}</td>
+            <td class="bar-cell">
+              <div class="bar">
+                <div class="bar-fill" style="width:${width}%"></div>
+              </div>
+            </td>
+            <td>${row.count}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function resetStatistics() {
+      resetTopStats();
+      yearTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
+      rangeTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
+    }
+
+    async function loadStatistics() {
+      clearError();
+
+      if (!selectedEventId) {
+        resetStatistics();
+        return;
+      }
+
+      yearTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
+      rangeTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
+
+      const { data, error } = await supabaseClient
+        .from("clean_time_entries")
+        .select("id, clean_date, event_id, is_active")
+        .eq("event_id", selectedEventId)
+        .eq("is_active", true)
+        .order("clean_date", { ascending: true });
+
+      if (error) {
+        showError("Kunde inte hämta statistik: " + error.message);
+        resetStatistics();
+        return;
+      }
+
+      const entries = data || [];
+      updateTopStats(entries);
+      const byYear = groupByCleanYear(entries);
+      const byRange = groupByRanges(entries);
+
+      renderRows(yearTableBody, byYear, "year", "Inga registreringar finns.");
+      renderRows(rangeTableBody, byRange, "label", "Inga registreringar finns.");
+    }
+
+    loadEvents();
+  </script>
+
+</body>
+</html>
