@@ -491,22 +491,17 @@
       document.getElementById("statsShortestNote").innerText = zero.daysText;
     }
 
-    function updateTopStats(entries) {
-      if (!entries.length) {
+    function updateTopStatsFromSummary(row) {
+      if (!row || Number(row.person_count || 0) === 0) {
         resetTopStats();
         return;
       }
 
-      const daysList = entries
-        .map(entry => daysBetween(entry.clean_date))
-        .filter(days => Number.isFinite(days))
-        .map(days => Math.max(0, Math.floor(days)));
-
-      const personCount = daysList.length;
-      const totalDays = daysList.reduce((sum, days) => sum + days, 0);
-      const averageDays = personCount > 0 ? Math.floor(totalDays / personCount) : 0;
-      const longestDays = personCount > 0 ? Math.max(...daysList) : 0;
-      const shortestDays = personCount > 0 ? Math.min(...daysList) : 0;
+      const personCount = Number(row.person_count || 0);
+      const totalDays = Number(row.total_days || 0);
+      const averageDays = Math.floor(Number(row.average_days || 0));
+      const longestDays = Number(row.longest_days || 0);
+      const shortestDays = Number(row.shortest_days || 0);
 
       const total = formatStatsFromDays(totalDays);
       const average = formatStatsFromDays(averageDays);
@@ -750,6 +745,20 @@
       yearTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
       rangeTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
 
+      const { data: summaryData, error: summaryError } = await supabaseClient
+        .from("clean_time_summary_by_event")
+        .select("person_count,total_days,average_days,longest_days,shortest_days")
+        .eq("event_id", selectedEventId)
+        .limit(1);
+
+      if (summaryError) {
+        showError("Kunde inte hämta sammanfattning: " + summaryError.message);
+        resetTopStats();
+      } else {
+        const summaryRow = summaryData && summaryData.length > 0 ? summaryData[0] : null;
+        updateTopStatsFromSummary(summaryRow);
+      }
+
       const { data, error } = await supabaseClient
         .from("clean_time_entries")
         .select("id, clean_date, event_id, is_active")
@@ -759,12 +768,12 @@
 
       if (error) {
         showError("Kunde inte hämta statistik: " + error.message);
-        resetStatistics();
+        yearTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
+        rangeTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
         return;
       }
 
       const entries = data || [];
-      updateTopStats(entries);
       const byYear = groupByCleanYear(entries);
       const byRange = groupByRanges(entries);
 
