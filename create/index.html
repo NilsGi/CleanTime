@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Skapa event - Clean Time</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --na-blue: #1E4F9A;
+      --na-blue-dark: #163D78;
+      --text: #1f2937;
+      --muted: #64748b;
+      --bg: #f4f7fb;
+      --white: #ffffff;
+      --border: #dbe3ef;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+      color: white;
+      text-align: center;
+      padding: 42px 18px 75px;
+    }
+
+    .hero h1 {
+      font-size: clamp(22px, 5vw, 34px);
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      opacity: 0.96;
+    }
+
+    .hero p {
+      font-size: 16px;
+      opacity: 0.92;
+    }
+
+    .wrap {
+      width: min(100%, 620px);
+      margin: -45px auto 42px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(30, 79, 154, 0.08);
+      padding: 24px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 11;
+    }
+
+    .card h2 {
+      color: var(--na-blue);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .helper-text {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      display: block;
+      width: calc(100% - 32px);
+      margin-left: auto;
+      margin-right: auto;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: 3px solid rgba(30,79,154,0.18);
+      border-color: var(--na-blue);
+    }
+
+    button,
+    .back-button {
+      width: 100%;
+      background: var(--na-blue);
+      color: white;
+      border: none;
+      padding: 16px 22px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 750;
+      text-decoration: none;
+      text-align: center;
+      display: block;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover,
+    .back-button:hover {
+      background: var(--na-blue-dark);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .secondary-button,
+    .back-button {
+      background: #64748b;
+    }
+
+    .secondary-button:hover,
+    .back-button:hover {
+      background: #475569;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .message.success {
+      display: block;
+      background: #eef7ff;
+      color: var(--na-blue-dark);
+      border: 1px solid #cfe2ff;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .event-title {
+      text-align: center;
+      color: var(--na-blue);
+      font-size: clamp(26px, 7vw, 42px);
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+
+    .created-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    .link-row {
+      background: #eef7ff;
+      border: 1px solid #cfe2ff;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .link-label {
+      color: var(--na-blue-dark);
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .link-line {
+      display: grid;
+      grid-template-columns: 1fr 44px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .link-url {
+      color: var(--na-blue-dark);
+      font-size: 14px;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+
+    .link-url a {
+      color: var(--na-blue-dark);
+      text-decoration: none;
+    }
+
+    .copy-icon-button {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      padding: 0;
+      border-radius: 12px;
+      background: var(--na-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .copy-icon-button svg {
+      width: 23px;
+      height: 23px;
+      stroke: white;
+      stroke-width: 2.4;
+      fill: none;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .qr-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .qr-title {
+      color: var(--na-blue);
+      font-weight: 850;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .qr-holder {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 196px;
+      margin-bottom: 12px;
+    }
+
+    .qr-holder img,
+    .qr-holder canvas {
+      border-radius: 10px;
+    }
+
+    .flyer-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .preview-flyer {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .preview-title {
+      color: var(--na-blue);
+      font-weight: 900;
+      font-size: 30px;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .preview-text {
+      color: var(--text);
+      font-weight: 800;
+      font-size: 22px;
+      line-height: 1.25;
+      margin-bottom: 18px;
+    }
+
+    .preview-help {
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.35;
+      margin-top: 18px;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 0 16px 34px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 430px) {
+      .hero {
+        padding-top: 34px;
+        padding-bottom: 68px;
+      }
+
+      .wrap {
+        margin-top: -38px;
+        padding: 0 12px;
+      }
+
+      .card {
+        border-radius: 18px;
+        padding: 19px;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      button,
+      .back-button {
+        font-size: 17px;
+        padding: 15px;
+      }
+
+      .flyer-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero">
+    <h1>Skapa event</h1>
+    <p>Länkar, QR-koder och flyer</p>
+  </section>
+
+  <main class="wrap">
+
+    <section class="card" id="loginCard">
+      <h2>Logga in</h2>
+      <p class="helper-text">Ange lösenord för att skapa event.</p>
+
+      <form id="loginForm">
+        <label for="adminPassword">Lösenord</label>
+        <input type="password" id="adminPassword" placeholder="Lösenord" required />
+        <button type="submit">Logga in</button>
+      </form>
+
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section class="card hidden" id="createCard">
+      <h2>Event</h2>
+      <p class="helper-text">
+        Skapa event och få färdiga länkar, QR-koder och flyer.
+      </p>
+
+      <form id="eventForm">
+        <label for="eventName">Eventnamn</label>
+        <input type="text" id="eventName" placeholder="Exempelvis Gullbranna 2027" required />
+
+        <label for="eventSlug">Event-ID / slug</label>
+        <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027" required />
+
+        <button type="submit" id="createEventButton">Skapa event</button>
+      </form>
+
+      <a href="/" class="back-button">← Till huvudmenyn</a>
+
+      <div id="eventMessage" class="message"></div>
+    </section>
+
+    <section class="card hidden" id="resultCard">
+      <div class="event-title" id="createdEventTitle">EVENT</div>
+      <div class="created-note" id="createdEventSlug">Event-ID</div>
+
+      <div class="link-row">
+        <div class="link-label">Registreringslänk</div>
+        <div class="link-line">
+          <div class="link-url" id="registerUrl"></div>
+          <button type="button" class="copy-icon-button" onclick="copyText('registerUrl')" title="Kopiera registreringslänk" aria-label="Kopiera registreringslänk">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+              <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="link-row">
+        <div class="link-label">Totalsida</div>
+        <div class="link-line">
+          <div class="link-url" id="totalUrl"></div>
+          <button type="button" class="copy-icon-button" onclick="copyText('totalUrl')" title="Kopiera totalsida" aria-label="Kopiera totalsida">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+              <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="link-row">
+        <div class="link-label">Statistik</div>
+        <div class="link-line">
+          <div class="link-url" id="statisticsUrl"></div>
+          <button type="button" class="copy-icon-button" onclick="copyText('statisticsUrl')" title="Kopiera statistik" aria-label="Kopiera statistik">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+              <path d="M4 16V6a2 2 0 0 1 2-2h10"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="qrCard">
+      <h2>QR-koder</h2>
+      <p class="helper-text">QR-koden för registrering används även i flyern.</p>
+
+      <div class="qr-grid">
+        <div class="qr-box">
+          <div class="qr-title">Registrering</div>
+          <div class="qr-holder" id="qrRegister"></div>
+        </div>
+
+        <div class="qr-box">
+          <div class="qr-title">Total</div>
+          <div class="qr-holder" id="qrTotal"></div>
+        </div>
+
+        <div class="qr-box">
+          <div class="qr-title">Statistik</div>
+          <div class="qr-holder" id="qrStatistics"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="flyerCard">
+      <h2>Flyer</h2>
+      <p class="helper-text">
+        Skapa en A4-PDF med eventnamn, text och stor QR-kod.
+      </p>
+
+      <div class="flyer-actions">
+        <button type="button" id="flyerSvButton">Skapa svensk PDF</button>
+        <button type="button" id="flyerEnButton" class="secondary-button">Create English PDF</button>
+      </div>
+
+      <div class="preview-flyer">
+        <div class="preview-title" id="previewTitle">EVENT</div>
+        <div class="preview-text" id="previewText">Registrera din drogfri tid här</div>
+        <div class="qr-holder" id="qrPreview"></div>
+        <div class="preview-help" id="previewHelp">
+          Behöver du hjälp? Prata med registreringen.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Bara för idag ❤️
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+    const ADMIN_PASSWORD = "drogfri";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    let currentEvent = null;
+    let currentLinks = null;
+
+    const loginCard = document.getElementById("loginCard");
+    const createCard = document.getElementById("createCard");
+    const resultCard = document.getElementById("resultCard");
+    const qrCard = document.getElementById("qrCard");
+    const flyerCard = document.getElementById("flyerCard");
+
+    const loginMessage = document.getElementById("loginMessage");
+    const eventMessage = document.getElementById("eventMessage");
+
+    function showMessage(element, text, type) {
+      element.textContent = text;
+      element.className = "message " + type;
+    }
+
+    function clearMessage(element) {
+      element.textContent = "";
+      element.className = "message";
+    }
+
+    function sanitizeSlug(value) {
+      return value
+        .toLowerCase()
+        .trim()
+        .replace(/å/g, "a")
+        .replace(/ä/g, "a")
+        .replace(/ö/g, "o")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    document.getElementById("eventName").addEventListener("input", function () {
+      const slugInput = document.getElementById("eventSlug");
+      if (!slugInput.dataset.manual) {
+        slugInput.value = sanitizeSlug(this.value);
+      }
+    });
+
+    document.getElementById("eventSlug").addEventListener("input", function () {
+      this.dataset.manual = "true";
+      this.value = sanitizeSlug(this.value);
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      clearMessage(loginMessage);
+
+      const password = document.getElementById("adminPassword").value;
+
+      if (password !== ADMIN_PASSWORD) {
+        showMessage(loginMessage, "Fel lösenord.", "error");
+        return;
+      }
+
+      loginCard.classList.add("hidden");
+      createCard.classList.remove("hidden");
+    });
+
+    document.getElementById("eventForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      clearMessage(eventMessage);
+
+      const name = document.getElementById("eventName").value.trim();
+      const slug = sanitizeSlug(document.getElementById("eventSlug").value);
+
+      if (!name || !slug) {
+        showMessage(eventMessage, "Ange både eventnamn och Event-ID.", "error");
+        return;
+      }
+
+      const button = document.getElementById("createEventButton");
+      button.disabled = true;
+      button.innerText = "Skapar...";
+
+      const { data, error } = await supabaseClient
+        .from("events")
+        .insert([{
+          name: name,
+          slug: slug,
+          is_active: true
+        }])
+        .select("id,name,slug")
+        .single();
+
+      button.disabled = false;
+      button.innerText = "Skapa event";
+
+      if (error) {
+        showMessage(eventMessage, "Kunde inte skapa event: " + error.message, "error");
+        console.log(error);
+        return;
+      }
+
+      currentEvent = data;
+      buildEventAssets(currentEvent);
+
+      showMessage(eventMessage, "Eventet är skapat.", "success");
+      document.getElementById("eventForm").reset();
+      document.getElementById("eventSlug").dataset.manual = "";
+
+      resultCard.classList.remove("hidden");
+      qrCard.classList.remove("hidden");
+      flyerCard.classList.remove("hidden");
+
+      resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    function buildEventAssets(event) {
+      const origin = window.location.origin;
+
+      const registerUrl = origin + "/register/?event=" + encodeURIComponent(event.slug);
+      const totalUrl = origin + "/total/?event=" + encodeURIComponent(event.slug);
+      const statisticsUrl = origin + "/statistics/?event=" + encodeURIComponent(event.slug);
+
+      currentLinks = {
+        registerUrl,
+        totalUrl,
+        statisticsUrl
+      };
+
+      document.getElementById("createdEventTitle").innerText = event.name;
+      document.getElementById("createdEventSlug").innerText = "Event-ID: " + event.slug;
+
+      setLink("registerUrl", registerUrl);
+      setLink("totalUrl", totalUrl);
+      setLink("statisticsUrl", statisticsUrl);
+
+      makeQr("qrRegister", registerUrl, 190);
+      makeQr("qrTotal", totalUrl, 190);
+      makeQr("qrStatistics", statisticsUrl, 190);
+      makeQr("qrPreview", registerUrl, 210);
+
+      document.getElementById("previewTitle").innerText = event.name;
+    }
+
+    function setLink(elementId, url) {
+      document.getElementById(elementId).innerHTML =
+        '<a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>';
+    }
+
+    function makeQr(elementId, url, size) {
+      const element = document.getElementById(elementId);
+      element.innerHTML = "";
+
+      new QRCode(element, {
+        text: url,
+        width: size,
+        height: size,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    async function copyText(elementId) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      const link = element.querySelector("a");
+      const text = link ? link.href : element.innerText;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showMessage(eventMessage, "Länk kopierad.", "success");
+      } catch (error) {
+        const input = document.createElement("input");
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        showMessage(eventMessage, "Länk kopierad.", "success");
+      }
+    }
+
+    function getQrDataUrl(elementId) {
+      const element = document.getElementById(elementId);
+      const canvas = element.querySelector("canvas");
+
+      if (canvas) {
+        return canvas.toDataURL("image/png");
+      }
+
+      const img = element.querySelector("img");
+      return img ? img.src : null;
+    }
+
+    function safeFileName(value) {
+      return sanitizeSlug(value || "event") || "event";
+    }
+
+    function createFlyer(language) {
+      if (!currentEvent || !currentLinks) {
+        showMessage(eventMessage, "Skapa ett event först.", "error");
+        return;
+      }
+
+      const qrDataUrl = getQrDataUrl("qrPreview");
+
+      if (!qrDataUrl) {
+        showMessage(eventMessage, "QR-koden kunde inte hämtas.", "error");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const isSv = language === "sv";
+
+      const title = currentEvent.name.toUpperCase();
+      const mainText = isSv
+        ? "Registrera din\\ndrogfria tid här"
+        : "Register your\\nclean time here";
+
+      const helpText = isSv
+        ? "Behöver du hjälp?\\nPrata med registreringen."
+        : "Need help?\\nPlease speak with registration.";
+
+      const urlText = currentLinks.registerUrl;
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, 210, 297, "F");
+
+      pdf.setTextColor(30, 79, 154);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(30);
+      pdf.text(title, 105, 38, { align: "center", maxWidth: 180 });
+
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFontSize(27);
+      const mainLines = mainText.split("\\n");
+      pdf.text(mainLines, 105, 72, { align: "center", lineHeightFactor: 1.18 });
+
+      pdf.addImage(qrDataUrl, "PNG", 45, 102, 120, 120);
+
+      pdf.setTextColor(30, 79, 154);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(13);
+      pdf.text(urlText, 105, 234, { align: "center", maxWidth: 180 });
+
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(18);
+      const helpLines = helpText.split("\\n");
+      pdf.text(helpLines, 105, 258, { align: "center", lineHeightFactor: 1.25 });
+
+      pdf.setTextColor(100, 116, 139);
+      pdf.setFontSize(12);
+      pdf.text(isSv ? "Bara för idag ❤️" : "Just for today ❤️", 105, 283, { align: "center" });
+
+      const suffix = isSv ? "SV" : "EN";
+      pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + suffix + ".pdf");
+    }
+
+    document.getElementById("flyerSvButton").addEventListener("click", () => createFlyer("sv"));
+    document.getElementById("flyerEnButton").addEventListener("click", () => createFlyer("en"));
+  </script>
+
+</body>
+</html>
