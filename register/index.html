@@ -380,6 +380,10 @@ input[type="text"]::placeholder {
         loadingEvent: "Laddar event...",
         eventMissingTitle: "EVENT SAKNAS",
         eventNotFoundTitle: "EVENT HITTADES INTE",
+        eventNotStartedTitle: "REGISTRERINGEN HAR INTE ÖPPNAT",
+        eventClosedTitle: "REGISTRERINGEN ÄR AVSLUTAD",
+        eventNotStartedMessage: "Registreringen har inte öppnat ännu.",
+        eventClosedMessage: "Registreringen är avslutad.",
         noEventLink: "Ingen event-länk angiven. Använd exempelvis ?event=na40 i adressen.",
         eventNotFound: "Kunde inte hitta eventet:",
         eventLabel: "Event:",
@@ -424,6 +428,10 @@ input[type="text"]::placeholder {
         loadingEvent: "Loading event...",
         eventMissingTitle: "EVENT MISSING",
         eventNotFoundTitle: "EVENT NOT FOUND",
+        eventNotStartedTitle: "REGISTRATION HAS NOT OPENED",
+        eventClosedTitle: "REGISTRATION IS CLOSED",
+        eventNotStartedMessage: "Registration has not opened yet.",
+        eventClosedMessage: "Registration is closed.",
         noEventLink: "No event link was provided. Use for example ?event=na40 in the address.",
         eventNotFound: "Could not find event:",
         eventLabel: "Event:",
@@ -473,6 +481,8 @@ input[type="text"]::placeholder {
     let eventId = null;
     let eventSlug = null;
     let eventName = null;
+    let registrationStatus = null;
+    let registrationIsOpen = false;
 
     const cleanDateInput = document.getElementById("cleanDate");
     const submitButton = document.getElementById("submitButton");
@@ -616,8 +626,8 @@ input[type="text"]::placeholder {
       }
 
       const { data, error } = await supabaseClient
-        .from("events")
-        .select("id,name,slug,is_active")
+        .from("event_status")
+        .select("id,name,slug,is_active,start_date,end_date,registration_status")
         .eq("slug", eventSlug)
         .eq("is_active", true)
         .single();
@@ -632,9 +642,27 @@ input[type="text"]::placeholder {
 
       eventId = data.id;
       eventName = data.name;
+      registrationStatus = data.registration_status;
+      registrationIsOpen = registrationStatus === "open";
 
       document.getElementById("eventTitle").innerText = eventName.toUpperCase();
       document.title = t("pageTitle") + " - " + eventName;
+
+      if (!registrationIsOpen) {
+        submitButton.disabled = true;
+
+        if (registrationStatus === "not_started") {
+          document.getElementById("eventTitle").innerText = t("eventNotStartedTitle");
+          showMessage(t("eventNotStartedMessage"), "error");
+        } else if (registrationStatus === "closed") {
+          document.getElementById("eventTitle").innerText = t("eventClosedTitle");
+          showMessage(t("eventClosedMessage"), "error");
+        } else {
+          showMessage(t("errorNoEvent"), "error");
+        }
+      } else {
+        submitButton.disabled = false;
+      }
 
       return true;
     }
@@ -685,6 +713,17 @@ input[type="text"]::placeholder {
 
       if (!eventId) {
         showMessage(t("errorNoEvent"), "error");
+        return;
+      }
+
+      if (!registrationIsOpen) {
+        if (registrationStatus === "not_started") {
+          showMessage(t("eventNotStartedMessage"), "error");
+        } else if (registrationStatus === "closed") {
+          showMessage(t("eventClosedMessage"), "error");
+        } else {
+          showMessage(t("errorNoEvent"), "error");
+        }
         return;
       }
 
