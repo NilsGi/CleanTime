@@ -281,6 +281,14 @@ utan skriftligt tillstånd från upphovsmannen.
       font-size: 15px;
     }
 
+    .footer-logo {
+      display: block;
+      width: min(100%, 360px);
+      max-width: 360px;
+      height: auto;
+      margin: 0 auto;
+    }
+
     @media (max-width: 560px) {
       .hero { padding-top: 34px; padding-bottom: 68px; }
       .wrap { margin-top: -38px; padding: 0 12px; }
@@ -288,6 +296,10 @@ utan skriftligt tillstånd från upphovsmannen.
       .summary-grid { grid-template-columns: 1fr; }
       select { font-size: 17px; padding: 15px; }
       th, td { font-size: 14px; padding: 10px; }
+
+      .footer-logo {
+        width: min(88vw, 310px);
+      }
     }
   </style>
 </head>
@@ -366,7 +378,13 @@ utan skriftligt tillstånd från upphovsmannen.
 
   </main>
 
-  <footer class="footer">Bara för idag ❤️</footer>
+  <footer class="footer">
+    <img
+      src="/assets/na-logo.png"
+      alt="Narcotics Anonymous, Anonyma Narkomaner"
+      class="footer-logo"
+    >
+  </footer>
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
