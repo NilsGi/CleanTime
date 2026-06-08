@@ -97,6 +97,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     input[type="text"],
     input[type="password"],
+    input[type="date"],
     select {
       display: block;
       width: calc(100% - 32px);
@@ -342,6 +343,12 @@ utan skriftligt tillstånd från upphovsmannen.
       <label for="eventSlug">Event-ID / slug</label>
       <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027" />
 
+      <label for="startDate">Startdatum</label>
+      <input type="date" id="startDate" />
+
+      <label for="endDate">Slutdatum</label>
+      <input type="date" id="endDate" />
+
       <button type="button" id="createEventButton">Skapa event</button>
 
       <a href="/" class="back-button">← Till huvudmenyn</a>
@@ -537,7 +544,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const { data, error } = await supabaseClient
         .from("events")
-        .select("id,name,slug,is_active,created_at")
+        .select("id,name,slug,is_active,start_date,end_date,created_at")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -565,9 +572,16 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const name = document.getElementById("eventName").value.trim();
       const slug = sanitizeSlug(document.getElementById("eventSlug").value);
+      const start_date = document.getElementById("startDate").value;
+      const end_date = document.getElementById("endDate").value;
 
-      if (!name || !slug) {
-        showMessage(eventMessage, "Ange både eventnamn och Event-ID.", "error");
+      if (!name || !slug || !start_date || !end_date) {
+        showMessage(eventMessage, "Ange eventnamn, Event-ID, startdatum och slutdatum.", "error");
+        return;
+      }
+
+      if (new Date(end_date + "T00:00:00") < new Date(start_date + "T00:00:00")) {
+        showMessage(eventMessage, "Slutdatum måste vara samma dag eller efter startdatum.", "error");
         return;
       }
 
@@ -577,8 +591,8 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const { data, error } = await supabaseClient
         .from("events")
-        .insert([{ name, slug, is_active: true }])
-        .select("id,name,slug")
+        .insert([{ name, slug, start_date, end_date, is_active: true }])
+        .select("id,name,slug,start_date,end_date")
         .single();
 
       button.disabled = false;
@@ -596,6 +610,8 @@ utan skriftligt tillstånd från upphovsmannen.
 
       document.getElementById("eventName").value = "";
       document.getElementById("eventSlug").value = "";
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
       document.getElementById("eventSlug").dataset.manual = "";
 
       showMessage(eventMessage, "Eventet är skapat.", "success");
@@ -638,7 +654,10 @@ utan skriftligt tillstånd från upphovsmannen.
       currentLinks = { registerUrl, totalUrl, statisticsUrl };
 
       document.getElementById("createdEventTitle").innerText = event.name;
-      document.getElementById("createdEventSlug").innerText = "Event-ID: " + event.slug;
+      document.getElementById("createdEventSlug").innerHTML =
+        "Event-ID: " + event.slug +
+        "<br>Startdatum: " + (event.start_date || "-") +
+        "<br>Slutdatum: " + (event.end_date || "-");
 
       setLink("registerUrl", registerUrl);
       setLink("totalUrl", totalUrl);
