@@ -460,6 +460,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
       <div class="admin-actions">
         <button type="button" class="secondary-button" id="refreshEventsButton">Uppdatera event</button>
+        <button type="button" id="archiveSelectedEventButton">Arkivera valt event</button>
         <button type="button" class="danger-button" id="deleteSelectedEventButton">Radera valt event</button>
       </div>
     </section>
@@ -635,6 +636,8 @@ utan skriftligt tillstånd från upphovsmannen.
       selectedEventInfo.innerHTML = `
         <div><strong>Valt event:</strong> ${selectedEvent.name}</div>
         <div><strong>Event-ID:</strong> ${selectedEvent.slug}</div>
+        <div><strong>Startdatum:</strong> ${selectedEvent.start_date || "-"}</div>
+        <div><strong>Slutdatum:</strong> ${selectedEvent.end_date || "-"}</div>
       `;
     }
     async function loadEvents(keepSelection = true) {
@@ -644,7 +647,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const { data, error } = await supabaseClient
         .from("events")
-        .select("id,name,slug,is_active,created_at")
+        .select("id,name,slug,is_active,start_date,end_date,created_at")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -951,6 +954,106 @@ utan skriftligt tillstånd från upphovsmannen.
       await loadEvents();
     });
 
+    async function archiveSelectedEvent() {
+      if (!selectedEventId || !selectedEvent) {
+        showMessage(eventMessage, "Välj ett event först.", "error");
+        return;
+      }
+
+      const confirmation = prompt(
+        "Detta arkiverar eventet, sparar slutresultatet i historik och raderar alla registreringar kopplade till eventet.\n\nEvent: " +
+        selectedEvent.name +
+        "\n\nSkriv ARKIVERA EVENT för att fortsätta."
+      );
+
+      if (confirmation !== "ARKIVERA EVENT") {
+        return;
+      }
+
+      clearMessage(eventMessage);
+
+      const { data: summaryData, error: summaryError } = await supabaseClient
+        .from("clean_time_summary_by_event")
+        .select("event_id,event_name,event_slug,person_count,total_days,average_days,longest_days,shortest_days")
+        .eq("event_id", selectedEventId)
+        .limit(1);
+
+      if (summaryError) {
+        showMessage(eventMessage, "Kunde inte hämta sammanfattning för arkivering: " + summaryError.message, "error");
+        console.log(summaryError);
+        return;
+      }
+
+      const summary = summaryData && summaryData.length > 0 ? summaryData[0] : {
+        event_id: selectedEventId,
+        event_name: selectedEvent.name,
+        event_slug: selectedEvent.slug,
+        person_count: 0,
+        total_days: 0,
+        average_days: 0,
+        longest_days: 0,
+        shortest_days: 0
+      };
+
+      const historyRow = {
+        event_id: selectedEventId,
+        event_name: summary.event_name || selectedEvent.name,
+        event_slug: summary.event_slug || selectedEvent.slug,
+        start_date: selectedEvent.start_date || null,
+        end_date: selectedEvent.end_date || null,
+        person_count: Number(summary.person_count || 0),
+        total_days: Number(summary.total_days || 0),
+        average_days: Number(summary.average_days || 0),
+        longest_days: Number(summary.longest_days || 0),
+        shortest_days: Number(summary.shortest_days || 0)
+      };
+
+      const { error: historyError } = await supabaseClient
+        .from("event_history")
+        .insert([historyRow]);
+
+      if (historyError) {
+        showMessage(eventMessage, "Kunde inte spara historik: " + historyError.message, "error");
+        console.log(historyError);
+        return;
+      }
+
+      const { error: entriesError } = await supabaseClient
+        .from("clean_time_entries")
+        .delete()
+        .eq("event_id", selectedEventId);
+
+      if (entriesError) {
+        showMessage(eventMessage, "Historik sparad, men kunde inte radera registreringar: " + entriesError.message, "error");
+        console.log(entriesError);
+        return;
+      }
+
+      const { error: eventError } = await supabaseClient
+        .from("events")
+        .delete()
+        .eq("id", selectedEventId);
+
+      if (eventError) {
+        showMessage(eventMessage, "Historik och registreringar är sparade/raderade, men kunde inte radera eventet: " + eventError.message, "error");
+        console.log(eventError);
+        return;
+      }
+
+      selectedEventId = "";
+      selectedEvent = null;
+      entries = [];
+
+      entriesTableBody.innerHTML = `
+        <tr>
+          <td colspan="6">Välj ett event för att läsa in listan.</td>
+        </tr>
+      `;
+
+      showMessage(eventMessage, "Eventet är arkiverat. Slutresultatet är sparat i historiken.", "success");
+      await loadEvents(false);
+    }
+
     async function deleteSelectedEvent() {
       if (!selectedEventId || !selectedEvent) {
         showMessage(eventMessage, "Välj ett event först.", "error");
@@ -967,6 +1070,7 @@ utan skriftligt tillstånd från upphovsmannen.
     });
 
     document.getElementById("refreshEventsButton").addEventListener("click", () => loadEvents(true));
+    document.getElementById("archiveSelectedEventButton").addEventListener("click", archiveSelectedEvent);
     document.getElementById("deleteSelectedEventButton").addEventListener("click", deleteSelectedEvent);
     document.getElementById("exportButton").addEventListener("click", exportToExcel);
   </script>
