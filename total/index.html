@@ -240,6 +240,14 @@ utan skriftligt tillstånd från upphovsmannen.
       color: white;
     }
 
+    .footer-logo {
+      display: block;
+      width: min(100%, 360px);
+      max-width: 360px;
+      height: auto;
+      margin: 24px auto 0;
+    }
+
     @media (max-width: 520px) {
       body {
         padding: 18px;
@@ -263,6 +271,10 @@ utan skriftligt tillstånd från upphovsmannen.
 
       .info-row {
         gap: 12px;
+      }
+
+      .footer-logo {
+        width: min(88vw, 310px);
       }
     }
   </style>
@@ -295,6 +307,12 @@ utan skriftligt tillstånd från upphovsmannen.
     <div class="updated" id="updatedText">
       Uppdateras automatiskt var 60:e sekund
     </div>
+
+    <img
+      src="/assets/na-logo-vit.png"
+      alt="Narcotics Anonymous, Anonyma Narkomaner"
+      class="footer-logo"
+    >
 
     <div class="error" id="errorBox"></div>
   </main>
