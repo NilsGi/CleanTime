@@ -477,6 +477,13 @@ utan skriftligt tillstånd från upphovsmannen.
     >
   </footer>
 
+  <img
+    id="naLogoPdf"
+    src="/assets/na-logo.png"
+    style="display:none"
+    crossorigin="anonymous"
+  >
+
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
@@ -792,6 +799,21 @@ utan skriftligt tillstånd från upphovsmannen.
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(18);
       pdf.text(helpText.split("\\n"), 105, 264, { align: "center", lineHeightFactor: 1.25 });
+
+      const logo = document.getElementById("naLogoPdf");
+
+      try {
+        pdf.addImage(
+          logo,
+          "PNG",
+          55,
+          278,
+          100,
+          15
+        );
+      } catch (e) {
+        console.log("Logga kunde inte läggas till i PDF", e);
+      }
 
       pdf.save(safeFileName(currentEvent.slug) + "-flyer-" + (isSv ? "SV" : "EN") + ".pdf");
     }
