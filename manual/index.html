@@ -433,7 +433,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     async function loadEvents() {
       const { data, error } = await supabaseClient
-        .from("events")
+        .from("event_status")
         .select("id,name,slug,is_active,start_date,end_date,registration_status")
         .eq("is_active", true)
         .order("name", { ascending: true });
