@@ -337,6 +337,8 @@ utan skriftligt tillstånd från upphovsmannen.
     let events = [];
     let selectedEventId = "";
     let selectedEvent = null;
+    let registrationStatus = null;
+    let registrationIsOpen = false;
 
     function showMessage(element, text, type) {
       element.textContent = text;
@@ -411,17 +413,28 @@ utan skriftligt tillstånd från upphovsmannen.
 
       if (!selectedEvent) {
         eventTitle.innerText = "EVENT SAKNAS";
+        registrationIsOpen = false;
         return;
       }
 
-      eventTitle.innerText = selectedEvent.name.toUpperCase();
+      registrationStatus = selectedEvent.registration_status;
+      registrationIsOpen = registrationStatus === "open";
+
+      if (registrationStatus === "not_started") {
+        eventTitle.innerText = "REGISTRERINGEN HAR INTE ÖPPNAT";
+      } else if (registrationStatus === "closed") {
+        eventTitle.innerText = "REGISTRERINGEN ÄR AVSLUTAD";
+      } else {
+        eventTitle.innerText = selectedEvent.name.toUpperCase();
+      }
+
       document.title = "Manuell registrering - " + selectedEvent.name;
     }
 
     async function loadEvents() {
       const { data, error } = await supabaseClient
         .from("events")
-        .select("id,name,slug,is_active,created_at")
+        .select("id,name,slug,is_active,start_date,end_date,registration_status")
         .eq("is_active", true)
         .order("name", { ascending: true });
 
@@ -481,6 +494,15 @@ utan skriftligt tillstånd från upphovsmannen.
       clearMessage(messageBox);
       if (!selectedEventId) {
         showMessage(messageBox, "Välj ett event först.", "error");
+        return;
+      }
+
+      if (!registrationIsOpen) {
+        if (registrationStatus === "not_started") {
+          showMessage(messageBox, "Registreringen har inte öppnat ännu.", "error");
+        } else {
+          showMessage(messageBox, "Registreringen är avslutad.", "error");
+        }
         return;
       }
 
