@@ -783,14 +783,18 @@
       const logo = document.getElementById("naLogoPdf");
 
       try {
-        pdf.addImage(
-          logo,
-          "PNG",
-          69.25,
-          238,
-          71.5,
-          19.5
-        );
+      const logoWidth = 88;
+
+const logoHeight = 25;
+
+pdf.addImage(
+  logo,
+  "PNG",
+  (210 - logoWidth) / 2,
+  255,
+  logoWidth,
+  logoHeight
+  );
       } catch (e) {
         console.log("Logga kunde inte läggas till i PDF", e);
       }
