@@ -1,17 +1,6 @@
-<!--
-Clean Time
-Copyright (c) 2026 Nils Gillberg
-
-All rights reserved.
-
-Koden får inte kopieras, distribueras eller användas
-utan skriftligt tillstånd från upphovsmannen.
--->
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="sv"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Skapa event - Clean Time</title>
 
@@ -338,7 +327,7 @@ utan skriftligt tillstånd från upphovsmannen.
       <p class="helper-text">Ange lösenord för att skapa event.</p>
 
       <label for="adminPassword">Lösenord</label>
-      <input type="password" id="adminPassword" placeholder="Lösenord" autocomplete="current-password" />
+      <input type="password" id="adminPassword" placeholder="Lösenord" autocomplete="current-password">
       <button type="button" id="loginButton">Logga in</button>
       <a href="/" class="back-button">← Till huvudmenyn</a>
 
@@ -350,16 +339,16 @@ utan skriftligt tillstånd från upphovsmannen.
       <p class="helper-text">Skapa event och få färdiga länkar, QR-koder och flyer.</p>
 
       <label for="eventName">Eventnamn</label>
-      <input type="text" id="eventName" placeholder="Exempelvis Gullbranna 2027" />
+      <input type="text" id="eventName" placeholder="Exempelvis Gullbranna 2027">
 
       <label for="eventSlug">Event-ID / slug</label>
-      <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027" />
+      <input type="text" id="eventSlug" placeholder="exempelvis gullbranna-2027">
 
       <label for="startDate">Startdatum</label>
-      <input type="date" id="startDate" />
+      <input type="date" id="startDate">
 
       <label for="endDate">Slutdatum</label>
-      <input type="date" id="endDate" />
+      <input type="date" id="endDate">
 
       <button type="button" id="createEventButton">Skapa event</button>
 
@@ -470,19 +459,10 @@ utan skriftligt tillstånd från upphovsmannen.
   </main>
 
   <footer class="footer">
-    <img
-      src="/assets/na-logo.png"
-      alt="Narcotics Anonymous, Anonyma Narkomaner"
-      class="footer-logo"
-    >
+    <img src="/assets/na-logo.png" alt="Narcotics Anonymous, Anonyma Narkomaner" class="footer-logo">
   </footer>
 
-  <img
-    id="naLogoPdf"
-    src="/assets/na-logo.png"
-    style="display:none"
-    crossorigin="anonymous"
-  >
+  <img id="naLogoPdf" src="/assets/na-logo.png" style="display:none" crossorigin="anonymous">
 
   <script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
@@ -781,24 +761,24 @@ utan skriftligt tillstånd från upphovsmannen.
 
       pdf.setTextColor(30, 79, 154);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(38);
-      pdf.text(title, 105, 38, { align: "center", maxWidth: 180 });
+      pdf.setFontSize(46);
+      pdf.text(title, 105, 30, { align: "center", maxWidth: 185 });
 
       pdf.setTextColor(31, 41, 55);
       pdf.setFontSize(27);
-      pdf.text(mainText.split("\\n"), 105, 78, { align: "center", lineHeightFactor: 1.18 });
+      pdf.text(mainText.split("\\n"), 105, 60, { align: "center", lineHeightFactor: 1.18 });
 
-      pdf.addImage(qrDataUrl, "PNG", 45, 108, 120, 120);
+      pdf.addImage(qrDataUrl, "PNG", 51, 82, 108, 108);
 
       pdf.setTextColor(30, 79, 154);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(13);
-      pdf.text(urlText, 105, 240, { align: "center", maxWidth: 180 });
+      pdf.text(urlText, 105, 198, { align: "center", maxWidth: 180 });
 
       pdf.setTextColor(31, 41, 55);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(18);
-      pdf.text(helpText.split("\\n"), 105, 264, { align: "center", lineHeightFactor: 1.25 });
+      pdf.text(helpText.split("\\n"), 105, 220, { align: "center", lineHeightFactor: 1.25 });
 
       const logo = document.getElementById("naLogoPdf");
 
@@ -807,7 +787,7 @@ utan skriftligt tillstånd från upphovsmannen.
           logo,
           "PNG",
           69.25,
-          276,
+          238,
           71.5,
           19.5
         );
@@ -821,5 +801,6 @@ utan skriftligt tillstånd från upphovsmannen.
     document.getElementById("flyerSvButton").addEventListener("click", () => createFlyer("sv"));
     document.getElementById("flyerEnButton").addEventListener("click", () => createFlyer("en"));
   </script>
-</body>
-</html>
+
+
+</body></html>
