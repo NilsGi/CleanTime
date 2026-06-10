@@ -236,7 +236,7 @@ utan skriftligt tillstånd från upphovsmannen.
     th:last-child,
     td:last-child {
       width: 76px;
-      text-align: right;
+      text-align: center;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -836,22 +836,12 @@ utan skriftligt tillstånd från upphovsmannen.
         return;
       }
 
-      const max = Math.max(...rows.map(row => row.count), 1);
-
-      target.innerHTML = rows.map(row => {
-        const width = Math.max(3, Math.round((row.count / max) * 100));
-        return `
+      target.innerHTML = rows.map(row => `
           <tr>
             <td>${row[labelKey]}</td>
-            <td class="bar-cell">
-              <div class="bar">
-                <div class="bar-fill" style="width:${width}%"></div>
-              </div>
-            </td>
             <td>${row.count}</td>
           </tr>
-        `;
-      }).join("");
+      `).join("");
     }
 
     function resetStatistics() {
