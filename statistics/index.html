@@ -353,6 +353,28 @@ utan skriftligt tillstånd från upphovsmannen.
     </section>
 
     <section class="card">
+      <h2>Milstolpar idag</h2>
+      <p class="helper-text">
+        Antal personer som exakt idag har uppnått en viss drogfri tid.
+        Månader och år räknas som riktiga kalenderdatum.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Milstolpe</th>
+              <th class="bar-cell"></th>
+              <th>Antal</th>
+            </tr>
+          </thead>
+          <tbody id="milestoneTableBody">
+            <tr><td colspan="3">Välj ett event.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Fördelning efter drogfri tid</h2>
       <p class="helper-text">Antal personer i varje tidsintervall, från första månaden till hela år.</p>
       <div class="table-wrap">
@@ -423,6 +445,7 @@ utan skriftligt tillstånd från upphovsmannen.
     const messageBox = document.getElementById("messageBox");
     const yearTableBody = document.getElementById("yearTableBody");
     const rangeTableBody = document.getElementById("rangeTableBody");
+    const milestoneTableBody = document.getElementById("milestoneTableBody");
 
     let events = [];
     let selectedEventId = "";
@@ -638,6 +661,72 @@ utan skriftligt tillstånd från upphovsmannen.
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
+    function formatDateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return year + "-" + month + "-" + day;
+    }
+
+    function isSameLocalDate(first, second) {
+      return formatDateKey(first) === formatDateKey(second);
+    }
+
+    function getExactMilestonesToday(entries) {
+      const today = todayLocalDate();
+
+      const milestones = [
+        { label: "30 dagar", type: "days", value: 30, sortOrder: 30 },
+        { label: "60 dagar", type: "days", value: 60, sortOrder: 60 },
+        { label: "90 dagar", type: "days", value: 90, sortOrder: 90 },
+        { label: "6 månader", type: "months", value: 6, sortOrder: 180 },
+        { label: "9 månader", type: "months", value: 9, sortOrder: 270 },
+        { label: "1 år", type: "years", value: 1, sortOrder: 365 },
+        { label: "18 månader", type: "months", value: 18, sortOrder: 545 }
+      ];
+
+      const maxYears = Math.max(
+        2,
+        ...entries.map(entry => fullYearsSince(entry.clean_date, today))
+      );
+
+      for (let year = 2; year <= maxYears; year++) {
+        milestones.push({
+          label: year + " år",
+          type: "years",
+          value: year,
+          sortOrder: 1000 + year
+        });
+      }
+
+      return milestones.map(milestone => {
+        const count = entries.filter(entry => {
+          const start = cleanDateToLocalDate(entry.clean_date);
+
+          if (milestone.type === "days") {
+            return daysBetween(entry.clean_date) === milestone.value;
+          }
+
+          if (milestone.type === "months") {
+            return isSameLocalDate(addMonths(start, milestone.value), today);
+          }
+
+          if (milestone.type === "years") {
+            return isSameLocalDate(addYears(start, milestone.value), today);
+          }
+
+          return false;
+        }).length;
+
+        return {
+          label: milestone.label,
+          count,
+          sortOrder: milestone.sortOrder
+        };
+      }).filter(row => row.count > 0)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+
     function fullYearsSince(cleanDate, today) {
       const start = cleanDateToLocalDate(cleanDate);
       let years = today.getFullYear() - start.getFullYear();
@@ -759,6 +848,7 @@ utan skriftligt tillstånd från upphovsmannen.
       resetTopStats();
       yearTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
       rangeTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
+      milestoneTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
     }
 
     async function loadStatistics() {
@@ -771,6 +861,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
       yearTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
       rangeTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
+      milestoneTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
 
       const { data: summaryData, error: summaryError } = await supabaseClient
         .from("clean_time_summary_by_event")
@@ -797,13 +888,16 @@ utan skriftligt tillstånd från upphovsmannen.
         showError("Kunde inte hämta statistik: " + error.message);
         yearTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
         rangeTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
+        milestoneTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
         return;
       }
 
       const entries = data || [];
       const byYear = groupByCleanYear(entries);
       const byRange = groupByRanges(entries);
+      const milestonesToday = getExactMilestonesToday(entries);
 
+      renderRows(milestoneTableBody, milestonesToday, "label", "Inga milstolpar idag.");
       renderRows(yearTableBody, byYear, "year", "Inga registreringar finns.");
       renderRows(rangeTableBody, byRange, "label", "Inga registreringar finns.");
     }
