@@ -228,22 +228,7 @@ utan skriftligt tillstånd från upphovsmannen.
     tr:last-child td { border-bottom: none; }
     td:last-child, th:last-child { text-align: right; font-weight: 800; }
 
-    .bar-cell { width: 45%; }
-
-    .bar {
-      height: 10px;
-      background: #dbeafe;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      background: var(--na-blue);
-      border-radius: 999px;
-      min-width: 3px;
-    }
-
+    
     .message {
       display: none;
       margin-top: 14px;
@@ -363,12 +348,11 @@ utan skriftligt tillstånd från upphovsmannen.
           <thead>
             <tr>
               <th>Milstolpe</th>
-              <th class="bar-cell"></th>
               <th>Antal</th>
             </tr>
           </thead>
           <tbody id="milestoneTableBody">
-            <tr><td colspan="3">Välj ett event.</td></tr>
+            <tr><td colspan="2">Välj ett event.</td></tr>
           </tbody>
         </table>
       </div>
@@ -382,12 +366,11 @@ utan skriftligt tillstånd från upphovsmannen.
           <thead>
             <tr>
               <th>Drogfri tid</th>
-              <th class="bar-cell"></th>
               <th>Antal</th>
             </tr>
           </thead>
           <tbody id="rangeTableBody">
-            <tr><td colspan="3">Välj ett event.</td></tr>
+            <tr><td colspan="2">Välj ett event.</td></tr>
           </tbody>
         </table>
       </div>
@@ -403,12 +386,11 @@ utan skriftligt tillstånd från upphovsmannen.
           <thead>
             <tr>
               <th>Årtal</th>
-              <th class="bar-cell"></th>
               <th>Antal</th>
             </tr>
           </thead>
           <tbody id="yearTableBody">
-            <tr><td colspan="3">Välj ett event.</td></tr>
+            <tr><td colspan="2">Välj ett event.</td></tr>
           </tbody>
         </table>
       </div>
@@ -675,15 +657,25 @@ utan skriftligt tillstånd från upphovsmannen.
     function getExactMilestonesToday(entries) {
       const today = todayLocalDate();
 
-      const milestones = [
-        { label: "30 dagar", type: "days", value: 30, sortOrder: 30 },
+      const milestones = [];
+
+      for (let day = 0; day <= 30; day++) {
+        milestones.push({
+          label: day + " " + pluralize(day, "dag", "dagar"),
+          type: "days",
+          value: day,
+          sortOrder: day
+        });
+      }
+
+      milestones.push(
         { label: "60 dagar", type: "days", value: 60, sortOrder: 60 },
         { label: "90 dagar", type: "days", value: 90, sortOrder: 90 },
         { label: "6 månader", type: "months", value: 6, sortOrder: 180 },
         { label: "9 månader", type: "months", value: 9, sortOrder: 270 },
         { label: "1 år", type: "years", value: 1, sortOrder: 365 },
         { label: "18 månader", type: "months", value: 18, sortOrder: 545 }
-      ];
+      );
 
       const maxYears = Math.max(
         2,
@@ -822,7 +814,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     function renderRows(target, rows, labelKey, emptyText) {
       if (!rows.length) {
-        target.innerHTML = `<tr><td colspan="3">${emptyText}</td></tr>`;
+        target.innerHTML = `<tr><td colspan="2">${emptyText}</td></tr>`;
         return;
       }
 
@@ -846,9 +838,9 @@ utan skriftligt tillstånd från upphovsmannen.
 
     function resetStatistics() {
       resetTopStats();
-      yearTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
-      rangeTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
-      milestoneTableBody.innerHTML = '<tr><td colspan="3">Välj ett event.</td></tr>';
+      yearTableBody.innerHTML = '<tr><td colspan="2">Välj ett event.</td></tr>';
+      rangeTableBody.innerHTML = '<tr><td colspan="2">Välj ett event.</td></tr>';
+      milestoneTableBody.innerHTML = '<tr><td colspan="2">Välj ett event.</td></tr>';
     }
 
     async function loadStatistics() {
@@ -859,9 +851,9 @@ utan skriftligt tillstånd från upphovsmannen.
         return;
       }
 
-      yearTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
-      rangeTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
-      milestoneTableBody.innerHTML = '<tr><td colspan="3">Laddar...</td></tr>';
+      yearTableBody.innerHTML = '<tr><td colspan="2">Laddar...</td></tr>';
+      rangeTableBody.innerHTML = '<tr><td colspan="2">Laddar...</td></tr>';
+      milestoneTableBody.innerHTML = '<tr><td colspan="2">Laddar...</td></tr>';
 
       const { data: summaryData, error: summaryError } = await supabaseClient
         .from("clean_time_summary_by_event")
@@ -886,9 +878,9 @@ utan skriftligt tillstånd från upphovsmannen.
 
       if (error) {
         showError("Kunde inte hämta statistik: " + error.message);
-        yearTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
-        rangeTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
-        milestoneTableBody.innerHTML = '<tr><td colspan="3">Kunde inte hämta statistik.</td></tr>';
+        yearTableBody.innerHTML = '<tr><td colspan="2">Kunde inte hämta statistik.</td></tr>';
+        rangeTableBody.innerHTML = '<tr><td colspan="2">Kunde inte hämta statistik.</td></tr>';
+        milestoneTableBody.innerHTML = '<tr><td colspan="2">Kunde inte hämta statistik.</td></tr>';
         return;
       }
 
