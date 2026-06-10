@@ -209,7 +209,7 @@ utan skriftligt tillstånd från upphovsmannen.
       width: 100%;
       border-collapse: collapse;
       background: white;
-      min-width: 360px;
+      table-layout: fixed;
     }
 
     th, td {
@@ -226,7 +226,20 @@ utan skriftligt tillstånd från upphovsmannen.
     }
 
     tr:last-child td { border-bottom: none; }
-    td:last-child, th:last-child { text-align: right; font-weight: 800; }
+
+    th:first-child,
+    td:first-child {
+      width: auto;
+      word-break: break-word;
+    }
+
+    th:last-child,
+    td:last-child {
+      width: 76px;
+      text-align: right;
+      font-weight: 800;
+      white-space: nowrap;
+    }
 
     
     .message {
@@ -280,7 +293,12 @@ utan skriftligt tillstånd från upphovsmannen.
       .card { border-radius: 18px; padding: 19px; }
       .summary-grid { grid-template-columns: 1fr; }
       select { font-size: 17px; padding: 15px; }
-      th, td { font-size: 14px; padding: 10px; }
+      th, td { font-size: 14px; padding: 10px 8px; }
+
+      th:last-child,
+      td:last-child {
+        width: 64px;
+      }
 
       .footer-logo {
         width: min(88vw, 310px);
