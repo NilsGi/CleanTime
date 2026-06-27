@@ -8,16 +8,14 @@ Koden får inte kopieras, distribueras eller användas
 utan skriftligt tillstånd från upphovsmannen.
 -->
 <!DOCTYPE html>
+
 <html lang="sv">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Drogfri tid</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Drogfri tid</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     :root {
       --na-blue: #1E4F9A;
       --na-blue-dark: #163D78;
@@ -236,55 +234,44 @@ utan skriftligt tillstånd från upphovsmannen.
     }
   </style>
 </head>
-
 <body>
-
-  <section class="hero">
-    <div class="language-toggle">
-      <button type="button" id="langSv">SV</button>
-      <button type="button" id="langEn">EN</button>
-    </div>
-
-    <h1 id="pageTitle">Drogfri tid</h1>
-    <p id="pageSubtitle">Välj event och gå vidare</p>
-  </section>
-
-  <main class="wrap">
-
-    <section class="card">
-      <h2 id="eventHeading">Välj event</h2>
-      <p class="helper-text" id="eventHelp">
+<section class="hero">
+<div class="language-toggle">
+<button id="langSv" type="button">SV</button>
+<button id="langEn" type="button">EN</button>
+</div>
+<h1 id="pageTitle">Drogfri tid</h1>
+<p id="pageSubtitle">Välj event och gå vidare</p>
+</section>
+<main class="wrap">
+<section class="card">
+<h2 id="eventHeading">Välj event</h2>
+<p class="helper-text" id="eventHelp">
         Välj vilket event du vill använda. Valet sparas på denna enhet.
       </p>
-
-      <label for="eventSelect" id="eventLabel">Event</label>
-      <select id="eventSelect">
-        <option value="">Laddar event...</option>
-      </select>
-      <div class="message" id="messageBox"></div>
-    </section>
-
-    <section class="card">
-      <h2 id="goHeading">Gå vidare</h2>
-
-      <div class="button-grid">
-        <a href="#" class="nav-button" id="registerButton">Registrera tid</a>
-        <a href="#" class="nav-button" id="totalButton">Visa total tid</a>
-        <a href="#" class="nav-button secondary" id="manualButton">Manuell registrering</a>
-        <a href="#" class="nav-button secondary" id="statisticsButton">Statistik</a>
-        <a href="/history/index.html" class="nav-button secondary" id="historyButton">Historisk statistik</a>
-        <a href="/create/index.html" class="nav-button admin" id="createButton">Skapa event/QR-koder</a>
-        <a href="/admin/index.html" class="nav-button admin" id="adminButton">Administrera event</a>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="footer">
-    <img src="/assets/na-logo.png" alt="Narcotics Anonymous, Anonyma Narkomaner" class="footer-logo">
-  </footer>
-
-  <script>
+<label for="eventSelect" id="eventLabel">Event</label>
+<select id="eventSelect">
+<option value="">Laddar event...</option>
+</select>
+<div class="message" id="messageBox"></div>
+</section>
+<section class="card">
+<h2 id="goHeading">Gå vidare</h2>
+<div class="button-grid">
+<a class="nav-button" href="#" id="registerButton">Registrera tid</a>
+<a class="nav-button" href="#" id="totalButton">Visa total tid</a>
+<a class="nav-button secondary" href="#" id="manualButton">Manuell registrering</a>
+<a class="nav-button secondary" href="#" id="statisticsButton">Statistik</a>
+<a class="nav-button secondary" href="/history/index.html" id="historyButton">Historisk statistik</a>
+<a class="nav-button admin" href="/create/index.html" id="createButton">Skapa event/QR-koder</a>
+<a class="nav-button admin" href="/admin/index.html" id="adminButton">Administrera event</a>
+<a class="nav-button secondary" href="/changelog/index.html" id="changelogButton">Versionshistorik / Changelog</a></div>
+</section>
+</main>
+<footer class="footer">
+<img alt="Narcotics Anonymous, Anonyma Narkomaner" class="footer-logo" src="/assets/na-logo.png"/>
+<div id="versionInfo" style="margin-top:16px;font-size:13px;color:#64748b;">Version v2.4.0</div></footer>
+<script>
     const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
     const SUPABASE_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
@@ -314,7 +301,9 @@ utan skriftligt tillstånd från upphovsmannen.
         missingEvent: "Välj ett event först.",
         noEvents: "Inga aktiva event finns ännu.",
         errorLoading: "Kunde inte hämta event:",
-        footer: ""
+        footer: "",
+        changelog: "Versionshistorik / Changelog",
+        version: "Version"
       },
       en: {
         pageTitle: "Clean Time",
@@ -336,7 +325,9 @@ utan skriftligt tillstånd från upphovsmannen.
         missingEvent: "Please choose an event first.",
         noEvents: "No active events found.",
         errorLoading: "Could not load events:",
-        footer: ""
+        footer: "",
+        changelog: "Versionshistorik / Changelog",
+        version: "Version"
       }
     };
 
@@ -376,6 +367,8 @@ utan skriftligt tillstånd från upphovsmannen.
       setText("historyButton", t("history"));
       setText("createButton", t("create"));
       setText("adminButton", t("admin"));
+      setText("changelogButton", t("changelog"));
+      document.getElementById("versionInfo").innerText = `${t("version")} v2.4.0`;
 
       renderEvents();
       updateSelectedInfo();
@@ -494,6 +487,5 @@ utan skriftligt tillstånd från upphovsmannen.
     setLanguage(language);
     loadEvents();
   </script>
-
 </body>
 </html>
