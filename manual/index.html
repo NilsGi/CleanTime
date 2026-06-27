@@ -357,12 +357,14 @@ utan skriftligt tillstånd från upphovsmannen.
     const cleanDateInput = document.getElementById("cleanDate");
     const eventTitle = document.getElementById("eventTitle");
     const manualHistoryList = document.getElementById("manualHistoryList");
+    const eventSelect = document.getElementById("eventSelect");
 
     let events = [];
     let selectedEventId = "";
     let selectedEvent = null;
     let registrationStatus = null;
     let registrationIsOpen = false;
+    const MIN_CLEAN_YEAR = 1953;
 
     function showMessage(element, text, type) {
       element.textContent = text;
@@ -388,12 +390,21 @@ utan skriftligt tillstånd från upphovsmannen.
       const selectedDate = new Date(cleanDate + "T00:00:00");
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const cleanYear = Number(cleanDate.substring(0, 4));
 
       if (Number.isNaN(selectedDate.getTime())) {
         return false;
       }
 
+      if (cleanYear < MIN_CLEAN_YEAR) {
+        return false;
+      }
+
       return selectedDate <= today;
+    }
+
+    function isBeforeMinimumCleanYear(cleanDate) {
+      return Number(cleanDate.substring(0, 4)) < MIN_CLEAN_YEAR;
     }
 
     function daysBetween(cleanDate) {
@@ -535,16 +546,19 @@ utan skriftligt tillstånd från upphovsmannen.
       await loadManualHistory();
     }
 
-("change", function () {
-      selectedEventId = this.value;
-      selectedEvent = events.find(event => event.id === selectedEventId) || null;
+    if (eventSelect) {
+      eventSelect.addEventListener("change", async function () {
+        selectedEventId = this.value;
+        selectedEvent = events.find(event => event.id === selectedEventId) || null;
 
-      if (selectedEvent) {
-        localStorage.setItem("selectedEventSlug", selectedEvent.slug);
-      }
+        if (selectedEvent) {
+          localStorage.setItem("selectedEventSlug", selectedEvent.slug);
+        }
 
-      updateSelectedEventInfo();
-    });
+        updateSelectedEventInfo();
+        await loadManualHistory();
+      });
+    }
 
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
@@ -589,6 +603,11 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const cleanDate = convertRawDate(rawDate);
 
+      if (isBeforeMinimumCleanYear(cleanDate)) {
+        showMessage(messageBox, "Årtalet måste vara 1953 eller senare.", "error");
+        return;
+      }
+
       if (!isValidDateString(cleanDate)) {
         showMessage(messageBox, "Datumet är ogiltigt eller ligger i framtiden.", "error");
         return;
@@ -599,12 +618,29 @@ utan skriftligt tillstånd från upphovsmannen.
       button.innerText = "Registrerar...";
 
       let error;
+      let updatedEntry = null;
 
       if (editingManualId) {
-        ({ error } = await supabaseClient
+        const updateResult = await supabaseClient
           .from("clean_time_entries")
-          .update({ clean_date: cleanDate })
-          .eq("id", editingManualId));
+          .update({
+            clean_date: cleanDate,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", editingManualId)
+          .eq("event_id", selectedEventId)
+          .eq("created_by", "manual")
+          .select("id,clean_date,updated_at")
+          .maybeSingle();
+
+        error = updateResult.error;
+        updatedEntry = updateResult.data;
+
+        if (!error && !updatedEntry) {
+          error = {
+            message: "Ingen manuell registrering hittades att uppdatera. Ladda om sidan och försök igen."
+          };
+        }
       } else {
         ({ error } = await supabaseClient
           .from("clean_time_entries")
