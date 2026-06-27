@@ -763,48 +763,71 @@ utan skriftligt tillstånd från upphovsmannen.
 
       const isSv = language === "sv";
       const title = currentEvent.name.toUpperCase();
-      const mainText = isSv ? "Registrera din\\ndrogfria tid här" : "Register your\\nclean time here";
-      const helpText = isSv ? "Behöver du hjälp?\\nPrata med registreringen." : "Need help?\\nPlease speak with the registration.";
-      const urlText = currentLinks.registerUrl;
+
+      const heading = isSv
+        ? "Registrera din\ndrogfria tid här"
+        : "Register your\nclean time here";
+
+      const step1 = isSv
+        ? "1. Scanna QR-koden"
+        : "1. Scan the QR code";
+
+      const step2 = isSv
+        ? "2. Skriv in det datumet då du blev drogfri\ntex 20260205"
+        : "2. Enter the date you became clean,\ne.g. 20260205";
+
+      const infoText = isSv
+        ? "Har du inte möjlighet att göra detta själv\nså prata med registreringen så hjälper dom till"
+        : "If you are not able to do this yourself,\nplease talk to the registration team\nand they will help you";
 
       pdf.setFillColor(255, 255, 255);
       pdf.rect(0, 0, 210, 297, "F");
 
       pdf.setTextColor(30, 79, 154);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(50);
+      pdf.setFontSize(45);
       pdf.text(title, 105, 30, { align: "center", maxWidth: 185 });
 
-      pdf.setTextColor(31, 41, 55);
-      pdf.setFontSize(27);
-      pdf.text(mainText.split("\\n"), 105, 70, { align: "center", lineHeightFactor: 1.18 });
+      pdf.setDrawColor(30, 79, 154);
+      pdf.setLineWidth(0.8);
+      pdf.line(25, 55, 185, 55);
 
-      pdf.addImage(qrDataUrl, "PNG", 51, 95, 108, 108);
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(26);
+      pdf.text(heading.split("\n"), 105, 68, { align: "center", lineHeightFactor: 1.2 });
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(18);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text(step1, 45, 95);
+      pdf.text(step2.split("\n"), 45, 115, { lineHeightFactor: 1.3 });
 
       pdf.setTextColor(30, 79, 154);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(13);
-
-      pdf.setTextColor(31, 41, 55);
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(22);
-      pdf.text(helpText.split("\\n"), 105, 230, { align: "center", lineHeightFactor: 1.25 });
+      pdf.setFontSize(17);
+      pdf.text(infoText.split("\n"), 105, 140, { align: "center", lineHeightFactor: 1.3 });
+
+      pdf.addImage(qrDataUrl, "PNG", 67, 165, 76, 76);
+
+      pdf.setDrawColor(30, 79, 154);
+      pdf.setLineWidth(0.8);
+      pdf.line(25, 250, 185, 250);
 
       const logo = document.getElementById("naLogoPdf");
 
       try {
-      const logoWidth = 88;
+        const logoWidth = 88;
+        const logoHeight = 25;
 
-const logoHeight = 25;
-
-pdf.addImage(
-  logo,
-  "PNG",
-  (210 - logoWidth) / 2,
-  255,
-  logoWidth,
-  logoHeight
-  );
+        pdf.addImage(
+          logo,
+          "PNG",
+          (210 - logoWidth) / 2,
+          265,
+          logoWidth,
+          logoHeight
+        );
       } catch (e) {
         console.log("Logga kunde inte läggas till i PDF", e);
       }
