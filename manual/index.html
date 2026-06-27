@@ -319,6 +319,11 @@ utan skriftligt tillstånd från upphovsmannen.
 
       <div id="messageBox" class="message"></div>
 
+      <div class="result-box" id="manualHistoryBox" style="display:block;margin-top:20px;">
+        <h3 style="margin-bottom:12px;color:#1E4F9A;">Senaste manuella registreringar</h3>
+        <div id="manualHistoryList">Inga registreringar ännu.</div>
+      </div>
+
       <a href="/" class="back-button">← Till huvudmenyn</a>
     </section>
 
@@ -349,6 +354,7 @@ utan skriftligt tillstånd från upphovsmannen.
     const messageBox = document.getElementById("messageBox");
     const cleanDateInput = document.getElementById("cleanDate");
     const eventTitle = document.getElementById("eventTitle");
+    const manualHistoryList = document.getElementById("manualHistoryList");
 
     let events = [];
     let selectedEventId = "";
@@ -447,6 +453,55 @@ utan skriftligt tillstånd från upphovsmannen.
       document.title = "Manuell registrering - " + selectedEvent.name;
     }
 
+
+    let editingManualId = null;
+
+    async function loadManualHistory() {
+      if (!selectedEventId || !manualHistoryList) return;
+
+      const { data, error } = await supabaseClient
+        .from("clean_time_entries")
+        .select("id,clean_date,created_at")
+        .eq("event_id", selectedEventId)
+        .eq("created_by", "manual")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error || !data || data.length === 0) {
+        manualHistoryList.innerHTML = "Inga registreringar ännu.";
+        return;
+      }
+
+      manualHistoryList.innerHTML = data.map(row => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #dbe3ef;">
+          <div>
+              <div><strong>${row.clean_date}</strong></div>
+              <div style="font-size:12px;color:#64748b;">
+                ${new Date(row.created_at).toLocaleString("sv-SE")}
+              </div>
+            </div>
+          <div>
+            <button type="button" onclick="editManualEntry('${row.id}','${row.clean_date}')" style="width:auto;padding:8px 12px;margin-right:6px;">✏️</button>
+            <button type="button" onclick="deleteManualEntry('${row.id}')" style="width:auto;padding:8px 12px;background:#b91c1c;">🗑️</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    window.editManualEntry = function(id, cleanDate) {
+      editingManualId = id;
+      cleanDateInput.value = cleanDate.replaceAll("-", "");
+      document.getElementById("submitButton").innerText = "Uppdatera registrering";
+      cleanDateInput.focus();
+    };
+
+    window.deleteManualEntry = async function(id) {
+      if (!confirm("Ta bort registreringen?")) return;
+      await supabaseClient.from("clean_time_entries").delete().eq("id", id);
+      await loadManualHistory();
+    };
+
+
     async function loadEvents() {
       const { data, error } = await supabaseClient
         .from("event_status")
@@ -475,6 +530,7 @@ utan skriftligt tillstånd från upphovsmannen.
       }
 
       updateSelectedEventInfo();
+      await loadManualHistory();
     }
 
 ("change", function () {
@@ -540,14 +596,23 @@ utan skriftligt tillstånd från upphovsmannen.
       button.disabled = true;
       button.innerText = "Registrerar...";
 
-      const { error } = await supabaseClient
-        .from("clean_time_entries")
-        .insert([{
-          clean_date: cleanDate,
-          event_id: selectedEventId,
-          device_id: "manual-" + crypto.randomUUID(),
-          created_by: "manual"
-        }]);
+      let error;
+
+      if (editingManualId) {
+        ({ error } = await supabaseClient
+          .from("clean_time_entries")
+          .update({ clean_date: cleanDate })
+          .eq("id", editingManualId));
+      } else {
+        ({ error } = await supabaseClient
+          .from("clean_time_entries")
+          .insert([{
+            clean_date: cleanDate,
+            event_id: selectedEventId,
+            device_id: "manual-" + crypto.randomUUID(),
+            created_by: "manual"
+          }]));
+      }
 
       button.disabled = false;
       button.innerText = "Registrera manuellt";
@@ -558,8 +623,13 @@ utan skriftligt tillstånd från upphovsmannen.
         return;
       }
 
-      showMessage(messageBox, "Tiden är registrerad ❤️", "success");
+      showMessage(messageBox,
+        editingManualId ? "Registreringen är uppdaterad ❤️" : "Tiden är registrerad ❤️",
+        "success");
       document.getElementById("manualForm").reset();
+      editingManualId = null;
+      button.innerText = "Registrera manuellt";
+      await loadManualHistory();
     });
   </script>
 
