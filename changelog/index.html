@@ -1,10 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CleanTime – Changelog</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>CleanTime – Changelog</title>
+<style>
     :root {
       --bg: #f4f7fb;
       --card: #ffffff;
@@ -101,415 +102,420 @@
       .grid { grid-template-columns: 1fr; }
       .release, header { box-shadow: none; break-inside: avoid; }
     }
-  </style>
+  
+.home-button {
+  display:inline-block;
+  margin-top:20px;
+  padding:12px 18px;
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  text-decoration:none;
+  border-radius:12px;
+  font-weight:700;
+  border:1px solid rgba(255,255,255,.25);
+  transition:background .2s ease, transform .2s ease;
+}
+.home-button:hover{
+  background:rgba(255,255,255,.25);
+  transform:translateY(-1px);
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>CleanTime – Changelog</h1>
-      <p>Versionshistorik för CleanTime, baserad på de funktioner och ändringar som faktiskt har byggts eller diskuterats i projektet.</p>
-      <div class="meta">
-        <span class="pill">Aktuell version: v2.2.0</span>
-        <span class="pill">Format: SemVer</span>
-        <span class="pill">Uppdaterad: 2026-06-27</span>
-      </div>
-    </header>
-
-    <div class="grid">
-      <nav aria-label="Versionsmeny">
-        <h2>Versioner</h2>
-        <a href="#v220">v2.2.0 – Nuvarande stabil version</a>
-        <a href="#v210">v2.1.0 – Egen ändring</a>
-        <a href="#v200">v2.0.0 – Multi Event Edition</a>
-        <a href="#v190">v1.9.0 – Förbättrad registrering</a>
-        <a href="#v180">v1.8.0 – Startsida</a>
-        <a href="#v170">v1.7.0 – Manuell registrering</a>
-        <a href="#v160">v1.6.0 – PDF och QR</a>
-        <a href="#v150">v1.5.0 – Admin och export</a>
-        <a href="#v140">v1.4.0 – Statistik</a>
-        <a href="#v130">v1.3.0 – Eventstöd</a>
-        <a href="#v120">v1.2.0 – Totalvisning</a>
-        <a href="#v110">v1.1.0 – Databas och låsning</a>
-        <a href="#v100">v1.0.0 – Första versionen</a>
-        <a href="#roadmap">Roadmap</a>
-      </nav>
-
-      <main>
-        <section class="release" id="v220">
-          <h2>v2.2.0 – Nuvarande stabil version <span class="badge current">Aktuell</span></h2>
-          <p class="subtitle">Senaste stabila läget efter korrigeringar kring egen registrering och årsvalidering.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Validering som stoppar orimliga årtal före 1953.</li>
-                <li>Lista över manuella registreringar under manuell inmatning.</li>
-                <li>Fältet <code>created_at</code> visas i listan över manuella registreringar.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Förbättrat flöde för att korrigera manuella registreringar.</li>
-                <li>Årsbegränsningen har lagts till i flera relevanta HTML-filer.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Förhindrar registrering med felaktigt startår.</li>
-                <li>Minskar risken att manuella registreringar blir svåra att spåra eller korrigera.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v210">
-          <h2>v2.1.0 – Egen ändring av registrering</h2>
-          <p class="subtitle">Användaren kan korrigera sin egen registrering utan att skapa en ny dubblett.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Möjlighet att ändra egen registrering.</li>
-                <li>Uppdatering av befintlig registrering kopplad till samma enhet.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Registreringsflödet hanterar både ny registrering och ändring.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Minskar behovet av administrativ korrigering vid felinmatning.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v200">
-          <h2>v2.0.0 – CleanTime Multi Event Edition <span class="badge major">Major</span></h2>
-          <p class="subtitle">Samlad version där systemet fungerar runt flera event och separata länkar.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Stöd för flera event.</li>
-                <li>Eventbaserade länkar till registrering, total, statistik, admin och manuell inmatning.</li>
-                <li>Eventnamn visas i relevanta vyer.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Databasen anpassad för event via <code>event_id</code>.</li>
-                <li>Unikhet ändrad från enbart enhet till enhet + event.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Samma enhet kan användas på flera olika event.</li>
-                <li>Färre konflikter vid flera samtidiga arrangemang.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v190">
-          <h2>v1.9.0 – Förbättrad registrering</h2>
-          <p class="subtitle">Tydligare registreringsflöde och bättre datumhantering.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Datumformat med åtta siffror: ÅÅÅÅMMDD.</li>
-                <li>Tydligare bekräftelse efter registrering.</li>
-                <li>NA-logotyp på alla sidor.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Mer centrerad och tydlig registreringsvy.</li>
-                <li>Förbättrad validering av datum.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Minskad risk för felaktigt datumformat.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v180">
-          <h2>v1.8.0 – Startsida och navigering</h2>
-          <p class="subtitle">En samlad ingång till systemets olika vyer.</p>
-          <div class="cols single">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Startsida med meny.</li>
-                <li>Val av event.</li>
-                <li>Knappar/länkar till registrering, total, admin, statistik och manuell inmatning.</li>
-                <li>Språkval i gränssnittet.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v170">
-          <h2>v1.7.0 – Manuell registrering</h2>
-          <p class="subtitle">Admin kan lägga in drogfri tid åt andra.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Manuell registrering via adminflöde.</li>
-                <li>Inmatning via datum.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Separat vy för manuell inmatning.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Gör det möjligt att registrera personer som inte kan eller vill använda egen enhet.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v160">
-          <h2>v1.6.0 – PDF, QR och flyers</h2>
-          <p class="subtitle">Material för event och enkel registrering via QR-kod.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>QR-kod till registreringslänk.</li>
-                <li>PDF-flyer för event.</li>
-                <li>Svensk och engelsk flyer.</li>
-                <li>Eventnamn i rubrik på flyer.</li>
-                <li>Kopieringsknappar för länkar.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Rubriker, hjälptexter och QR-placering justerade i PDF.</li>
-                <li>Sidfot och logotyp justerade.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Textproblem i flyer.</li>
-                <li>Layoutproblem vid PDF-generering.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v150">
-          <h2>v1.5.0 – Admin och export</h2>
-          <p class="subtitle">Grundläggande administration av registreringar.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Adminsida.</li>
-                <li>Lista över registreringar.</li>
-                <li>Ta bort registrering.</li>
-                <li>Rensa registreringar.</li>
-                <li>Export till CSV-fil.</li>
-                <li>Enkel lösenordsruta för admin.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Adminvyn förbättrad med fler fält och tydligare översikt.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Fel vid rensning och hantering av registreringar åtgärdade under arbetet.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v140">
-          <h2>v1.4.0 – Statistik</h2>
-          <p class="subtitle">Statistiksidor och sammanställningar.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Statistiksida.</li>
-                <li>Antal personer.</li>
-                <li>Total tid.</li>
-                <li>Genomsnittlig drogfri tid.</li>
-                <li>Längsta och kortaste drogfri tid.</li>
-                <li>Fördelning efter drogfri tid.</li>
-                <li>Fördelning efter startår.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Intervall för drogfri tid förtydligades.</li>
-                <li>Kortaste tid visas mer läsbart vid korta perioder.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Beräkningar justerade för dagar, månader och år.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v130">
-          <h2>v1.3.0 – Eventstöd</h2>
-          <p class="subtitle">Grund för att koppla registreringar till specifika event.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Tabellen <code>events</code>.</li>
-                <li>Eventnamn.</li>
-                <li>Event-slug.</li>
-                <li>Eventval i gränssnittet.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Registreringar började kopplas till event.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Fel vid tomt eller saknat event hanterades.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v120">
-          <h2>v1.2.0 – Totalvisning och livevy</h2>
-          <p class="subtitle">Visning av total drogfri tid för event.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Totalsida.</li>
-                <li>Total antal drogfria dagar.</li>
-                <li>Antal personer.</li>
-                <li>Total tid i år, månader och dagar.</li>
-                <li>Flip-räknare med sju siffror.</li>
-                <li>Automatisk uppdatering.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Räknaren anpassades för storbild/livevisning.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>Felräkning runt startdag och totaldagar justerades.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v110">
-          <h2>v1.1.0 – Databas, Supabase och dubbelregistreringsskydd</h2>
-          <p class="subtitle">Från lokal prototyp till databasdriven registrering.</p>
-          <div class="cols">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Supabase-koppling.</li>
-                <li>Tabellen <code>clean_time_entries</code>.</li>
-                <li>Sparning av registreringar.</li>
-                <li>Device ID.</li>
-                <li>Skydd mot dubbelregistrering per enhet.</li>
-              </ul>
-            </div>
-            <div class="box changed">
-              <h3>Ändrat</h3>
-              <ul>
-                <li>Registreringar hämtas från databas istället för att bara hanteras lokalt.</li>
-              </ul>
-            </div>
-            <div class="box fixed">
-              <h3>Fixat</h3>
-              <ul>
-                <li>RLS/policy-problem vid insert.</li>
-                <li>Fel vid Supabase-konfiguration.</li>
-                <li>Problem med dubbletter.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="v100">
-          <h2>v1.0.0 – Första prototypen</h2>
-          <p class="subtitle">Första fungerande grunden för CleanTime.</p>
-          <div class="cols single">
-            <div class="box added">
-              <h3>Tillagt</h3>
-              <ul>
-                <li>Enkel HTML-sida.</li>
-                <li>Registrering av drogfri tid.</li>
-                <li>Datumfält för startdatum.</li>
-                <li>Grundläggande beräkning av antal drogfria dagar.</li>
-                <li>Första visuella designen.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="release" id="roadmap">
-          <h2>Roadmap – ej genomfört ännu <span class="badge planned">Planerat</span></h2>
-          <p class="subtitle">Detta är idéer/framtida utveckling och ska inte blandas ihop med genomförda versioner.</p>
-          <div class="cols single">
-            <div class="box changed">
-              <h3>Kommande idéer</h3>
-              <ul>
-                <li>PWA/app-liknande installation på mobil.</li>
-                <li>Offline-stöd.</li>
-                <li>Backup/export av hela event.</li>
-                <li>Mer avancerad statistik.</li>
-                <li>Mer robust inloggning och behörighetsstyrning.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-      </main>
+<div class="wrap">
+<header>
+<h1>CleanTime – Changelog</h1>
+<p>Versionshistorik för CleanTime, baserad på de funktioner och ändringar som faktiskt har byggts eller diskuterats i projektet.</p>
+<div class="meta">
+<span class="pill">Aktuell version: v2.2.0</span>
+<span class="pill">Format: SemVer</span>
+<span class="pill">Uppdaterad: 2026-06-27</span>
+</div>
+<a class="home-button" href="/index.html">← Huvudmeny</a></header>
+<div class="notice">
+<strong>Notering:</strong> v2.3.0 är borttagen som genomförd version eftersom den tidigare innehöll funktioner som inte faktiskt har genomförts. Nästa nya funktion bör därför bli v2.3.0 när den är byggd.
     </div>
-
-    <footer>
+<div class="grid">
+<nav aria-label="Versionsmeny">
+<h2>Versioner</h2>
+<a href="#v220">v2.2.0 – Nuvarande stabil version</a>
+<a href="#v210">v2.1.0 – Egen ändring</a>
+<a href="#v200">v2.0.0 – Multi Event Edition</a>
+<a href="#v190">v1.9.0 – Förbättrad registrering</a>
+<a href="#v180">v1.8.0 – Startsida</a>
+<a href="#v170">v1.7.0 – Manuell registrering</a>
+<a href="#v160">v1.6.0 – PDF och QR</a>
+<a href="#v150">v1.5.0 – Admin och export</a>
+<a href="#v140">v1.4.0 – Statistik</a>
+<a href="#v130">v1.3.0 – Eventstöd</a>
+<a href="#v120">v1.2.0 – Totalvisning</a>
+<a href="#v110">v1.1.0 – Databas och låsning</a>
+<a href="#v100">v1.0.0 – Första versionen</a>
+<a href="#roadmap">Roadmap</a>
+</nav>
+<main>
+<section class="release" id="v220">
+<h2>v2.2.0 – Nuvarande stabil version <span class="badge current">Aktuell</span></h2>
+<p class="subtitle">Senaste stabila läget efter korrigeringar kring egen registrering och årsvalidering.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Validering som stoppar orimliga årtal före 1953.</li>
+<li>Lista över manuella registreringar under manuell inmatning.</li>
+<li>Fältet <code>created_at</code> visas i listan över manuella registreringar.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Förbättrat flöde för att korrigera manuella registreringar.</li>
+<li>Årsbegränsningen har lagts till i flera relevanta HTML-filer.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Förhindrar registrering med felaktigt födelse-/startår.</li>
+<li>Minskar risken att manuella registreringar blir svåra att spåra eller korrigera.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v210">
+<h2>v2.1.0 – Egen ändring av registrering</h2>
+<p class="subtitle">Användaren kan korrigera sin egen registrering utan att skapa en ny dubblett.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Möjlighet att ändra egen registrering.</li>
+<li>Uppdatering av befintlig registrering kopplad till samma enhet.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Registreringsflödet hanterar både ny registrering och ändring.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Minskar behovet av administrativ korrigering vid felinmatning.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v200">
+<h2>v2.0.0 – CleanTime Multi Event Edition <span class="badge major">Major</span></h2>
+<p class="subtitle">Samlad version där systemet fungerar runt flera event och separata länkar.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Stöd för flera event.</li>
+<li>Eventbaserade länkar till registrering, total, statistik, admin och manuell inmatning.</li>
+<li>Eventnamn visas i relevanta vyer.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Databasen anpassad för event via <code>event_id</code>.</li>
+<li>Unikhet ändrad från enbart enhet till enhet + event.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Samma enhet kan användas på flera olika event.</li>
+<li>Färre konflikter vid flera samtidiga arrangemang.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v190">
+<h2>v1.9.0 – Förbättrad registrering</h2>
+<p class="subtitle">Tydligare registreringsflöde och bättre datumhantering.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Datumformat med åtta siffror: ÅÅÅÅMMDD.</li>
+<li>Tydligare bekräftelse efter registrering.</li>
+<li>Texten “Bara för idag ❤️”.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Mer centrerad och tydlig registreringsvy.</li>
+<li>Förbättrad validering av datum.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Minskad risk för felaktigt datumformat.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v180">
+<h2>v1.8.0 – Startsida och navigering</h2>
+<p class="subtitle">En samlad ingång till systemets olika vyer.</p>
+<div class="cols single">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Startsida med meny.</li>
+<li>Val av event.</li>
+<li>Knappar/länkar till registrering, total, admin, statistik och manuell inmatning.</li>
+<li>Språkval i gränssnittet.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v170">
+<h2>v1.7.0 – Manuell registrering</h2>
+<p class="subtitle">Admin kan lägga in drogfri tid åt andra.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Manuell registrering via adminflöde.</li>
+<li>Inmatning via datum.</li>
+<li>Inmatning via år, månader och dagar.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Separat vy för manuell inmatning.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Gör det möjligt att registrera personer som inte kan eller vill använda egen enhet.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v160">
+<h2>v1.6.0 – PDF, QR och flyers</h2>
+<p class="subtitle">Material för event och enkel registrering via QR-kod.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>QR-kod till registreringslänk.</li>
+<li>PDF-flyer för event.</li>
+<li>Svensk och engelsk flyer.</li>
+<li>Eventnamn i rubrik på flyer.</li>
+<li>Kopieringsknappar för länkar.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Rubriker, hjälptexter och QR-placering justerade i PDF.</li>
+<li>Sidfot och logotyp justerade.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Textproblem i flyer.</li>
+<li>Layoutproblem vid PDF-generering.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v150">
+<h2>v1.5.0 – Admin och export</h2>
+<p class="subtitle">Grundläggande administration av registreringar.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Adminsida.</li>
+<li>Lista över registreringar.</li>
+<li>Ta bort registrering.</li>
+<li>Rensa registreringar.</li>
+<li>Export till Excel.</li>
+<li>Enkel lösenordsruta för admin.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Adminvyn förbättrad med fler fält och tydligare översikt.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Fel vid rensning och hantering av registreringar åtgärdade under arbetet.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v140">
+<h2>v1.4.0 – Statistik</h2>
+<p class="subtitle">Statistiksidor och sammanställningar.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Statistiksida.</li>
+<li>Antal personer.</li>
+<li>Total tid.</li>
+<li>Genomsnittlig drogfri tid.</li>
+<li>Längsta och kortaste drogfri tid.</li>
+<li>Fördelning efter drogfri tid.</li>
+<li>Fördelning efter startår.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Intervall för drogfri tid förtydligades.</li>
+<li>Kortaste tid visas mer läsbart vid korta perioder.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Beräkningar justerade för dagar, månader och år.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v130">
+<h2>v1.3.0 – Eventstöd</h2>
+<p class="subtitle">Grund för att koppla registreringar till specifika event.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Tabellen <code>events</code>.</li>
+<li>Eventnamn.</li>
+<li>Event-slug.</li>
+<li>Eventval i gränssnittet.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Registreringar började kopplas till event.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Fel vid tomt eller saknat event hanterades.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v120">
+<h2>v1.2.0 – Totalvisning och livevy</h2>
+<p class="subtitle">Visning av total drogfri tid för event.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Totalsida.</li>
+<li>Total antal drogfria dagar.</li>
+<li>Antal personer.</li>
+<li>Total tid i år, månader och dagar.</li>
+<li>Flip-räknare med sju siffror.</li>
+<li>Automatisk uppdatering.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Räknaren anpassades för storbild/livevisning.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>Felräkning runt startdag och totaldagar justerades.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v110">
+<h2>v1.1.0 – Databas, Supabase och dubbelregistreringsskydd</h2>
+<p class="subtitle">Från lokal prototyp till databasdriven registrering.</p>
+<div class="cols">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Supabase-koppling.</li>
+<li>Tabellen <code>clean_time_entries</code>.</li>
+<li>Sparning av registreringar.</li>
+<li>Device ID.</li>
+<li>Skydd mot dubbelregistrering per enhet.</li>
+</ul>
+</div>
+<div class="box changed">
+<h3>Ändrat</h3>
+<ul>
+<li>Registreringar hämtas från databas istället för att bara hanteras lokalt.</li>
+</ul>
+</div>
+<div class="box fixed">
+<h3>Fixat</h3>
+<ul>
+<li>RLS/policy-problem vid insert.</li>
+<li>Fel vid Supabase-konfiguration.</li>
+<li>Problem med dubbletter.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="v100">
+<h2>v1.0.0 – Första prototypen</h2>
+<p class="subtitle">Första fungerande grunden för CleanTime.</p>
+<div class="cols single">
+<div class="box added">
+<h3>Tillagt</h3>
+<ul>
+<li>Enkel HTML-sida.</li>
+<li>Registrering av drogfri tid.</li>
+<li>Datumfält för startdatum.</li>
+<li>Grundläggande beräkning av antal drogfria dagar.</li>
+<li>Första visuella designen.</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="release" id="roadmap">
+<h2>Roadmap – ej genomfört ännu <span class="badge planned">Planerat</span></h2>
+<p class="subtitle">Detta är idéer/framtida utveckling och ska inte blandas ihop med genomförda versioner.</p>
+<div class="cols single">
+<div class="box changed">
+<h3>Kommande idéer</h3>
+<ul>
+<li>PWA/app-liknande installation på mobil.</li>
+<li>Offline-stöd.</li>
+<li>Backup/export av hela event.</li>
+<li>Mer avancerad statistik.</li>
+<li>Mer robust inloggning och behörighetsstyrning.</li>
+</ul>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer>
       CleanTime changelog • SemVer • v2.3.0 reserveras för nästa faktiska nya funktion.
     </footer>
-  </div>
+</div>
 </body>
 </html>
