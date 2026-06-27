@@ -1,528 +1,509 @@
-<!--
-Clean Time
-Copyright (c) 2026 N.A. Sverige
-
-All rights reserved.
-
-Koden får inte kopieras, distribueras eller användas
-utan skriftligt tillstånd från upphovsmannen.
--->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
 <head>
-<link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="apple-touch-icon" href="/assets/favicon.png">
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>CleanTime – Changelog</title>
-<style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <title>CleanTime - Changelog</title>
+  <style>
     :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
       --text: #172033;
       --muted: #64748b;
       --blue: #1e4f9a;
+      --blue-dark: #16386d;
       --blue-soft: #e8f0ff;
       --green: #1f8a5b;
-      --orange: #b56a00;
+      --amber: #a86400;
       --red: #b42318;
       --border: #d9e2ef;
       --shadow: 0 12px 30px rgba(15, 23, 42, .08);
-      --radius: 18px;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #e9f1ff 0, #f4f7fb 36%, #f8fafc 100%);
+      background: var(--bg);
       color: var(--text);
       line-height: 1.55;
     }
-    .wrap { max-width: 1060px; margin: 0 auto; padding: 42px 18px 70px; }
-    header {
-      background: linear-gradient(135deg, #1e4f9a, #16386d);
+
+    a {
+      color: inherit;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--blue), var(--blue-dark));
       color: #fff;
-      border-radius: 26px;
-      padding: 38px 34px;
+      border-radius: 8px;
+      padding: 30px;
       box-shadow: var(--shadow);
-      margin-bottom: 24px;
     }
-    header h1 { margin: 0 0 8px; font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -.04em; }
-    header p { margin: 0; max-width: 760px; color: rgba(255,255,255,.86); font-size: 1.08rem; }
-    .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-    .pill {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 12px; border-radius: 999px;
-      background: rgba(255,255,255,.14); color: #fff; font-weight: 650; font-size: .92rem;
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.08;
     }
+
+    .hero p {
+      margin: 0;
+      max-width: 850px;
+      color: rgba(255, 255, 255, .86);
+      font-size: 1.06rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, .35);
+      background: rgba(255, 255, 255, .14);
+      color: #fff;
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .meta-card,
+    .notice,
+    .release,
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .meta-card {
+      padding: 14px;
+    }
+
+    .meta-card span {
+      display: block;
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 650;
+    }
+
+    .meta-card strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--text);
+      font-size: 1.04rem;
+    }
+
     .notice {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      color: #7c2d12;
-      border-radius: var(--radius);
       padding: 16px 18px;
-      margin: 0 0 24px;
+      margin-bottom: 18px;
+      border-color: #cfe2ff;
+      background: #eef7ff;
+      color: #163d78;
     }
-    .grid { display: grid; grid-template-columns: 260px 1fr; gap: 22px; align-items: start; }
-    nav {
-      position: sticky; top: 18px;
-      background: rgba(255,255,255,.78);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
+
+    .layout {
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
     }
-    nav h2 { margin: 0 0 10px; font-size: 1rem; }
-    nav a { display: block; color: var(--blue); text-decoration: none; padding: 7px 8px; border-radius: 10px; font-weight: 600; }
-    nav a:hover { background: var(--blue-soft); }
-    main { display: grid; gap: 18px; }
+
+    .toc {
+      position: sticky;
+      top: 14px;
+      padding: 14px;
+    }
+
+    .toc h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .toc a {
+      display: block;
+      padding: 7px 8px;
+      border-radius: 8px;
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 650;
+      font-size: .94rem;
+    }
+
+    .toc a:hover {
+      background: var(--blue-soft);
+    }
+
+    main {
+      display: grid;
+      gap: 14px;
+    }
+
     .release {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 22px;
-      box-shadow: var(--shadow);
+      padding: 20px;
     }
-    .release h2 { margin: 0; font-size: 1.38rem; letter-spacing: -.02em; }
-    .subtitle { color: var(--muted); margin: 4px 0 16px; }
-    .badge { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: .78rem; font-weight: 800; margin-left: 8px; vertical-align: middle; }
-    .current { background: #dcfce7; color: #166534; }
-    .major { background: var(--blue-soft); color: var(--blue); }
-    .planned { background: #fef3c7; color: #92400e; }
-    .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .box { border: 1px solid #e5edf7; border-radius: 14px; padding: 14px; background: #fbfdff; }
-    .box h3 { margin: 0 0 8px; font-size: .94rem; text-transform: uppercase; letter-spacing: .06em; }
-    .added h3 { color: var(--green); }
-    .changed h3 { color: var(--orange); }
-    .fixed h3 { color: var(--red); }
-    ul { margin: 0; padding-left: 19px; }
-    li { margin: 5px 0; }
-    .single { grid-template-columns: 1fr; }
-    footer { color: var(--muted); text-align: center; margin-top: 30px; font-size: .92rem; }
-    @media (max-width: 850px) {
-      .grid { grid-template-columns: 1fr; }
-      nav { position: static; }
-      .cols { grid-template-columns: 1fr; }
-      header { padding: 28px 22px; }
+
+    .release h2 {
+      margin: 0;
+      font-size: 1.38rem;
+      line-height: 1.25;
     }
+
+    .summary {
+      color: var(--muted);
+      margin: 6px 0 14px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 800;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    .current {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .major {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .change-box {
+      border: 1px solid #e5edf7;
+      background: #fbfdff;
+      border-radius: 8px;
+      padding: 13px;
+      min-width: 0;
+    }
+
+    .change-box h3 {
+      margin: 0 0 8px;
+      font-size: .86rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .added h3 {
+      color: var(--green);
+    }
+
+    .changed h3 {
+      color: var(--amber);
+    }
+
+    .fixed h3 {
+      color: var(--red);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: .95rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 9px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--blue);
+      background: #f8fbff;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 24px;
+      font-size: .92rem;
+    }
+
+    @media (max-width: 900px) {
+      .meta,
+      .layout,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+      }
+
+      .hero {
+        padding: 24px 18px;
+      }
+    }
+
     @media print {
-      body { background: #fff; }
-      nav { display: none; }
-      .grid { grid-template-columns: 1fr; }
-      .release, header { box-shadow: none; break-inside: avoid; }
+      body {
+        background: #fff;
+      }
+
+      .toc,
+      .hero-actions {
+        display: none;
+      }
+
+      .layout,
+      .grid,
+      .meta {
+        display: block;
+      }
+
+      .release,
+      .meta-card,
+      .notice,
+      .hero {
+        box-shadow: none;
+        break-inside: avoid;
+        margin-bottom: 12px;
+      }
     }
-  
-.home-button {
-  display:inline-block;
-  margin-top:20px;
-  padding:12px 18px;
-  background:rgba(255,255,255,.15);
-  color:#fff;
-  text-decoration:none;
-  border-radius:12px;
-  font-weight:700;
-  border:1px solid rgba(255,255,255,.25);
-  transition:background .2s ease, transform .2s ease;
-}
-.home-button:hover{
-  background:rgba(255,255,255,.25);
-  transform:translateY(-1px);
-}
-</style>
+  </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-<h1>CleanTime – Changelog</h1>
-<p>Versionshistorik för CleanTime, baserad på de funktioner och ändringar som faktiskt har byggts eller diskuterats i projektet.</p>
-<div class="meta">
-<span class="pill">Aktuell version: v2.2.0</span>
-<span class="pill">Format: SemVer</span>
-<span class="pill">Uppdaterad: 2026-06-27</span>
-</div>
-<a class="home-button" href="/index.html">← Huvudmeny</a></header>
-<div class="grid">
-<nav aria-label="Versionsmeny">
-<h2>Versioner</h2>
-<a href="#v220">v2.2.0 – Nuvarande stabil version</a>
-<a href="#v210">v2.1.0 – Egen ändring</a>
-<a href="#v200">v2.0.0 – Multi Event Edition</a>
-<a href="#v190">v1.9.0 – Förbättrad registrering</a>
-<a href="#v180">v1.8.0 – Startsida</a>
-<a href="#v170">v1.7.0 – Manuell registrering</a>
-<a href="#v160">v1.6.0 – PDF och QR</a>
-<a href="#v150">v1.5.0 – Admin och export</a>
-<a href="#v140">v1.4.0 – Statistik</a>
-<a href="#v130">v1.3.0 – Eventstöd</a>
-<a href="#v120">v1.2.0 – Totalvisning</a>
-<a href="#v110">v1.1.0 – Databas och låsning</a>
-<a href="#v100">v1.0.0 – Första versionen</a>
-<a href="#roadmap">Roadmap</a>
-</nav>
-<main>
-<section class="release" id="v220">
-<h2>v2.2.0 – Nuvarande stabil version <span class="badge current">Aktuell</span></h2>
-<p class="subtitle">Senaste stabila läget efter korrigeringar kring egen registrering och årsvalidering.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Validering som stoppar orimliga årtal före 1953.</li>
-<li>Lista över manuella registreringar under manuell inmatning.</li>
-<li>Fältet <code>created_at</code> visas i listan över manuella registreringar.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Förbättrat flöde för att korrigera manuella registreringar.</li>
-<li>Årsbegränsningen har lagts till i flera relevanta HTML-filer.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Förhindrar registrering med felaktigt startår.</li>
-<li>Minskar risken att manuella registreringar blir svåra att spåra eller korrigera.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v210">
-<h2>v2.1.0 – Egen ändring av registrering</h2>
-<p class="subtitle">Användaren kan korrigera sin egen registrering utan att skapa en ny dubblett.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Möjlighet att ändra egen registrering.</li>
-<li>Uppdatering av befintlig registrering kopplad till samma enhet.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Registreringsflödet hanterar både ny registrering och ändring.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Minskar behovet av administrativ korrigering vid felinmatning.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v200">
-<h2>v2.0.0 – CleanTime Multi Event Edition <span class="badge major">Major</span></h2>
-<p class="subtitle">Samlad version där systemet fungerar runt flera event och separata länkar.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Stöd för flera event.</li>
-<li>Eventbaserade länkar till registrering, total, statistik, admin och manuell inmatning.</li>
-<li>Eventnamn visas i relevanta vyer.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Databasen anpassad för event via <code>event_id</code>.</li>
-<li>Unikhet ändrad från enbart enhet till enhet + event.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Samma enhet kan användas på flera olika event.</li>
-<li>Färre konflikter vid flera samtidiga arrangemang.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v190">
-<h2>v1.9.0 – Förbättrad registrering</h2>
-<p class="subtitle">Tydligare registreringsflöde och bättre datumhantering.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Datumformat med åtta siffror: ÅÅÅÅMMDD.</li>
-<li>Tydligare bekräftelse efter registrering.</li>
-<li>NA-logotyp på alla sidor.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Mer centrerad och tydlig registreringsvy.</li>
-<li>Förbättrad validering av datum.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Minskad risk för felaktigt datumformat.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v180">
-<h2>v1.8.0 – Startsida och navigering</h2>
-<p class="subtitle">En samlad ingång till systemets olika vyer.</p>
-<div class="cols single">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Startsida med meny.</li>
-<li>Val av event.</li>
-<li>Knappar/länkar till registrering, total, admin, statistik och manuell inmatning.</li>
-<li>Språkval i gränssnittet.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v170">
-<h2>v1.7.0 – Manuell registrering</h2>
-<p class="subtitle">Admin kan lägga in drogfri tid åt andra.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Manuell registrering via adminflöde.</li>
-<li>Inmatning via datum.</li>
-<li>Inmatning via år, månader och dagar.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Separat vy för manuell inmatning.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Gör det möjligt att registrera personer som inte kan eller vill använda egen enhet.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v160">
-<h2>v1.6.0 – PDF, QR och flyers</h2>
-<p class="subtitle">Material för event och enkel registrering via QR-kod.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>QR-kod till registreringslänk.</li>
-<li>PDF-flyer för event.</li>
-<li>Svensk och engelsk flyer.</li>
-<li>Eventnamn i rubrik på flyer.</li>
-<li>Kopieringsknappar för länkar.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Rubriker, hjälptexter och QR-placering justerade i PDF.</li>
-<li>Sidfot och logotyp justerade.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Textproblem i flyer.</li>
-<li>Layoutproblem vid PDF-generering.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v150">
-<h2>v1.5.0 – Admin och export</h2>
-<p class="subtitle">Grundläggande administration av registreringar.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Adminsida.</li>
-<li>Lista över registreringar.</li>
-<li>Ta bort registrering.</li>
-<li>Rensa registreringar.</li>
-<li>Export till CSV-fil.</li>
-<li>Enkel lösenordsruta för admin.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Adminvyn förbättrad med fler fält och tydligare översikt.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Fel vid rensning och hantering av registreringar åtgärdade under arbetet.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v140">
-<h2>v1.4.0 – Statistik</h2>
-<p class="subtitle">Statistiksidor och sammanställningar.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Statistiksida.</li>
-<li>Antal personer.</li>
-<li>Total tid.</li>
-<li>Genomsnittlig drogfri tid.</li>
-<li>Längsta och kortaste drogfri tid.</li>
-<li>Fördelning efter drogfri tid.</li>
-<li>Fördelning efter startår.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Intervall för drogfri tid förtydligades.</li>
-<li>Kortaste tid visas mer läsbart vid korta perioder.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Beräkningar justerade för dagar, månader och år.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v130">
-<h2>v1.3.0 – Eventstöd</h2>
-<p class="subtitle">Grund för att koppla registreringar till specifika event.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Tabellen <code>events</code>.</li>
-<li>Eventnamn.</li>
-<li>Event-slug.</li>
-<li>Eventval i gränssnittet.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Registreringar började kopplas till event.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Fel vid tomt eller saknat event hanterades.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v120">
-<h2>v1.2.0 – Totalvisning och livevy</h2>
-<p class="subtitle">Visning av total drogfri tid för event.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Totalsida.</li>
-<li>Total antal drogfria dagar.</li>
-<li>Antal personer.</li>
-<li>Total tid i år, månader och dagar.</li>
-<li>Flip-räknare med sju siffror.</li>
-<li>Automatisk uppdatering.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Räknaren anpassades för storbild/livevisning.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>Felräkning runt startdag och totaldagar justerades.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v110">
-<h2>v1.1.0 – Databas, Supabase och dubbelregistreringsskydd</h2>
-<p class="subtitle">Från lokal prototyp till databasdriven registrering.</p>
-<div class="cols">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Supabase-koppling.</li>
-<li>Tabellen <code>clean_time_entries</code>.</li>
-<li>Sparning av registreringar.</li>
-<li>Device ID.</li>
-<li>Skydd mot dubbelregistrering per enhet.</li>
-</ul>
-</div>
-<div class="box changed">
-<h3>Ändrat</h3>
-<ul>
-<li>Registreringar hämtas från databas istället för att bara hanteras lokalt.</li>
-</ul>
-</div>
-<div class="box fixed">
-<h3>Fixat</h3>
-<ul>
-<li>RLS/policy-problem vid insert.</li>
-<li>Fel vid Supabase-konfiguration.</li>
-<li>Problem med dubbletter.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="v100">
-<h2>v1.0.0 – Första prototypen</h2>
-<p class="subtitle">Första fungerande grunden för CleanTime.</p>
-<div class="cols single">
-<div class="box added">
-<h3>Tillagt</h3>
-<ul>
-<li>Enkel HTML-sida.</li>
-<li>Registrering av drogfri tid.</li>
-<li>Datumfält för startdatum.</li>
-<li>Grundläggande beräkning av antal drogfria dagar.</li>
-<li>Första visuella designen.</li>
-</ul>
-</div>
-</div>
-</section>
-<section class="release" id="roadmap">
-<h2>Roadmap – ej genomfört ännu <span class="badge planned">Planerat</span></h2>
-<p class="subtitle">Detta är idéer/framtida utveckling och ska inte blandas ihop med genomförda versioner.</p>
-<div class="cols single">
-<div class="box changed">
-<h3>Kommande idéer</h3>
-<ul>
-<li>PWA/app-liknande installation på mobil.</li>
-<li>Offline-stöd.</li>
-<li>Backup/export av hela event.</li>
-<li>Mer avancerad statistik.</li>
-<li>Mer robust inloggning och behörighetsstyrning.</li>
-</ul>
-</div>
-</div>
-</section>
-</main>
-</div>
-<footer>
-      CleanTime changelog • SemVer • v2.3.0 reserveras för nästa faktiska nya funktion.
-    </footer>
-</div>
+  <div class="wrap">
+    <header class="hero">
+      <h1>CleanTime Changelog</h1>
+      <p>Professionell release-logg för CleanTime, med tydligare beskrivning av vad som faktiskt lades till, ändrades och rättades per version.</p>
+      <div class="hero-actions">
+        <a class="button" href="/index.html">Till huvudmeny</a>
+        <a class="button" href="#v2-3-0">Aktuell version</a>
+      </div>
+    </header>
+
+    <section class="meta" aria-label="Projektöversikt">
+      <div class="meta-card"><span>Projekt</span><strong>CleanTime</strong></div>
+      <div class="meta-card"><span>Projektstart</span><strong>2026-06-04</strong></div>
+      <div class="meta-card"><span>Aktuell version</span><strong>v2.3.0</strong></div>
+      <div class="meta-card"><span>Versionsmodell</span><strong>SemVer</strong></div>
+    </section>
+
+    <section class="notice">
+      <strong>Notering:</strong> Denna release-logg är en professionell SemVer-rekonstruktion baserad på commit-historik, nuvarande filer och utvecklingsarbetet i chatten. Alla versioner behöver därför inte ha funnits som faktiska Git-taggar vid tidpunkten.
+    </section>
+
+    <div class="layout">
+      <nav class="toc" aria-label="Versionsmeny">
+        <h2>Versioner</h2>
+        <a href="#v2-3-0">v2.3.0 - Egen och manuell kontroll</a>
+        <a href="#v2-2-0">v2.2.0 - Changelog och favicon</a>
+        <a href="#v2-1-0">v2.1.0 - Statistik</a>
+        <a href="#v2-0-0">v2.0.0 - Arkivering</a>
+        <a href="#v1-9-0">v1.9.0 - Eventdatum</a>
+        <a href="#v1-8-0">v1.8.0 - Branding</a>
+        <a href="#v1-7-0">v1.7.0 - QR och flyer</a>
+        <a href="#v1-6-0">v1.6.0 - Meny och språk</a>
+        <a href="#v1-5-0">v1.5.0 - Multi-event</a>
+        <a href="#v1-4-0">v1.4.0 - Admin</a>
+        <a href="#v1-3-0">v1.3.0 - Manuell registrering</a>
+        <a href="#v1-2-0">v1.2.0 - Totalvisning</a>
+        <a href="#v1-1-0">v1.1.0 - Supabase</a>
+        <a href="#v1-0-0">v1.0.0 - Första version</a>
+      </nav>
+
+      <main>
+        <section class="release" id="v2-3-0">
+          <h2>v2.3.0 - Egen och manuell kontroll <span class="label current">Aktuell</span></h2>
+          <p class="summary"><strong>2026-06-27.</strong> Egen registrering kan ändras från samma enhet och manuell registrering blev spårbar, redigerbar och säkrare att använda.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Funktion för att ändra sin egen registrering från samma enhet.</li><li>Kontroll som känner av befintlig registrering och erbjuder uppdatering.</li><li>Lista över senaste manuella registreringarna.</li><li>Visning av <code>created_at</code>.</li><li>Redigering och borttagning från listan.</li><li>Stopp för datum före 1953.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Registreringsflödet ändrades så att användaren kan korrigera sitt eget datum.</li><li>Manuell registrering fungerar som både nyregistrering och korrigering.</li><li>Gränssnittet växlar läge när en registrering redigeras.</li><li>Datumvalideringen blev tydligare.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Löser problemet där en användare som råkat skriva fel datum tidigare blev låst av enhetsregistreringen.</li><li>Minskar risken att felaktiga manuella registreringar blir kvar.</li><li>Gör det möjligt att rätta fel utan direkt databasändring.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v2-2-0">
+          <h2>v2.2.0 - Changelog och favicon</h2>
+          <p class="summary"><strong>2026-06-27.</strong> Projektets versionshistorik och visuella webbläsaridentitet lades till.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Changelog-sida.</li><li>Knapp till changelog från huvudmenyn.</li><li>Aktuell version i huvudmenyn.</li><li>Favicon och Apple Touch Icon.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Huvudmenyn kompletterades med versionsinformation.</li><li>Texten för skapa-event-flödet förtydligades.</li><li>Felaktig versionsmärkning korrigerades.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Rättade tidigare changelog där ej genomförda funktioner fanns med.</li><li>Rättade exportbeskrivning från Excel till CSV där det stämde bättre.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v2-1-0">
+          <h2>v2.1.0 - Statistik och milstolpar</h2>
+          <p class="summary"><strong>2026-06-10.</strong> Statistikvyn blev mer exakt, mer läsbar och bättre anpassad för mobil.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Milstolpar idag.</li><li>0-30 dagar, 60 dagar och 90 dagar.</li><li>6 månader, 9 månader, 1 år och 18 månader.</li><li>Hela år från 2 år och framåt.</li><li>Kalenderbaserad beräkning för månader och år.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Statistiktabeller byggdes om till två kolumner.</li><li>Liggande staplar togs bort.</li><li>Antal-kolumnen centrerades.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Bättre visning på mobil.</li><li>Tomma stapelkolumner togs bort.</li><li>Horisontell scroll minskades.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v2-0-0">
+          <h2>v2.0.0 - Arkivering och historik <span class="label major">Major</span></h2>
+          <p class="summary"><strong>2026-06-08.</strong> CleanTime fick stöd för avslutade event och sparade historiska resultat.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Arkivering av event.</li><li>Sparade slutresultat.</li><li>Historisk statistik-sida.</li><li>Lista för att välja arkiverat event.</li><li>Visning av startdatum, slutdatum och arkiveringstid.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Aktiva och arkiverade event separerades.</li><li>Historiska resultat fryses efter arkivering.</li><li>Adminflödet fick stöd för avslutade event.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Gamla event räknas inte längre om som pågående.</li><li>Tidigare event kan visas utan att ligga kvar som aktiva registreringar.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-9-0">
+          <h2>v1.9.0 - Eventdatum och öppet/stängt</h2>
+          <p class="summary"><strong>2026-06-08.</strong> Event fick startdatum, slutdatum och regler för när registrering är tillåten.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Startdatum på event.</li><li>Slutdatum på event.</li><li>Status för om registrering är öppen eller stängd.</li><li>Datumkontroll i registrering och manuell registrering.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Registrering kan bara ske under aktiv eventperiod.</li><li>Skapa-event-flödet fick datumfält.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Förhindrar registrering före start.</li><li>Förhindrar registrering efter slut.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-8-0">
+          <h2>v1.8.0 - NA-branding</h2>
+          <p class="summary"><strong>2026-06-08.</strong> Appen fick tydligare avsändare och mer konsekvent visuell identitet.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>NA-logotyp i assets.</li><li>Vit NA-logotyp.</li><li>Logotyp i sidfot.</li><li>Logotyp i PDF-flyer.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Sidfötter med text ersattes med logotyp.</li><li>Logotyper anpassades för mobil.</li><li>PDF-layouten justerades för logotyp.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Felaktig logoplacering i PDF rättades.</li><li>Onödig sidfotstext togs bort.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-7-0">
+          <h2>v1.7.0 - Eventmaterial, QR och PDF</h2>
+          <p class="summary"><strong>2026-06-07.</strong> Skapande av eventlänkar, QR-koder och flyers samlades i ett eget flöde.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Create-sida.</li><li>QR-koder för registrering, total och statistik.</li><li>PDF-flyer på svenska och engelska.</li><li>Eventnamn i flyer.</li><li>Kopieringsknappar för länkar.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Flyerlayout justerades med större QR-kod.</li><li>Hjälptexten gjordes tydligare.</li><li>Länktext under QR-kod togs bort.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Textplacering i PDF rättades.</li><li>Logotypplacering i PDF rättades.</li><li>Lösenordshantering i create-flödet förbättrades.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-6-0">
+          <h2>v1.6.0 - Huvudmeny och flerspråkighet</h2>
+          <p class="summary"><strong>2026-06-06.</strong> Appen fick gemensam navigation, språkstöd och tydligare sidstruktur.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Huvudmeny.</li><li>Val av aktivt event.</li><li>Knappar till centrala vyer.</li><li>Svenska och engelska.</li><li>Sparat eventval på enheten.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Sidor flyttades till mappar.</li><li>URL-strukturen anpassades för publicering.</li><li>Appen blev mer sammanhållen.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Konsekvent navigation mellan sidor.</li><li>Samma event kan användas i flera vyer.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-5-0">
+          <h2>v1.5.0 - Multi-event</h2>
+          <p class="summary"><strong>2026-06-06.</strong> CleanTime kunde hantera flera event parallellt.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Eventbaserad registrering.</li><li>Eventbaserad totalsida.</li><li>Eventbaserad admin.</li><li>Eventbaserad manuell registrering.</li><li>Event-id och slug i länkar.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Registreringar kopplas till <code>event_id</code>.</li><li>Samma enhet kan användas i flera event.</li><li>Admin filtreras på valt event.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Löste problem där <code>device_id</code> kunde blockera deltagare mellan event.</li><li>Minskar behovet av kodändring per event.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-4-0">
+          <h2>v1.4.0 - Admin och export</h2>
+          <p class="summary"><strong>2026-06-05.</strong> Administratörer fick möjlighet att hantera registreringar och exportera data.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Adminsida.</li><li>Lista över registreringar.</li><li>Redigera och ta bort registrering.</li><li>Rensa alla registreringar.</li><li>Export till CSV.</li><li>Dashboard med antal och total tid.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Admin separerades från registreringsflödet.</li><li>Export och rensning blev adminfunktioner.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Fel vid rensning av tabell hanterades.</li><li>Sammanfattningsvärden i admin blev mer konsekventa.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-3-0">
+          <h2>v1.3.0 - Manuell registrering</h2>
+          <p class="summary"><strong>2026-06-05.</strong> Admin kan registrera deltagare som inte själva använder enhet.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Separat manuell registreringssida.</li><li>Inloggning för manuell registrering.</li><li>Datumformat <code>ÅÅÅÅMMDD</code>.</li><li>Eventval i manuell registrering.</li><li>Markering med <code>created_by = manual</code>.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Manuell registrering separerades från admin.</li><li>Lösenordshanteringen förbättrades senare.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Deltagare utan egen enhet kan registreras.</li><li>Registreringsbord kan mata in uppgifter åt andra.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-2-0">
+          <h2>v1.2.0 - Totalvisning</h2>
+          <p class="summary"><strong>2026-06-05.</strong> En separat vy skapades för att visa total drogfri tid på skärm.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Separat totalsida.</li><li>Total drogfri tid.</li><li>Antal registrerade personer.</li><li>År, månader och dagar.</li><li>Split-flap-räknare.</li><li>Automatisk uppdatering.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Totalvisningen separerades från registreringssidan.</li><li>Räknaren anpassades för större skärmar.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Totaldagar justerades.</li><li>Uppdateringslogiken förbättrades.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-1-0">
+          <h2>v1.1.0 - Supabase och grundstatistik</h2>
+          <p class="summary"><strong>2026-06-04.</strong> Prototypen blev databasdriven och fick grundläggande statistik.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Supabase-integration.</li><li>Sparning i <code>clean_time_entries</code>.</li><li><code>device_id</code> mot dubbelregistrering.</li><li>Personer, total tid, medel, längsta och kortaste.</li><li>Datumformat <code>ÅÅÅÅMMDD</code>.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Från lokal prototyp till databasdriven modell.</li><li>Startdag räknas som dag 1.</li><li>År beräknas med 365,25 dagar och månad med cirka 30,44 dagar.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Minskar dubbelregistrering från samma enhet.</li><li>Tidiga beräkningsfel rättades.</li></ul></div>
+          </div>
+        </section>
+
+        <section class="release" id="v1-0-0">
+          <h2>v1.0.0 - Första fungerande version</h2>
+          <p class="summary"><strong>2026-06-04.</strong> CleanTime gick från idé till fungerande HTML-prototyp.</p>
+          <div class="grid">
+            <div class="change-box added"><h3>Tillagt</h3><ul><li>Första registreringssidan.</li><li>Inmatning av drogfrihetsdatum.</li><li>Beräkning av drogfri tid i dagar.</li><li>Grundläggande användargränssnitt.</li><li>Första visuella designen.</li></ul></div>
+            <div class="change-box changed"><h3>Ändrat</h3><ul><li>Projektet fick sin första körbara form.</li></ul></div>
+            <div class="change-box fixed"><h3>Fixat</h3><ul><li>Grundläggande datumvalidering infördes.</li></ul></div>
+          </div>
+        </section>
+
+        
+       
+    <footer>CleanTime changelog - v2.3.0 - uppdaterad 2026-06-27</footer>
+  </div>
 </body>
 </html>
