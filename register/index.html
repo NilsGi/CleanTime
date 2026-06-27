@@ -10,8 +10,6 @@ utan skriftligt tillstånd från upphovsmannen.
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/favicon.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drogfri tid</title>
@@ -434,9 +432,13 @@ input[type="text"]::placeholder {
         errorDateFormat: "Ange datum som ÅÅÅÅMMDD",
         errorInvalidDate: "Datumet är ogiltigt.",
         errorFutureDate: "Datumet kan inte ligga i framtiden.",
+        errorTooOldDate: "Årtalet måste vara 1953 eller senare.",
         errorOldUniqueIndex: "Denna enhet är redan registrerad i databasen. För flera event behöver databasen ändras till unikt index på device_id + event_id.",
         errorGeneric: "Något gick fel:",
-        successRegistered: "Din drogfria tid är registrerad ❤️"
+        successRegistered: "Din drogfria tid är registrerad ❤️",
+        successUpdated: "Din drogfria tid är uppdaterad ❤️",
+        updateButton: "Uppdatera",
+        updating: "Uppdaterar..."
       },
       en: {
         pageTitle: "Clean Time",
@@ -482,9 +484,13 @@ input[type="text"]::placeholder {
         errorDateFormat: "Enter the date as YYYYMMDD",
         errorInvalidDate: "The date is invalid.",
         errorFutureDate: "The date cannot be in the future.",
+        errorTooOldDate: "The year must be 1953 or later.",
         errorOldUniqueIndex: "This device is already registered in the database. For multiple events, the database needs a unique index on device_id + event_id.",
         errorGeneric: "Something went wrong:",
-        successRegistered: "Your clean time has been registered ❤️"
+        successRegistered: "Your clean time has been registered ❤️",
+        successUpdated: "Your clean time has been updated ❤️",
+        updateButton: "Update",
+        updating: "Updating..."
       }
     };
 
@@ -501,6 +507,7 @@ input[type="text"]::placeholder {
     let eventName = null;
     let registrationStatus = null;
     let registrationIsOpen = false;
+    let existingEntryId = null;
 
     const cleanDateInput = document.getElementById("cleanDate");
     const submitButton = document.getElementById("submitButton");
@@ -531,7 +538,7 @@ input[type="text"]::placeholder {
       setText("registerHeading", t("registerHeading"));
       setText("dateLabel", t("dateLabel"));
       setText("dateHelp", t("dateHelp"));
-      setText("submitButton", t("registerButton"));
+      setText("submitButton", existingEntryId ? t("updateButton") : t("registerButton"));
 
       cleanDateInput.placeholder = t("datePlaceholder");
 
@@ -684,6 +691,31 @@ input[type="text"]::placeholder {
       return true;
     }
 
+
+    async function loadExistingRegistration() {
+      if (!eventId) return;
+
+      const { data, error } = await supabaseClient
+        .from("clean_time_entries")
+        .select("id,clean_date")
+        .eq("device_id", deviceId)
+        .eq("event_id", eventId)
+        .limit(1);
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        existingEntryId = data[0].id;
+        cleanDateInput.value = String(data[0].clean_date).replaceAll("-", "");
+        submitButton.innerText = t("updateButton");
+      } else {
+        existingEntryId = null;
+      }
+    }
+
     async function loadStats() {
       if (!eventId) {
         setEmptyStats();
@@ -758,8 +790,7 @@ input[type="text"]::placeholder {
       }
 
       if (existingEntry && existingEntry.length > 0) {
-        showMessage(t("errorAlreadyRegistered"), "error");
-        return;
+        existingEntryId = existingEntry[0].id;
       }
 
       const rawDate = cleanDateInput.value;
@@ -783,25 +814,49 @@ input[type="text"]::placeholder {
         return;
       }
 
+      const inputYear = Number(rawDate.substring(0, 4));
+
+      if (inputYear < 1953) {
+        showMessage(t("errorTooOldDate"), "error");
+        return;
+      }
+
       if (selectedDate > today) {
         showMessage(t("errorFutureDate"), "error");
         return;
       }
 
       submitButton.disabled = true;
-      submitButton.innerText = t("registering");
+      submitButton.innerText = existingEntryId ? t("updating") : t("registering");
 
-      const { error } = await supabaseClient
-        .from("clean_time_entries")
-        .insert([{
-          clean_date: cleanDate,
-          device_id: deviceId,
-          event_id: eventId,
-          created_by: "user"
-        }]);
+      let result;
 
+      if (existingEntryId) {
+        result = await supabaseClient
+          .from("clean_time_entries")
+          .update({
+            clean_date: cleanDate,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existingEntryId)
+          .eq("device_id", deviceId)
+          .eq("event_id", eventId);
+      } else {
+        result = await supabaseClient
+          .from("clean_time_entries")
+          .insert([{
+            clean_date: cleanDate,
+            device_id: deviceId,
+            event_id: eventId,
+            created_by: "user"
+          }]);
+      }
+
+      const { error } = result;
+
+      
       submitButton.disabled = false;
-      submitButton.innerText = t("registerButton");
+      submitButton.innerText = existingEntryId ? t("updateButton") : t("registerButton");
 
       if (error) {
         if (error.message && error.message.includes("clean_time_device_unique")) {
@@ -813,8 +868,11 @@ input[type="text"]::placeholder {
         }
         console.log(error);
       } else {
-        showMessage(t("successRegistered"), "success");
-        document.getElementById("cleanForm").reset();
+        showMessage(
+          existingEntryId ? t("successUpdated") : t("successRegistered"),
+          "success"
+        );
+        await loadExistingRegistration();
         await loadStats();
       }
     });
@@ -825,7 +883,10 @@ input[type="text"]::placeholder {
     async function init() {
       setLanguage(language);
       const eventLoaded = await loadEvent();
-      if (eventLoaded) await loadStats();
+      if (eventLoaded) {
+        await loadExistingRegistration();
+        await loadStats();
+      }
     }
 
     init();
