@@ -1,0 +1,253 @@
+<html lang="sv"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NA Sverige – API-test möten</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.45; background:#f7f7f7; color:#111; }
+    h1 { margin-bottom: 0.2rem; }
+    .card { background:white; border:1px solid #ddd; border-radius:12px; padding:16px; margin:16px 0; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    button { padding:10px 14px; border-radius:8px; border:1px solid #222; background:#111; color:white; cursor:pointer; margin-right:8px; margin-top:8px; }
+    button.secondary { background:white; color:#111; }
+    input, select { padding:9px; border:1px solid #bbb; border-radius:8px; width:100%; max-width:720px; box-sizing:border-box; }
+    label { display:block; margin:10px 0 4px; font-weight:600; }
+    pre { white-space: pre-wrap; word-break: break-word; background:#111; color:#eee; padding:12px; border-radius:8px; max-height:380px; overflow:auto; }
+    table { border-collapse: collapse; width:100%; background:white; }
+    th, td { border-bottom:1px solid #ddd; padding:8px; text-align:left; vertical-align:top; font-size:14px; }
+    th { background:#f0f0f0; position:sticky; top:0; }
+    .ok { color: #087a2a; font-weight:700; }
+    .err { color: #b00020; font-weight:700; }
+    .muted { color:#666; }
+  </style>
+</head>
+<body>
+  <h1>NA Sverige – hämta möten</h1>
+  <p class="muted">Denna fil testar <code>POST https://www.nasverige.org/api/posts/</code> med endpoint <code>/meetings</code>.</p>
+
+  <div class="card">
+    <label for="endpoint">Endpoint</label>
+    <input id="endpoint" value="/meetings?pagination[page]=1&amp;pagination[pageSize]=100">
+
+    <label for="pages">Antal sidor att testa</label>
+    <select id="pages">
+      <option value="1">1 sida</option>
+      <option value="3">3 sidor</option>
+      <option value="10" selected="">10 sidor</option>
+      <option value="999">Alla sidor tills tomt svar</option>
+    </select>
+
+    <button onclick="fetchOne()">Hämta sida 1</button>
+    <button onclick="fetchAll()">Hämta flera/alla sidor</button>
+    <button class="secondary" onclick="clearOutput()">Rensa</button>
+  </div>
+
+  <div class="card">
+    <h2>Status</h2>
+    <div id="status">Inte startat.</div>
+  </div>
+
+  <div class="card">
+    <h2>Tabell</h2>
+    <div id="count" class="muted">Inga möten hämtade.</div>
+    <div style="overflow:auto; max-height:520px;">
+      <table id="table">
+        <thead>
+          <tr>
+            <th>Namn</th>
+            <th>Dag</th>
+            <th>Tid</th>
+            <th>Stad</th>
+            <th>Adress</th>
+            <th>Format</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Rådata / felsökning</h2>
+    <pre id="debug"></pre>
+  </div>
+
+<script>
+const API_URL = "https://www.nasverige.org/api/posts/";
+
+function log(msg, obj) {
+  const el = document.getElementById("debug");
+  const line = typeof obj === "undefined" ? msg : msg + "\n" + JSON.stringify(obj, null, 2);
+  el.textContent += line + "\n\n";
+}
+
+function setStatus(html) {
+  document.getElementById("status").innerHTML = html;
+}
+
+function clearOutput() {
+  document.getElementById("debug").textContent = "";
+  document.querySelector("#table tbody").innerHTML = "";
+  document.getElementById("count").textContent = "Inga möten hämtade.";
+  setStatus("Rensat.");
+}
+
+function extractMeetings(json) {
+  // Försöker stödja flera möjliga Strapi/Next-format
+  if (Array.isArray(json)) return json;
+  if (Array.isArray(json?.data)) return json.data;
+  if (Array.isArray(json?.data?.data)) return json.data.data;
+  if (Array.isArray(json?.results)) return json.results;
+  if (Array.isArray(json?.meetings)) return json.meetings;
+  return [];
+}
+
+function getMeta(json) {
+  return json?.meta?.pagination || json?.data?.meta?.pagination || null;
+}
+
+function field(item, names) {
+  const a = item?.attributes || item;
+  for (const name of names) {
+    if (a?.[name] !== undefined && a?.[name] !== null) return a[name];
+  }
+  return "";
+}
+
+function asText(v) {
+  if (v == null) return "";
+  if (Array.isArray(v)) return v.map(asText).filter(Boolean).join(", ");
+  if (typeof v === "object") {
+    if (v.name) return v.name;
+    if (v.title) return v.title;
+    if (v.attributes?.name) return v.attributes.name;
+    if (v.attributes?.title) return v.attributes.title;
+    return JSON.stringify(v);
+  }
+  return String(v);
+}
+
+function renderRows(meetings) {
+  const tbody = document.querySelector("#table tbody");
+  tbody.innerHTML = "";
+  for (const item of meetings) {
+    const a = item?.attributes || item;
+    const tr = document.createElement("tr");
+    const name = field(item, ["name", "title", "groupName", "meetingName"]);
+    const day = field(item, ["days", "day", "weekday"]);
+    const time = field(item, ["time", "start_time", "startTime", "start"]);
+    const city = field(item, ["city", "town"]);
+    const address = field(item, ["address", "street", "location"]);
+    const formats = field(item, ["formats", "format", "tags"]);
+    tr.innerHTML = `
+      <td>${escapeHtml(asText(name))}</td>
+      <td>${escapeHtml(asText(day))}</td>
+      <td>${escapeHtml(asText(time))}</td>
+      <td>${escapeHtml(asText(city))}</td>
+      <td>${escapeHtml(asText(address))}</td>
+      <td>${escapeHtml(asText(formats))}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("count").textContent = `${meetings.length} möten visas.`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+  }[ch]));
+}
+
+async function callApi(endpoint) {
+  log("Anropar endpoint:", endpoint);
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    mode: "cors",
+    credentials: "omit",
+    headers: {
+      "accept": "*/*",
+      "content-type": "text/plain;charset=UTF-8"
+    },
+    body: JSON.stringify({ endpoint })
+  });
+
+  const text = await response.text();
+
+  log(`HTTP ${response.status} ${response.statusText}`);
+  log("Råsvar:", text.slice(0, 5000));
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 300)}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error("Svaret var inte JSON. Se råsvar längst ned.");
+  }
+}
+
+async function fetchOne() {
+  clearOutput();
+  setStatus("Hämtar sida 1...");
+  try {
+    const endpoint = document.getElementById("endpoint").value.trim();
+    const json = await callApi(endpoint);
+    const meetings = extractMeetings(json);
+    const meta = getMeta(json);
+
+    log("Tolkad metadata:", meta);
+    log("Första objektet:", meetings[0] || null);
+
+    renderRows(meetings);
+    setStatus(`<span class="ok">Klart.</span> Hittade ${meetings.length} poster på denna sida.`);
+  } catch (err) {
+    setStatus(`<span class="err">Fel:</span> ${escapeHtml(err.message)}<br><br>
+      Om felet säger <b>Failed to fetch</b> är det nästan säkert CORS när filen körs lokalt.
+      Testa då att lägga filen på samma domän/proxy, t.ex. Cloudflare Worker.`);
+    log("Fel:", String(err.stack || err));
+  }
+}
+
+async function fetchAll() {
+  clearOutput();
+  const maxPages = Number(document.getElementById("pages").value);
+  let all = [];
+  let page = 1;
+
+  setStatus("Hämtar sidor...");
+
+  try {
+    while (page <= maxPages) {
+      const endpoint = `/meetings?pagination[page]=${page}&pagination[pageSize]=100`;
+      const json = await callApi(endpoint);
+      const meetings = extractMeetings(json);
+      const meta = getMeta(json);
+
+      log(`Sida ${page}: ${meetings.length} poster`, meta);
+
+      if (!meetings.length) break;
+
+      all.push(...meetings);
+
+      // Om API:et skickar pageCount använder vi det
+      if (meta?.pageCount && page >= meta.pageCount) break;
+
+      // Annars: om mindre än 100, antar vi sista sidan
+      if (meetings.length < 100) break;
+
+      page++;
+    }
+
+    renderRows(all);
+    setStatus(`<span class="ok">Klart.</span> Hämtade totalt ${all.length} poster.`);
+  } catch (err) {
+    setStatus(`<span class="err">Fel:</span> ${escapeHtml(err.message)}<br><br>
+      Om felet säger <b>Failed to fetch</b> är det nästan säkert CORS när filen körs lokalt.
+      Lösning: kör via Cloudflare Worker/Pages eller egen backend som proxy.`);
+    log("Fel:", String(err.stack || err));
+  }
+}
+</script>
+
+
+</body></html>
