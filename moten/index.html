@@ -6,7 +6,11 @@
 <title>NA Möten Sverige – karta debug</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
@@ -150,8 +154,18 @@ function initMap(){
     attribution: "© OpenStreetMap"
   }).addTo(map);
 
-  markersLayer = L.layerGroup().addTo(map);
-  setStatus('<span class="ok">Kartan laddad.</span> Klicka på Hämta möten.');
+  if (typeof L.markerClusterGroup === "function") {
+    markersLayer = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      disableClusteringAtZoom: 14,
+      maxClusterRadius: 45
+    }).addTo(map);
+  } else {
+    logAppend("MarkerCluster laddades inte. Använder vanlig layerGroup.");
+    markersLayer = L.layerGroup().addTo(map);
+  }
+  setStatus('<span class="ok">Kartan laddad med klustring.</span> Klicka på Hämta möten.');
   return true;
 }
 
@@ -311,7 +325,13 @@ function renderMarkers(meetings){
   meetings.forEach(m => {
     const lat = Number(m.latitude);
     const lng = Number(m.longitude);
-    const marker = L.marker([lat,lng]).bindPopup(popupHtml(m));
+    const marker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: "#1976d2",
+    fillColor: "#1976d2",
+    fillOpacity: 0.85,
+    weight: 2
+  }).bindPopup(popupHtml(m));
     marker.addTo(markersLayer);
     bounds.push([lat,lng]);
   });
