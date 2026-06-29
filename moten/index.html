@@ -150,10 +150,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 
 <main id="meetingsPanel" class="tab-panel active">
 <aside>
-<button onclick="fetchAllMeetings()">Hämta möten</button>
 <button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
 
-<div id="status" class="muted">Startar...</div>
+<div id="status" class="muted">Laddar möten automatiskt...</div>
 
 <label>Sök grupp/ort</label>
 <input id="search" placeholder="Sök gruppnamn eller meetingCity..." oninput="renderAll()">
@@ -220,8 +219,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 
 <main id="statsPanel" class="tab-panel">
   <aside>
-    <button onclick="fetchAllMeetings()">Hämta möten</button>
-    <button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
+<button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
 
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
@@ -279,6 +277,7 @@ let userPosition = null;
 let map = null;
 let markersLayer = null;
 let userMarker = null;
+let isLoadingMeetings = false;
 
 window.addEventListener("error", e => {
   logAppend("JS-FEL: " + e.message + " rad " + e.lineno);
@@ -326,7 +325,7 @@ function initMap(){
     markersLayer = L.layerGroup().addTo(map);
   }
 
-  setStatus('<span class="ok">Kartan laddad.</span> Klicka på Hämta möten.');
+  setStatus('Laddar möten automatiskt...');
   return true;
 }
 
@@ -381,6 +380,9 @@ async function fetchPageWithFallback(page, pageSize, preferredSortMode){
 }
 
 async function fetchAllMeetings(){
+  if (isLoadingMeetings) return;
+  isLoadingMeetings = true;
+
   if (!map || !markersLayer) {
     if (!initMap()) return;
   }
@@ -432,7 +434,9 @@ async function fetchAllMeetings(){
       sinnesro: sinnesro.map(m => ({id:m.id, documentId:m.documentId, title:m.title, city:getCity(m), day:m.days, start:m.startTime, address:m.address})),
       firstMeeting: allMeetings[0] || null
     });
+    isLoadingMeetings = false;
   } catch(e) {
+    isLoadingMeetings = false;
     setStatus('<span class="bad">Fel:</span> ' + esc(e.message));
     logAppend(String(e.stack || e));
   }
@@ -1053,7 +1057,10 @@ function handleDistanceFilterChange(){
 }
 
 
-document.addEventListener("DOMContentLoaded", initMap);
+document.addEventListener("DOMContentLoaded", () => {
+  initMap();
+  fetchAllMeetings();
+});
 </script>
 </body>
 </html>
