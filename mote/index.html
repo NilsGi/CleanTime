@@ -1,305 +1,204 @@
 <html lang="sv"><head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>NA Sverige API-test med felrapport</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px;background:#f7f7f7;color:#111}
-    .wrap{max-width:1100px;margin:0 auto}
-    .card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-    label{display:block;font-weight:700;margin:10px 0 5px}
-    input,textarea,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;font-size:15px}
-    textarea{min-height:95px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    button{padding:10px 14px;border:1px solid #111;border-radius:8px;background:#111;color:#fff;cursor:pointer;font-size:15px;margin:8px 8px 0 0}
-    button.secondary{background:#fff;color:#111}
-    pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border-radius:8px;padding:12px;max-height:480px;overflow:auto}
-    .ok{color:#087a2a;font-weight:800}
-    .bad{color:#b00020;font-weight:800}
-    .warn{color:#9a5b00;font-weight:800}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    @media(max-width:800px){.grid{grid-template-columns:1fr}}
-    table{border-collapse:collapse;width:100%}
-    th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top;font-size:14px}
-    th{background:#f0f0f0}
-    code{background:#eee;padding:2px 5px;border-radius:5px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NA Möten Sverige</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
+header{background:#111;color:white;padding:22px}
+main{max-width:1200px;margin:auto;padding:20px}
+.card{background:white;border:1px solid #ddd;border-radius:14px;padding:16px;margin:14px 0}
+button{padding:11px 15px;border:0;border-radius:9px;background:#111;color:white;font-size:15px;cursor:pointer;margin:5px 8px 5px 0}
+button.secondary{background:#eee;color:#111}
+input,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bbb;border-radius:9px;font-size:15px;margin:6px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid #ddd;padding:9px;text-align:left;vertical-align:top;font-size:14px}
+th{background:#f0f0f0;position:sticky;top:0}
+.ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
+pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border-radius:10px;padding:12px;max-height:380px;overflow:auto}
+.pill{display:inline-block;background:#eee;border-radius:999px;padding:3px 8px;margin:2px;font-size:12px}
+a{color:#0645ad}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <h1>NA Sverige – API-test med felsvar</h1>
-  <p>Den här filen anropar din <b>Cloudflare Worker</b>, som i sin tur ska anropa <code>https://www.nasverige.org/api/posts/</code>.</p>
-
-  <div class="card">
-    <label for="proxy">Worker-adress</label>
-    <input id="proxy" placeholder="https://na-moten-proxy.dittnamn.workers.dev/" value="">
-
-    <label for="endpoint">Endpoint som skickas till NA API</label>
-    <input id="endpoint" value="/meetings?pagination[page]=1&amp;pagination[pageSize]=100">
-
-    <label for="payload">Payload som skickas till Workern</label>
-    <textarea id="payload"></textarea>
-
-    <button onclick="setPayloadFromEndpoint()">Uppdatera payload</button>
-    <button onclick="testPost()">Testa POST</button>
-    <button class="secondary" onclick="testOptions()">Testa OPTIONS/CORS</button>
-    <button class="secondary" onclick="clearAll()">Rensa</button>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h2>Status</h2>
-      <div id="status">Inte startat.</div>
-    </div>
-    <div class="card">
-      <h2>Snabbdiagnos</h2>
-      <div id="diagnosis">Ingen diagnos ännu.</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Sammanfattning</h2>
-    <pre id="summary"></pre>
-  </div>
-
-  <div class="card">
-    <h2>Råsvar</h2>
-    <pre id="raw"></pre>
-  </div>
-
-  <div class="card">
-    <h2>JSON / tolkad data</h2>
-    <pre id="json"></pre>
-  </div>
-
-  <div class="card">
-    <h2>Försök till mötestabell</h2>
-    <div id="count">Inga möten hittade.</div>
-    <div style="overflow:auto;max-height:520px">
-      <table>
-        <thead>
-          <tr><th>Namn</th><th>Dag</th><th>Tid</th><th>Stad</th><th>Adress</th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-  </div>
+<header>
+<h1>NA Möten Sverige</h1>
+<div>Hämtar via proxy: <code>https://clean-time.se/mote</code></div>
+</header>
+<main>
+<div class="card">
+<button onclick="fetchAllMeetings()">Hämta alla möten</button>
+<button class="secondary" onclick="useMyLocation()">Använd min plats / närmast</button>
+<button class="secondary" onclick="downloadJson()">Ladda ner JSON</button>
+<button class="secondary" onclick="clearAll()">Rensa</button>
+<div id="status" class="muted">Inte startat.</div>
 </div>
 
+<div class="card">
+<h2>Filter</h2>
+<div class="grid">
+<div><label>Sök</label><input id="search" placeholder="Sök grupp, stad, adress..." oninput="render()"></div>
+<div><label>Dag</label><select id="dayFilter" onchange="render()"><option value="">Alla dagar</option></select></div>
+<div><label>Typ</label><select id="typeFilter" onchange="render()"><option value="">Alla typer</option><option value="online">Virtuella möten</option><option value="physical">Fysiska möten</option></select></div>
+</div>
+<div id="summary" class="muted"></div>
+</div>
+
+<div class="card">
+<h2>Möten</h2>
+<div style="overflow:auto;max-height:650px">
+<table>
+<thead><tr><th>Dag</th><th>Tid</th><th>Namn</th><th>Stad</th><th>Adress / online</th><th>Typ</th><th>Distans</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2>Rådata / felsökning</h2>
+<pre id="debug"></pre>
+</div>
+</main>
+
 <script>
-const NA_API = "https://www.nasverige.org/api/posts/";
+const PROXY_URL = "https://clean-time.se/mote";
+let allMeetings = [];
+let userPosition = null;
 
-function $(id){ return document.getElementById(id); }
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function setStatus(html){$("status").innerHTML=html}
+function log(obj){$("debug").textContent=typeof obj==="string"?obj:JSON.stringify(obj,null,2)}
 
-function setPayloadFromEndpoint(){
-  const endpoint = $("endpoint").value.trim();
-  $("payload").value = JSON.stringify({ endpoint }, null, 2);
+async function callProxy(endpoint){
+  const res = await fetch(PROXY_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=UTF-8","Accept":"*/*"},
+    body:JSON.stringify({endpoint})
+  });
+  const text = await res.text();
+  if(!res.ok) throw new Error("HTTP "+res.status+"\n"+text.slice(0,1000));
+  return JSON.parse(text);
 }
 
-function clearAll(){
-  $("status").innerHTML = "Rensat.";
-  $("diagnosis").innerHTML = "Ingen diagnos ännu.";
-  $("summary").textContent = "";
-  $("raw").textContent = "";
-  $("json").textContent = "";
-  $("rows").innerHTML = "";
-  $("count").textContent = "Inga möten hittade.";
-}
+async function fetchAllMeetings(){
+  clearAll(false);
+  const pageSize=100;
+  let page=1, pageCount=1, total=null;
+  try{
+    do{
+      setStatus("Hämtar sida "+page+" av "+pageCount+"...");
+      const json = await callProxy(`/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}`);
+      if(!json.data || !Array.isArray(json.data)) throw new Error("Oväntat API-svar.");
+      allMeetings.push(...json.data);
+      pageCount=json.meta?.pagination?.pageCount || pageCount;
+      total=json.meta?.pagination?.total || total;
+      page++;
+    }while(page<=pageCount);
 
-function esc(s){
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
-
-function diagnose(status, text, json){
-  let msg = [];
-
-  if (status === 0) {
-    msg.push('<span class="bad">Load failed / Failed to fetch.</span> Det är nästan alltid CORS, fel Worker-adress eller att Workern inte svarar.');
-  } else if (status === 405) {
-    msg.push('<span class="bad">HTTP 405.</span> Servern säger att metoden inte är tillåten.');
-    msg.push('Om råsvaret innehåller <code>Use POST</code> kommer 405 från Workern.');
-    msg.push('Om råsvaret ser ut som HTML/Next/API-fel kommer 405 troligen från NA Sveriges API.');
-  } else if (status >= 200 && status < 300) {
-    msg.push('<span class="ok">HTTP OK.</span> Anropet fungerar.');
-  } else if (status >= 400) {
-    msg.push('<span class="warn">HTTP ' + status + '.</span> Anropet når servern men får felstatus.');
-  }
-
-  if (text && text.toLowerCase().includes("use post")) {
-    msg.push('<span class="bad">Workern svarar “Use POST”.</span> HTML-filen skickade troligen inte POST, eller så hamnade anropet på fel URL.');
-  }
-
-  if (text && text.toLowerCase().includes("method not allowed")) {
-    msg.push('<span class="bad">Method Not Allowed i svaret.</span> Kontrollera att Workern skickar POST vidare till ' + NA_API);
-  }
-
-  if (json && Array.isArray(extractMeetings(json)) && extractMeetings(json).length > 0) {
-    msg.push('<span class="ok">Möten hittades i JSON-svaret.</span>');
-  }
-
-  $("diagnosis").innerHTML = msg.join("<br><br>") || "Ingen tydlig diagnos.";
-}
-
-async function testOptions(){
-  clearAll();
-  const proxy = $("proxy").value.trim();
-  if (!proxy) {
-    $("status").innerHTML = '<span class="bad">Ange Worker-adress först.</span>';
-    return;
-  }
-
-  try {
-    const started = new Date();
-    const res = await fetch(proxy, { method: "OPTIONS" });
-    const text = await res.text();
-    const headers = {};
-    res.headers.forEach((v,k)=>headers[k]=v);
-
-    $("status").innerHTML = `<span class="${res.ok ? "ok":"bad"}">OPTIONS HTTP ${res.status}</span>`;
-    $("summary").textContent = JSON.stringify({
-      test: "OPTIONS/CORS",
-      proxy,
-      status: res.status,
-      statusText: res.statusText,
-      headers,
-      started: started.toISOString(),
-      finished: new Date().toISOString()
-    }, null, 2);
-    $("raw").textContent = text;
-    diagnose(res.status, text, null);
-  } catch(e) {
-    $("status").innerHTML = '<span class="bad">OPTIONS fel: ' + esc(e.message) + '</span>';
-    $("summary").textContent = String(e.stack || e);
-    diagnose(0, String(e.message), null);
+    populateFilters();
+    render();
+    setStatus(`<span class="ok">Klart.</span> Hämtade ${allMeetings.length} möten.`);
+    log({totalFetched:allMeetings.length, apiTotal:total, firstMeeting:allMeetings[0]||null});
+  }catch(e){
+    setStatus(`<span class="bad">Fel:</span> ${esc(e.message)}`);
+    log(String(e.stack||e));
   }
 }
 
-async function testPost(){
-  clearAll();
-  const proxy = $("proxy").value.trim();
-  if (!proxy) {
-    $("status").innerHTML = '<span class="bad">Ange Worker-adress först.</span>';
-    return;
-  }
-
-  let payloadText = $("payload").value.trim();
-  if (!payloadText) {
-    setPayloadFromEndpoint();
-    payloadText = $("payload").value.trim();
-  }
-
-  let payloadObj = null;
-  try {
-    payloadObj = JSON.parse(payloadText);
-  } catch(e) {
-    $("status").innerHTML = '<span class="bad">Payload är inte giltig JSON.</span>';
-    $("summary").textContent = e.message;
-    return;
-  }
-
-  $("status").innerHTML = "Skickar POST...";
-
-  try {
-    const started = new Date();
-
-    const res = await fetch(proxy, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=UTF-8",
-        "Accept": "*/*"
-      },
-      body: JSON.stringify(payloadObj)
-    });
-
-    const text = await res.text();
-    const headers = {};
-    res.headers.forEach((v,k)=>headers[k]=v);
-
-    $("status").innerHTML = `<span class="${res.ok ? "ok":"bad"}">POST HTTP ${res.status} ${esc(res.statusText)}</span>`;
-
-    $("summary").textContent = JSON.stringify({
-      proxy,
-      method: "POST",
-      sentPayload: payloadObj,
-      status: res.status,
-      statusText: res.statusText,
-      responseHeaders: headers,
-      started: started.toISOString(),
-      finished: new Date().toISOString(),
-      note: "Om status är 405: titta i råsvaret. 'Use POST' = Worker-fel/fel URL. 'Method Not Allowed' från annan server = vidarebefordran till NA API fel."
-    }, null, 2);
-
-    $("raw").textContent = text;
-
-    let parsed = null;
-    try {
-      parsed = JSON.parse(text);
-      $("json").textContent = JSON.stringify(parsed, null, 2);
-      renderMeetings(parsed);
-    } catch(e) {
-      $("json").textContent = "Svaret kunde inte tolkas som JSON: " + e.message;
-    }
-
-    diagnose(res.status, text, parsed);
-
-  } catch(e) {
-    $("status").innerHTML = '<span class="bad">POST fel: ' + esc(e.message) + '</span>';
-    $("summary").textContent = String(e.stack || e);
-    diagnose(0, String(e.message), null);
-  }
+function populateFilters(){
+  const days=[...new Set(allMeetings.map(m=>m.days).filter(Boolean))].sort();
+  $("dayFilter").innerHTML='<option value="">Alla dagar</option>';
+  days.forEach(d=>{
+    const opt=document.createElement("option");
+    opt.value=d; opt.textContent=cleanDay(d);
+    $("dayFilter").appendChild(opt);
+  });
 }
 
-function extractMeetings(json){
-  if (Array.isArray(json)) return json;
-  if (Array.isArray(json?.data)) return json.data;
-  if (Array.isArray(json?.data?.data)) return json.data.data;
-  if (Array.isArray(json?.results)) return json.results;
-  if (Array.isArray(json?.meetings)) return json.meetings;
-  return [];
+function cleanDay(day){
+  return String(day||"").replace(/^[a-g]\.\s*/,"");
 }
+function getCity(m){return (m.meetingCity||[]).map(c=>c.city).join(", ")}
+function getTypes(m){return (m.meetingTypes||[]).map(t=>t.title)}
+function isOnline(m){return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting}
+function meetingText(m){return [m.title,m.theme,m.information,m.location,m.address,m.zip,getCity(m),m.meetingDistrict?.district,getTypes(m).join(" ")].join(" ").toLowerCase()}
 
-function attr(item){ return item?.attributes || item || {}; }
-
-function val(item, keys){
-  const a = attr(item);
-  for (const k of keys) {
-    if (a[k] !== undefined && a[k] !== null) return a[k];
+function filteredMeetings(){
+  const q=$("search").value.trim().toLowerCase();
+  const day=$("dayFilter").value;
+  const type=$("typeFilter").value;
+  let list=allMeetings.filter(m=>{
+    if(q && !meetingText(m).includes(q)) return false;
+    if(day && m.days!==day) return false;
+    if(type==="online" && !isOnline(m)) return false;
+    if(type==="physical" && isOnline(m)) return false;
+    return true;
+  });
+  if(userPosition){
+    list=list.map(m=>({...m,_distance:distanceToMeeting(m)})).sort((a,b)=>(a._distance??Infinity)-(b._distance??Infinity));
+  }else{
+    list.sort((a,b)=>String(a.days+a.startTime).localeCompare(String(b.days+b.startTime)));
   }
-  return "";
+  return list;
 }
 
-function text(v){
-  if (v == null) return "";
-  if (Array.isArray(v)) return v.map(text).filter(Boolean).join(", ");
-  if (typeof v === "object") {
-    if (v.name) return v.name;
-    if (v.title) return v.title;
-    if (v.attributes?.name) return v.attributes.name;
-    if (v.attributes?.title) return v.attributes.title;
-    return JSON.stringify(v);
-  }
-  return String(v);
-}
-
-function renderMeetings(json){
-  const meetings = extractMeetings(json);
-  $("rows").innerHTML = "";
-  $("count").textContent = meetings.length + " möjliga mötesposter hittade.";
-
-  for (const m of meetings) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${esc(text(val(m, ["name","title","groupName","meetingName"])))}</td>
-      <td>${esc(text(val(m, ["days","day","weekday"])))}</td>
-      <td>${esc(text(val(m, ["time","start_time","startTime","start"])))}</td>
-      <td>${esc(text(val(m, ["city","town"])))}</td>
-      <td>${esc(text(val(m, ["address","street","location"])))}</td>
-    `;
+function render(){
+  const list=filteredMeetings();
+  $("summary").textContent=`Visar ${list.length} av ${allMeetings.length} möten.`;
+  $("rows").innerHTML="";
+  list.forEach(m=>{
+    const types=getTypes(m).map(t=>`<span class="pill">${esc(t)}</span>`).join("");
+    const address=[m.location,m.address,m.zip].filter(Boolean).join("<br>");
+    const online=m.onlineMeeting?.url?`<a href="${esc(m.onlineMeeting.url)}" target="_blank">Online-länk</a>`:"";
+    const map=m.linkMap?`<br><a href="${esc(m.linkMap)}" target="_blank">Karta</a>`:"";
+    const dist=m._distance!=null?m._distance.toFixed(1)+" km":"";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${esc(cleanDay(m.days))}</td>
+      <td>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</td>
+      <td><b>${esc(m.title)}</b>${m.theme?`<br><span class="muted">${esc(m.theme)}</span>`:""}</td>
+      <td>${esc(getCity(m))}<br><span class="muted">${esc(m.meetingDistrict?.district||"")}</span></td>
+      <td>${address||online||'<span class="muted">Ingen adress</span>'}${online&&address?"<br>"+online:""}${map}</td>
+      <td>${types}</td>
+      <td>${esc(dist)}</td>`;
     $("rows").appendChild(tr);
-  }
+  });
 }
 
-setPayloadFromEndpoint();
+function useMyLocation(){
+  if(!navigator.geolocation){setStatus('<span class="bad">Geolocation stöds inte.</span>');return}
+  setStatus("Hämtar din position...");
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userPosition={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    render();
+    setStatus('<span class="ok">Position hämtad.</span> Möten sorteras efter avstånd.');
+  },err=>setStatus('<span class="bad">Kunde inte hämta position:</span> '+esc(err.message)),{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+function distanceToMeeting(m){
+  if(!userPosition || m.latitude==null || m.longitude==null) return null;
+  return haversine(userPosition.lat,userPosition.lng,Number(m.latitude),Number(m.longitude));
+}
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function downloadJson(){
+  if(!allMeetings.length){setStatus('<span class="bad">Hämta möten först.</span>');return}
+  const blob=new Blob([JSON.stringify(allMeetings,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="na-sverige-moten.json";a.click();URL.revokeObjectURL(url);
+}
+function clearAll(reset=true){
+  allMeetings=[];
+  if(reset) userPosition=null;
+  $("rows").innerHTML="";$("summary").textContent="";$("debug").textContent="";
+  $("search").value="";$("dayFilter").innerHTML='<option value="">Alla dagar</option>';$("typeFilter").value="";
+  if(reset) setStatus("Rensat.");
+}
 </script>
 
 
