@@ -73,6 +73,57 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   box-shadow:0 1px 4px rgba(0,0,0,.35);
 }
 
+
+@media(max-width:900px){
+  #meetingsPanel.active{
+    display:flex !important;
+    flex-direction:column;
+  }
+
+  #meetingsPanel aside{
+    order:1;
+    max-height:none;
+    border-right:0;
+    border-bottom:1px solid #ddd;
+  }
+
+  #map{
+    order:2;
+    height:55vh;
+    min-height:360px;
+  }
+
+  #list{
+    order:3;
+  }
+
+  #meetingsPanel aside #list{
+    display:block;
+  }
+
+  #mobileList{
+    order:3;
+    display:block;
+    background:#fff;
+    padding:14px;
+  }
+
+  #desktopListWrapper{
+    display:none;
+  }
+
+  .mobile-list-title{
+    margin:0 0 8px;
+    font-size:18px;
+  }
+}
+
+@media(min-width:901px){
+  #mobileList{
+    display:none;
+  }
+}
+
 </style>
 </head>
 
@@ -148,11 +199,12 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 
 <div id="statsCards"></div>
 
-<div id="list"></div>
+<div id="desktopListWrapper"><div id="list"></div></div>
 
 </aside>
 
 <div id="map"></div>
+<section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
 </main>
 
 <main id="statsPanel" class="tab-panel">
@@ -609,16 +661,12 @@ function groupPopupHtml(g){
   `;
 }
 
-function renderList(groups){
-  const el = $("list");
-  el.innerHTML = "";
-
+function buildListHtml(groups){
   if (!groups.length) {
-    el.innerHTML = "<p>Inga grupper matchar filtret.</p>";
-    return;
+    return "<p>Inga grupper matchar filtret.</p>";
   }
 
-  groups.forEach(g => {
+  return groups.map(g => {
     const times = g.meetings.map(m => {
       const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join("");
       const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
@@ -638,25 +686,51 @@ function renderList(groups){
 
     const dist = g.distance != null ? "<br><b>" + g.distance.toFixed(1) + " km bort</b>" : "";
 
-    const div = document.createElement("div");
-    div.className = "meeting";
-    div.innerHTML =
-      "<h3>"+esc(g.title)+"</h3>" +
-      '<div class="muted">'+esc(g.city)+" · "+esc(g.district)+"</div>" +
-      "<div><b>"+g.meetings.length+" möte"+(g.meetings.length === 1 ? "" : "n")+"</b>"+dist+"</div>" +
-      "<div>"+times+"</div>";
+    return `
+      <div class="meeting" data-group-key="${esc(g.key)}">
+        <h3>${esc(g.title)}</h3>
+        <div class="muted">${esc(g.city)} · ${esc(g.district)}</div>
+        <div><b>${g.meetings.length} möte${g.meetings.length === 1 ? "" : "n"}</b>${dist}</div>
+        <div>${times}</div>
+      </div>
+    `;
+  }).join("");
+}
 
-    if (groupMatchesMap(g)) {
-      div.style.cursor = "pointer";
-      div.onclick = () => {
+function bindListClicks(groups, containerId){
+  const container = $(containerId);
+  if (!container) return;
+
+  container.querySelectorAll(".meeting[data-group-key]").forEach(el => {
+    const key = el.getAttribute("data-group-key");
+    const g = groups.find(x => x.key === key);
+
+    if (g && groupMatchesMap(g)) {
+      el.style.cursor = "pointer";
+      el.onclick = () => {
         map.setView([g.latitude, g.longitude], 15);
         L.popup().setLatLng([g.latitude, g.longitude]).setContent(groupPopupHtml(g)).openOn(map);
       };
     }
-
-    el.appendChild(div);
   });
 }
+
+function renderList(groups){
+  const html = buildListHtml(groups);
+
+  const desktop = $("list");
+  if (desktop) {
+    desktop.innerHTML = html;
+    bindListClicks(groups, "list");
+  }
+
+  const mobile = $("listMobile");
+  if (mobile) {
+    mobile.innerHTML = html;
+    bindListClicks(groups, "listMobile");
+  }
+}
+
 
 function buildStats(meetings){
   const districtSummary = {};
