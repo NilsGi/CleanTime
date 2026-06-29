@@ -124,6 +124,17 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   }
 }
 
+
+/* Stabil flikhantering */
+.tab-panel{display:none !important;}
+.tab-panel.active{display:grid !important;}
+#meetingsPanel.active{grid-template-columns:430px 1fr;}
+#statsPanel.active{grid-template-columns:minmax(720px,980px) 1fr;}
+@media(max-width:900px){
+  .tab-panel.active{display:block !important;}
+  #meetingsPanel.active{display:flex !important;flex-direction:column;}
+}
+
 </style>
 </head>
 
@@ -903,21 +914,33 @@ function fitVisible(){
 
 
 function showTab(tab){
-  const meetingsPanel = $("meetingsPanel");
-  const statsPanel = $("statsPanel");
-  const meetingsBtn = $("meetingsTabBtn");
-  const statsBtn = $("statsTabBtn");
+  const panels = {
+    meetings: $("meetingsPanel"),
+    stats: $("statsPanel")
+  };
 
-  if (meetingsPanel) meetingsPanel.classList.toggle("active", tab === "meetings");
-  if (statsPanel) statsPanel.classList.toggle("active", tab === "stats");
-  if (meetingsBtn) meetingsBtn.classList.toggle("active", tab === "meetings");
-  if (statsBtn) statsBtn.classList.toggle("active", tab === "stats");
+  const buttons = {
+    meetings: $("meetingsTabBtn"),
+    stats: $("statsTabBtn")
+  };
+
+  Object.keys(panels).forEach(key => {
+    if (panels[key]) panels[key].classList.toggle("active", key === tab);
+    if (buttons[key]) buttons[key].classList.toggle("active", key === tab);
+  });
+
+  if (tab === "stats") {
+    renderAll();
+    syncFilterMirror();
+  }
 
   setTimeout(() => {
-    if (tab === "meetings" && map) map.invalidateSize();
-  }, 50);
+    if (tab === "meetings" && map) {
+      map.invalidateSize();
+      fitVisible();
+    }
+  }, 100);
 }
-
 function syncFilterMirror(){
   const pairs = [
     ["search","searchStats"],
