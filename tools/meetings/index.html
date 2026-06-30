@@ -1,243 +1,1621 @@
-<!doctype html>
-<html lang="sv">
-<head>
+<html lang="sv"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NA Möten Sverige</title>
+<title>NA Sverige - Möten</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
 header{background:#0a1981;color:#fff;padding:14px 20px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
-main{max-width:1200px;margin:auto;padding:20px}
-.card{background:white;border:1px solid #ddd;border-radius:14px;padding:16px;margin:14px 0}
+main{display:grid;grid-template-columns:430px 1fr;min-height:calc(100vh - 64px)}
+aside{background:#fff;border-right:1px solid #ddd;padding:14px;overflow:auto;max-height:calc(100vh - 64px)}
+#map{height:calc(100vh - 64px);min-height:500px;width:100%;background:#ddd}
 button{padding:10px 13px;border:0;border-radius:10px;background:#0a1981;color:#fff;cursor:pointer;margin:4px 5px 8px 0;font-weight:700;box-shadow:0 2px 6px rgba(10,25,129,.25)}
 button.secondary{background:#d9e1ff;color:#0a1981;border:1px solid rgba(10,25,129,.15)}
-input,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bbb;border-radius:9px;font-size:15px;margin:6px 0 10px}
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-@media(max-width:800px){.grid{grid-template-columns:1fr}}
-table{border-collapse:collapse;width:100%}
-th,td{border-bottom:1px solid #ddd;padding:9px;text-align:left;vertical-align:top;font-size:14px}
-th{background:#f0f0f0;position:sticky;top:0}
+input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;margin:5px 0 10px}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
-pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border-radius:10px;padding:12px;max-height:380px;overflow:auto}
-.pill{display:inline-block;background:#eee;border-radius:999px;padding:3px 8px;margin:2px;font-size:12px}
-a{color:#0645ad}
+.meeting{border:1px solid #ddd;border-radius:10px;padding:10px;margin:9px 0;background:#fafafa}
+.meeting h3{font-size:15px;margin:0 0 4px}
+.meeting-time{border-top:1px dashed #ddd;padding:5px 0;font-size:13px}
+.pill{display:inline-block;background:#eee;border-radius:999px;padding:2px 7px;margin:2px;font-size:12px}
+pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border-radius:8px;padding:10px;max-height:260px;overflow:auto;font-size:12px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.stat-card{background:#f3f3f3;border-radius:10px;padding:10px}
+.stat-card b{display:block;font-size:20px}
+.stats-table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
+.stats-table th,.stats-table td{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
+.stats-table th{background:#eee}
+.accordion-district{border:1px solid #ddd;border-radius:10px;margin:8px 0;background:#fafafa;overflow:hidden}
+.accordion-district summary{cursor:pointer;padding:10px;font-weight:700;background:#eee}
+.accordion-content{padding:8px}
+.group-row{display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:8px;border-bottom:1px solid #ddd;padding:7px 0;font-size:13px}
+.group-row.header{font-weight:700;background:#f6f6f6}
+.group-count{font-weight:700;text-align:right}
+.missing-coords{background:#fff7e6;border:1px solid #e5b95c;border-radius:10px;padding:10px;margin:10px 0}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(10,25,129,0.25)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#0a1981!important;color:white!important;font-weight:bold}
+.leaflet-control-attribution .leaflet-attribution-flag{display:none!important}
+.leaflet-control-attribution a[href*="leafletjs.com"]{display:none!important}
+@media(max-width:900px){main{display:block}.tab-panel.active{display:block}#meetingsPanel,#statsPanel{display:block;min-height:auto}aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}#map{height:70vh}#statsFull{max-height:none}.filter-grid,.stats-grid{grid-template-columns:1fr}.group-row{grid-template-columns:1fr}}
+
+.tabs{display:flex;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid #ddd}
+.tab-button{background:#eee;color:#111}
+.tab-button.active{background:#0a1981;color:#fff}
+.tab-panel{display:none}
+.tab-panel.active{display:grid}
+#meetingsPanel{grid-template-columns:430px 1fr;min-height:calc(100vh - 114px)}
+#statsPanel{grid-template-columns:minmax(720px,980px) 1fr;min-height:calc(100vh - 114px)}
+#statsPanel aside{max-height:calc(100vh - 114px)}
+#statsFull{background:#fff;padding:18px 22px;overflow:auto;max-height:calc(100vh - 114px)}
+#statsFull .stats-table{font-size:14px}
+#statsFull .group-row{font-size:14px;grid-template-columns:1.5fr 1fr 90px 90px 90px}
+
+
+.meeting-count-marker div{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#0a1981;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.35);
+}
+
+
+@media(max-width:900px){
+  #meetingsPanel.active{
+    display:flex !important;
+    flex-direction:column;
+  }
+
+  #meetingsPanel aside{
+    order:1;
+    max-height:none;
+    border-right:0;
+    border-bottom:1px solid #ddd;
+  }
+
+  #map{
+    order:2;
+    height:55vh;
+    min-height:360px;
+  }
+
+  #list{
+    order:3;
+  }
+
+  #meetingsPanel aside #list{
+    display:block;
+  }
+
+  #mobileList{
+    order:3;
+    display:block;
+    background:#fff;
+    padding:14px;
+  }
+
+  #desktopListWrapper{
+    display:none;
+  }
+
+  .mobile-list-title{
+    margin:0 0 8px;
+    font-size:18px;
+  }
+}
+
+@media(min-width:901px){
+  #mobileList{
+    display:none;
+  }
+}
+
+
+/* Stabil flikhantering */
+.tab-panel{display:none !important;}
+.tab-panel.active{display:grid !important;}
+#meetingsPanel.active{grid-template-columns:430px 1fr;}
+#statsPanel.active{grid-template-columns:minmax(720px,980px) 1fr;}
+@media(max-width:900px){
+  .tab-panel.active{display:block !important;}
+  #meetingsPanel.active{display:flex !important;flex-direction:column;}
+}
+
+
+select[multiple]{
+  min-height:92px;
+}
+.filter-hint{
+  font-size:12px;
+  color:#666;
+  margin-top:-6px;
+  margin-bottom:8px;
+}
+.map-sync-box{
+  background:#f3f6ff;
+  border:1px solid #c7d7ff;
+  border-radius:10px;
+  padding:9px;
+  margin:8px 0 12px;
+  font-size:13px;
+}
+
+
+.day-heading{margin:18px 0 8px;padding:8px 10px;background:#0a1981;color:#fff;border-radius:8px;font-size:16px}
+
+
+.meeting-info{
+  margin-top:6px;
+  padding:7px 8px;
+  background:#fff;
+  border-left:3px solid #ddd;
+  border-radius:6px;
+  font-size:13px;
+}
+
+
+.meeting-time-main{
+  margin:4px 0;
+  font-size:15px;
+}
+
+
+/* Mobilanpassning för statistik */
+@media(max-width:900px){
+  #statsFull .stats-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  #statsFull .stat-card:first-child{
+    grid-column:1 / -1;
+  }
+
+  #statsFull .stat-card:first-child b{
+    font-size:28px;
+  }
+
+  #statsFull .group-row{
+    grid-template-columns:1fr auto auto auto;
+    align-items:start;
+    gap:6px;
+  }
+
+  #statsFull .group-row > div:first-child{
+    grid-column:1 / -1;
+  }
+
+  #statsFull .group-row .mobile-city{
+    display:block;
+    color:#666;
+    font-weight:400;
+    margin-top:2px;
+    font-size:13px;
+  }
+
+  #statsFull .group-row.header{
+    display:none;
+  }
+
+  #statsFull .group-count{
+    text-align:left;
+  }
+
+  #statsFull .stats-table{
+    font-size:13px;
+  }
+}
+
+@media(min-width:901px){
+  .mobile-city{
+    display:none;
+  }
+}
+
+
+@media(max-width:900px){
+  #statsFull .desktop-city{
+    display:none;
+  }
+}
+
+
+/* Dolda äldre extra sökfält om de finns kvar i någon cachead mall */
+#groupFilter,#cityFilter,#groupFilterStats,#cityFilterStats{
+  display:none;
+}
+
+
+/* Dölj gamla rubriker på statistikfliken */
+#statsTab label[for="groupFilterStats"],
+#statsTab label[for="cityFilterStats"],
+#groupFilterStats,
+#cityFilterStats{
+  display:none !important;
+}
+
 
 .header-inner{
   display:flex;
   align-items:center;
+  justify-content:space-between;
   gap:16px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-width:0;
 }
 .header-logo{
   height:46px;
   width:auto;
   display:block;
+  flex:0 0 auto;
 }
-.header-titles{
-  display:flex;
-  flex-direction:column;
-}
-.header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
-.header-titles .subtitle{
-  margin-top:3px;
+header h1{
+  margin:0!important;
+  font-size:26px!important;
+  font-weight:800;
   color:#fff;
-  opacity:.92;
-  font-size:15px;
-  font-weight:600;
+  line-height:1.08;
 }
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:9px 13px;
+  border-radius:10px;
+  background:rgba(255,255,255,.16);
+  color:#fff!important;
+  text-decoration:none;
+  font-weight:800;
+  border:1px solid rgba(255,255,255,.35);
+  white-space:nowrap;
+}
+.back-link:hover{
+  background:rgba(255,255,255,.24);
+}
+button:hover{filter:brightness(1.08)}
+button.secondary:hover{background:#cfd9ff}
 @media(max-width:700px){
   header{padding:12px 14px}
   .header-logo{height:40px}
-  .header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
-  .header-titles .subtitle{font-size:14px}
+  header h1{font-size:22px!important}
+  .back-link{padding:8px 10px;font-size:14px}
 }
 
-
-button:hover{filter:brightness(1.08)}
-button.secondary:hover{background:#cfd9ff}
 </style>
 </head>
+
 <body>
 <header>
   <div class="header-inner">
-    <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
-    <div class="header-titles">
+    <div class="brand">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
       <h1>Möteslista</h1>
     </div>
+    <a class="back-link" href="/tools">Tillbaka</a>
   </div>
 </header>
-<main>
-<div class="card">
-<button onclick="fetchAllMeetings()">Hämta alla möten</button>
-<button class="secondary" onclick="useMyLocation()">Använd min plats / närmast</button>
-<button class="secondary" onclick="downloadJson()">Ladda ner JSON</button>
-<button class="secondary" onclick="clearAll()">Rensa</button>
-<div id="status" class="muted">Inte startat.</div>
+
+<div class="tabs">
+  <button id="meetingsTabBtn" class="tab-button active" onclick="showTab('meetings')">Möten</button>
+  <button id="statsTabBtn" class="tab-button" onclick="showTab('stats')">Statistik</button>
 </div>
 
-<div class="card">
-<h2>Filter</h2>
-<div class="grid">
-<div><label>Sök</label><input id="search" placeholder="Sök grupp, stad, adress..." oninput="render()"></div>
-<div><label>Dag</label><select id="dayFilter" onchange="render()"><option value="">Alla dagar</option></select></div>
-<div><label>Typ</label><select id="typeFilter" onchange="render()"><option value="">Alla typer</option><option value="online">Virtuella möten</option><option value="physical">Fysiska möten</option></select></div>
+<main id="meetingsPanel" class="tab-panel active">
+<aside>
+<button onclick="fetchAllMeetings()">Uppdatera möten</button>
+<button class="secondary" onclick="exportFilteredToPdf()">Exportera PDF</button>
+<button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
+
+<div id="status" class="muted"><span class="bad">Fel:</span> Load failed</div>
+
+<label>Sök grupp/ort</label>
+<input id="search" placeholder="Sök möte, ort, adress, station, info..." oninput="renderAll()">
+
+<div class="filter-grid">
+  <div>
+    <label>Distrikt</label>
+    <select id="districtFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Håll Ctrl/Cmd för flera val.</div>
+  </div>
+  <div>
+    <label>Dag</label>
+    <select id="dayFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Välj en eller flera dagar.</div>
+  </div>
 </div>
+
+<div class="filter-grid">
+  <div>
+    <label>Mötestyp</label>
+    <select id="meetingTypeFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Välj en eller flera mötestyper.</div>
+  </div>
+  <div>
+    <label>Visning</label>
+    <select id="typeFilter" onchange="renderAll()">
+      <option value="physical">Fysiska möten på karta</option>
+      <option value="">Alla i listan</option>
+      <option value="online">Endast online i listan</option>
+    </select>
+  </div>
+</div>
+
+<label>Avstånd från mig</label>
+<select id="distanceFilter" onchange="handleDistanceFilterChange()">
+  <option value="">Alla avstånd</option>
+  <option value="5">Inom 5 km</option>
+  <option value="10">Inom 10 km</option>
+  <option value="25">Inom 25 km</option>
+  <option value="50">Inom 50 km</option>
+  <option value="100">Inom 100 km</option>
+  <option value="250">Inom 250 km</option>
+</select>
+
+<div class="map-sync-box">
+  <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
+    <input id="listFollowsMap" type="checkbox" checked="" onchange="toggleListFollowsMap()" style="width:auto;margin-top:2px">
+    <span>Listan följer kartans synliga område</span>
+  </label>
+  <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
+</div>
+
 <div id="summary" class="muted"></div>
-</div>
 
-<div class="card">
-<h2>Möten</h2>
-<div style="overflow:auto;max-height:650px">
-<table>
-<thead><tr><th>Dag</th><th>Tid</th><th>Namn</th><th>Stad</th><th>Adress / online</th><th>Typ</th><th>Distans</th></tr></thead>
-<tbody id="rows"></tbody>
-</table>
-</div>
-</div>
+<div id="statsCards"></div>
 
-<div class="card">
-<h2>Rådata / felsökning</h2>
-<pre id="debug"></pre>
-</div>
+<div id="desktopListWrapper"><div id="list"></div></div>
+
+</aside>
+
+<div id="map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0" style="position: relative;"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="https://b.tile.openstreetmap.org/5/17/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/17/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/16/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/18/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, -57px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/5/16/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/18/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, 199px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(4437.333333px, 2285.043853px, 0px) scale(16);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control">© OpenStreetMap</div></div></div></div>
+<section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
+</main>
+
+<main id="statsPanel" class="tab-panel">
+  <aside>
+    <button onclick="fetchAllMeetings()">Uppdatera möten</button>
+    <button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
+
+    <div class="muted">Statistiken följer samma filter som möteslistan.</div>
+
+    <label>Sök grupp/ort</label>
+    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="syncFilter('search', this.value)">
+
+    <div class="filter-grid">
+      <div>
+        
+        <input id="groupFilterStats" placeholder="T.ex. Huddinge NA" oninput="syncFilter('groupFilter', this.value)">
+      </div>
+      <div>
+        
+        <input id="cityFilterStats" placeholder="T.ex. Stockholm" oninput="syncFilter('cityFilter', this.value)">
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <label>Distrikt</label>
+        <select id="districtFilterStats" multiple="" onchange="syncMultiFilter('districtFilter', this)"></select><div class="filter-hint">Håll Ctrl/Cmd för flera val.</div>
+      </div>
+      <div>
+        <label>Dag</label>
+        <select id="dayFilterStats" multiple="" onchange="syncMultiFilter('dayFilter', this)"></select><div class="filter-hint">Välj en eller flera dagar.</div>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <label>Mötestyp</label>
+        <select id="meetingTypeFilterStats" multiple="" onchange="syncMultiFilter('meetingTypeFilter', this)"></select><div class="filter-hint">Välj en eller flera mötestyper.</div>
+      </div>
+      <div>
+        <label>Visning</label>
+        <select id="typeFilterStats" onchange="syncFilter('typeFilter', this.value)">
+          <option value="physical">Fysiska möten på karta</option>
+          <option value="">Alla i listan</option>
+          <option value="online">Endast online i listan</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <section id="statsFull">
+    <div id="stats"></div>
+  </section>
 </main>
 
 <script>
-const PROXY_URL = "https://clean-time.se/mote";
+const PROXY_URL = "/mote";
+let rawMeetings = [];
 let allMeetings = [];
 let userPosition = null;
+let map = null;
+let markersLayer = null;
+let userMarker = null;
+let listFollowsMap = true;
+let suppressMapMoveRender = false;
+
+window.addEventListener("error", e => {
+  logAppend("JS-FEL: " + e.message + " rad " + e.lineno);
+  setStatus('<span class="bad">JavaScript-fel:</span> ' + esc(e.message));
+});
 
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function setStatus(html){$("status").innerHTML=html}
-function log(obj){$("debug").textContent=typeof obj==="string"?obj:JSON.stringify(obj,null,2)}
 
-async function callProxy(endpoint){
-  const res = await fetch(PROXY_URL,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain;charset=UTF-8","Accept":"*/*"},
-    body:JSON.stringify({endpoint})
+function selectedValues(id){
+  const el = $(id);
+  if (!el) return [];
+  if (!el.multiple) return el.value ? [el.value] : [];
+  return [...el.selectedOptions].map(o => o.value).filter(Boolean);
+}
+
+function setSelectedValues(id, values){
+  const el = $(id);
+  if (!el) return;
+  const set = new Set(values || []);
+  [...el.options].forEach(opt => {
+    opt.selected = set.has(opt.value);
   });
-  const text = await res.text();
-  if(!res.ok) throw new Error("HTTP "+res.status+"\n"+text.slice(0,1000));
-  return JSON.parse(text);
+}
+
+function isGroupInMapView(g){
+  if (!listFollowsMap || !map || !groupMatchesMap(g)) return true;
+  const bounds = map.getBounds();
+  return bounds.contains([g.latitude, g.longitude]);
+}
+
+function toggleListFollowsMap(){
+  const el = $("listFollowsMap");
+  listFollowsMap = !!(el && el.checked);
+  renderAll(false);
+}
+
+
+function logAppend(msg){ const el = $("debug"); if (el) el.textContent += msg + "\n\n"; }
+function logObj(label,obj){ const el = $("debug"); if (el) el.textContent += label + ":\n" + JSON.stringify(obj,null,2).slice(0,8000) + "\n\n"; }
+
+function initMap(){
+  if (typeof L === "undefined") {
+    setStatus('<span class="bad">Leaflet laddades inte.</span>');
+    return false;
+  }
+
+  map = L.map("map", { attributionControl: true }).setView([62.0, 15.0], 5);
+  map.attributionControl.setPrefix(false);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+
+  map.on("moveend zoomend", () => {
+    if (!suppressMapMoveRender && listFollowsMap) {
+      renderAll(false);
+    }
+  });
+
+  if (typeof L.markerClusterGroup === "function") {
+    markersLayer = L.markerClusterGroup({
+      showCoverageOnHover:false,
+      spiderfyOnMaxZoom:true,
+      disableClusteringAtZoom:14,
+      maxClusterRadius:45,
+      iconCreateFunction: function(cluster){
+        const totalMeetings = cluster.getAllChildMarkers()
+          .reduce((sum, m) => sum + (m.meetingCount || 1), 0);
+
+        return L.divIcon({
+          html: '<div><span>' + totalMeetings + '</span></div>',
+          className: 'marker-cluster marker-cluster-small',
+          iconSize: L.point(40, 40)
+        });
+      }
+    }).addTo(map);
+  } else {
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  setStatus('<span class="ok">Kartan laddad.</span> Klicka på Hämta möten.');
+  return true;
+}
+
+async function fetchSmartProxy(){
+  const response = await fetch(PROXY_URL, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error("HTTP " + response.status + " från /mote: " + text.slice(0, 500));
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Svaret från /mote var inte JSON: " + text.slice(0, 500));
+  }
 }
 
 async function fetchAllMeetings(){
-  clearAll(false);
-  const pageSize=100;
-  let page=1, pageCount=1, total=null;
-  try{
-    do{
-      setStatus("Hämtar sida "+page+" av "+pageCount+"...");
-      const json = await callProxy(`/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}`);
-      if(!json.data || !Array.isArray(json.data)) throw new Error("Oväntat API-svar.");
-      allMeetings.push(...json.data);
-      pageCount=json.meta?.pagination?.pageCount || pageCount;
-      total=json.meta?.pagination?.total || total;
-      page++;
-    }while(page<=pageCount);
-
-    populateFilters();
-    render();
-    setStatus(`<span class="ok">Klart.</span> Hämtade ${allMeetings.length} möten.`);
-    log({totalFetched:allMeetings.length, apiTotal:total, firstMeeting:allMeetings[0]||null});
-  }catch(e){
-    setStatus(`<span class="bad">Fel:</span> ${esc(e.message)}`);
-    log(String(e.stack||e));
+  if (!map || !markersLayer) {
+    if (!initMap()) return;
   }
+
+  rawMeetings = [];
+  allMeetings = [];
+  markersLayer.clearLayers();
+  $("list").innerHTML = "";
+  if ($("listMobile")) $("listMobile").innerHTML = "";
+  $("summary").textContent = "";
+
+  setStatus("Hämtar möten...");
+
+  try {
+    const json = await fetchSmartProxy();
+
+    if (!json.ok || !Array.isArray(json.data)) {
+      throw new Error(json.error || "Oväntat svar från /mote. data saknas.");
+    }
+
+    rawMeetings = json.data;
+    allMeetings = json.data;
+
+    populateFiltersFromSmartProxy(json);
+    renderAll(false);
+    fitVisible();
+
+    const meta = json.meta || {};
+    setStatus(
+      '<span class="ok">Klart.</span> Hämtade ' +
+      (meta.uniqueCount || allMeetings.length) +
+      ' möten.' +
+      (meta.duplicateCount ? ' Dubbletter borttagna: ' + meta.duplicateCount + '.' : '')
+    );
+  } catch(e) {
+    setStatus('<span class="bad">Fel:</span> ' + esc(e.message));
+    console.error(e);
+  }
+}
+
+function fillSelectFromValues(id, values, labelFn){
+  const el = $(id);
+  if (!el) return;
+
+  const currentValues = selectedValues(id);
+  el.innerHTML = "";
+
+  if (!el.multiple) {
+    el.innerHTML = '<option value="">Alla</option>';
+  }
+
+  values.forEach(item => {
+    const value = typeof item === "object" ? item.value : item;
+    const label = typeof item === "object" ? (item.label || item.value) : (labelFn ? labelFn(item) : item);
+
+    if (!value) return;
+
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    el.appendChild(opt);
+  });
+
+  if (el.multiple) setSelectedValues(id, currentValues);
+  else el.value = currentValues[0] || "";
+}
+
+function populateFiltersFromSmartProxy(json){
+  if (json.filters) {
+    fillSelectFromValues("dayFilter", json.filters.days || []);
+    fillSelectFromValues("dayFilterStats", json.filters.days || []);
+
+    fillSelectFromValues("districtFilter", json.filters.districts || []);
+    fillSelectFromValues("districtFilterStats", json.filters.districts || []);
+
+    fillSelectFromValues("meetingTypeFilter", json.filters.meetingTypes || []);
+    fillSelectFromValues("meetingTypeFilterStats", json.filters.meetingTypes || []);
+
+    syncFilterMirror();
+    return;
+  }
+
+  populateFilters();
+}
+
+function normalizeText(value){
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+function meetingPrimaryKey(m){
+  if (m.documentId) return "documentId:" + String(m.documentId);
+  if (m.id !== undefined && m.id !== null) return "id:" + String(m.id);
+  return [m.title,m.days,m.startTime,m.endTime,m.address,m.zip].map(normalizeText).join("|");
+}
+function uniqueMeetingsById(meetings){
+  const seen = new Set();
+  const result = [];
+  meetings.forEach(m => {
+    const key = meetingPrimaryKey(m);
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(m);
+  });
+  return result;
+}
+function duplicateMeetingsById(meetings){
+  const groups = {};
+  meetings.forEach(m => {
+    const key = meetingPrimaryKey(m);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+  return Object.values(groups).filter(g => g.length > 1);
+}
+
+function cleanDay(day){ return String(day||"").replace(/^[a-g]\.\s*/,""); }
+
+function dayOrder(day){
+  const raw = String(day || "").trim();
+
+  // API:t använder ofta prefix a-g där a = Måndag, b = Tisdag osv.
+  const prefix = raw.match(/^([a-g])\./i);
+  if (prefix) return "abcdefg".indexOf(prefix[1].toLowerCase());
+
+  const name = cleanDay(raw).toLowerCase().trim();
+  const order = [
+    "måndag",
+    "tisdag",
+    "onsdag",
+    "torsdag",
+    "fredag",
+    "lördag",
+    "söndag"
+  ];
+
+  const idx = order.indexOf(name);
+  return idx >= 0 ? idx : 99;
+}
+
+function timeValue(time){
+  const parts = String(time || "99:99").split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+
+  if (Number.isNaN(h) || Number.isNaN(m)) return 9999;
+  return h * 60 + m;
+}
+
+function compareMeetingsByDayTime(a,b){
+  return dayOrder(a.days) - dayOrder(b.days)
+    || timeValue(a.startTime) - timeValue(b.startTime)
+    || timeValue(a.endTime) - timeValue(b.endTime)
+    || String(a.title || "").localeCompare(String(b.title || ""), "sv")
+    || String(getCity(a) || "").localeCompare(String(getCity(b) || ""), "sv");
+}
+
+function compareGroupsByDayTime(a,b){
+  const meetingsA = [...(a.meetings || [])].sort(compareMeetingsByDayTime);
+  const meetingsB = [...(b.meetings || [])].sort(compareMeetingsByDayTime);
+  const firstA = meetingsA[0] || {};
+  const firstB = meetingsB[0] || {};
+
+  return dayOrder(firstA.days) - dayOrder(firstB.days)
+    || timeValue(firstA.startTime) - timeValue(firstB.startTime)
+    || String(a.title || "").localeCompare(String(b.title || ""), "sv")
+    || String(a.city || "").localeCompare(String(b.city || ""), "sv");
+}
+function normalizeGroupName(name){ return String(name || "Okänd grupp").trim().replace(/\s+/g, " ").toLowerCase(); }
+function displayGroupName(name){ return String(name || "Okänd grupp").trim().replace(/\s+/g, " "); }
+function getCity(m){ return (m.meetingCity||[]).map(c=>c.city).join(", "); }
+function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
+function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
+function hasCoords(m){ return m.latitude !== null && m.longitude !== null && !isNaN(Number(m.latitude)) && !isNaN(Number(m.longitude)); }
+function meetingText(m){
+  return [
+    m.title,
+    getCity(m),
+    m.meetingDistrict?.district,
+    m.location,
+    m.address,
+    m.zip,
+    m.station,
+    m.information,
+    getTypes(m).join(" ")
+  ].join(" ").toLowerCase();
+}
+
+function hasActiveTextSearch(){
+  const q = $("search")?.value?.trim();
+  return !!q;
+}
+
+
+function formatInformation(text){
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+  return esc(raw)
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+    .replace(/\n/g, "<br>");
+}
+
+
+function fillSelect(id, options, defaultText, labelFn){
+  const el = $(id);
+  if (!el) return;
+  const currentValues = selectedValues(id);
+  el.innerHTML = "";
+
+  if (!el.multiple) {
+    el.innerHTML = '<option value="">' + defaultText + '</option>';
+  }
+
+  options.forEach(value => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = labelFn ? labelFn(value) : value;
+    el.appendChild(opt);
+  });
+
+  if (el.multiple) setSelectedValues(id, currentValues);
+  else el.value = currentValues[0] || "";
 }
 
 function populateFilters(){
-  const days=[...new Set(allMeetings.map(m=>m.days).filter(Boolean))].sort();
-  $("dayFilter").innerHTML='<option value="">Alla dagar</option>';
-  days.forEach(d=>{
-    const opt=document.createElement("option");
-    opt.value=d; opt.textContent=cleanDay(d);
-    $("dayFilter").appendChild(opt);
-  });
-}
+  const days = [...new Set(allMeetings.map(m=>m.days).filter(Boolean))].sort();
+  const districts = [...new Set(allMeetings.map(m=>m.meetingDistrict?.district).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sv"));
+  const types = [...new Set(allMeetings.flatMap(m=>getTypes(m)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sv"));
 
-function cleanDay(day){
-  return String(day||"").replace(/^[a-g]\.\s*/,"");
+  fillSelect("dayFilter", days, "Alla dagar", cleanDay);
+  fillSelect("dayFilterStats", days, "Alla dagar", cleanDay);
+
+  fillSelect("districtFilter", districts, "Alla distrikt");
+  fillSelect("districtFilterStats", districts, "Alla distrikt");
+
+  fillSelect("meetingTypeFilter", types, "Alla mötestyper");
+  fillSelect("meetingTypeFilterStats", types, "Alla mötestyper");
+
+  syncFilterMirror();
 }
-function getCity(m){return (m.meetingCity||[]).map(c=>c.city).join(", ")}
-function getTypes(m){return (m.meetingTypes||[]).map(t=>t.title)}
-function isOnline(m){return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting}
-function meetingText(m){return [m.title,m.theme,m.information,m.location,m.address,m.zip,getCity(m),m.meetingDistrict?.district,getTypes(m).join(" ")].join(" ").toLowerCase()}
 
 function filteredMeetings(){
-  const q=$("search").value.trim().toLowerCase();
-  const day=$("dayFilter").value;
-  const type=$("typeFilter").value;
-  let list=allMeetings.filter(m=>{
-    if(q && !meetingText(m).includes(q)) return false;
-    if(day && m.days!==day) return false;
-    if(type==="online" && !isOnline(m)) return false;
-    if(type==="physical" && isOnline(m)) return false;
+  const q = $("search").value.trim().toLowerCase();
+  const districts = selectedValues("districtFilter");
+  const meetingTypes = selectedValues("meetingTypeFilter");
+  const days = selectedValues("dayFilter");
+  const type = $("typeFilter").value;
+  const maxDistance = Number($("distanceFilter").value || 0);
+
+  let list = allMeetings.filter(m => {
+    if (q && !meetingText(m).includes(q)) return false;
+    if (districts.length && !districts.includes(m.meetingDistrict?.district)) return false;
+    if (meetingTypes.length && !meetingTypes.some(t => getTypes(m).includes(t))) return false;
+    if (days.length && !days.includes(m.days)) return false;
+    if (type === "online" && !isOnline(m)) return false;
+    if (type === "physical" && isOnline(m)) return false;
+    if (maxDistance && userPosition) {
+      const d = distanceToMeeting(m);
+      if (d === null || d > maxDistance) return false;
+    }
     return true;
   });
-  if(userPosition){
-    list=list.map(m=>({...m,_distance:distanceToMeeting(m)})).sort((a,b)=>(a._distance??Infinity)-(b._distance??Infinity));
-  }else{
-    list.sort((a,b)=>String(a.days+a.startTime).localeCompare(String(b.days+b.startTime)));
+
+  if (userPosition) {
+    list = list.map(m => ({...m, _distance: distanceToMeeting(m)}))
+      .sort((a,b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
+  } else {
+    list.sort(compareMeetingsByDayTime);
   }
+
   return list;
 }
 
-function render(){
-  const list=filteredMeetings();
-  $("summary").textContent=`Visar ${list.length} av ${allMeetings.length} möten.`;
-  $("rows").innerHTML="";
-  list.forEach(m=>{
-    const types=getTypes(m).map(t=>`<span class="pill">${esc(t)}</span>`).join("");
-    const address=[m.location,m.address,m.zip].filter(Boolean).join("<br>");
-    const online=m.onlineMeeting?.url?`<a href="${esc(m.onlineMeeting.url)}" target="_blank">Online-länk</a>`:"";
-    const map=m.linkMap?`<br><a href="${esc(m.linkMap)}" target="_blank">Karta</a>`:"";
-    const dist=m._distance!=null?m._distance.toFixed(1)+" km":"";
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${esc(cleanDay(m.days))}</td>
-      <td>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</td>
-      <td><b>${esc(m.title)}</b>${m.theme?`<br><span class="muted">${esc(m.theme)}</span>`:""}</td>
-      <td>${esc(getCity(m))}<br><span class="muted">${esc(m.meetingDistrict?.district||"")}</span></td>
-      <td>${address||online||'<span class="muted">Ingen adress</span>'}${online&&address?"<br>"+online:""}${map}</td>
-      <td>${types}</td>
-      <td>${esc(dist)}</td>`;
-    $("rows").appendChild(tr);
+function groupMeetingsForDisplay(meetings){
+  const groups = {};
+
+  meetings.forEach(m => {
+    const district = m.meetingDistrict?.district || "Okänt distrikt";
+    const city = getCity(m) || "Okänd ort";
+    const cityKey = normalizeText(city);
+    const groupKey = normalizeGroupName(m.title);
+    const key = district + "|||" + cityKey + "|||" + groupKey;
+
+    if (!groups[key]) {
+      groups[key] = {
+        key, district, city,
+        title: displayGroupName(m.title),
+        meetings: [],
+        latitude: null,
+        longitude: null,
+        isOnlineOnly: true,
+        distance: null
+      };
+    }
+
+    groups[key].meetings.push(m);
+    if (!isOnline(m)) groups[key].isOnlineOnly = false;
+
+    if (groups[key].latitude === null && hasCoords(m)) {
+      groups[key].latitude = Number(m.latitude);
+      groups[key].longitude = Number(m.longitude);
+    }
+  });
+
+  const result = Object.values(groups).map(g => {
+    g.meetings.sort(compareMeetingsByDayTime);
+    if (userPosition && groupHasCoords(g)) {
+      g.distance = haversine(userPosition.lat, userPosition.lng, g.latitude, g.longitude);
+    }
+    return g;
+  });
+
+  if (userPosition) result.sort((a,b)=>(a.distance ?? Infinity) - (b.distance ?? Infinity));
+  else result.sort(compareGroupsByDayTime);
+
+  return result;
+}
+function groupHasCoords(g){ return g.latitude !== null && g.longitude !== null && !isNaN(g.latitude) && !isNaN(g.longitude); }
+function groupMatchesMap(g){ return !g.isOnlineOnly && groupHasCoords(g); }
+
+function renderAll(syncFromMap = false){
+  if (!markersLayer) return;
+
+  const meetingList = filteredMeetings();
+  const groupList = groupMeetingsForDisplay(meetingList);
+  const mapGroups = groupList.filter(groupMatchesMap);
+  const searchActive = hasActiveTextSearch();
+
+  const visibleGroupList = listFollowsMap && map && !searchActive
+    ? groupList.filter(isGroupInMapView)
+    : groupList;
+
+  const visibleMeetingCount = visibleGroupList.reduce((sum, g) => sum + g.meetings.length, 0);
+
+  const distanceText = userPosition && $("distanceFilter").value
+    ? "<br><b>Avstånd:</b> visar grupper inom " + $("distanceFilter").value + " km från din position."
+    : userPosition
+      ? "<br><b>Position hämtad:</b> välj ett avstånd i filtret för att begränsa resultaten."
+      : "";
+
+  $("summary").innerHTML =
+    "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " möten i listan.<br>" +
+    mapGroups.length + " grupper finns på kartan efter filter." +
+    distanceText;
+
+  renderMarkers(mapGroups);
+
+  if (searchActive) {
+    fitGroupsOnMap(mapGroups);
+  }
+
+  renderStats(meetingList);
+  renderList(visibleGroupList.slice(0,150));
+
+  syncFilterMirror();
+
+  if (visibleGroupList.length > 150) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Listan visar de första 150 grupperna. Använd sök/filter för att begränsa.";
+    $("list").appendChild(p);
+  }
+}
+
+
+function fitGroupsOnMap(groups){
+  if (!map || !groups || !groups.length) return;
+
+  const points = groups
+    .filter(groupMatchesMap)
+    .map(g => [g.latitude, g.longitude]);
+
+  if (!points.length) return;
+
+  suppressMapMoveRender = true;
+
+  if (points.length === 1) {
+    map.setView(points[0], 14);
+  } else {
+    map.fitBounds(points, {
+      padding: [35, 35],
+      maxZoom: 13
+    });
+  }
+
+  setTimeout(() => {
+    suppressMapMoveRender = false;
+  }, 250);
+}
+
+
+function renderMarkers(groups){
+  markersLayer.clearLayers();
+  const bounds = [];
+
+  groups.forEach(g => {
+    const marker = L.marker([g.latitude, g.longitude], {
+      icon: L.divIcon({
+        className: 'meeting-count-marker',
+        html: '<div>' + g.meetings.length + '</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      })
+    }).bindPopup(groupPopupHtml(g));
+
+    marker.meetingCount = g.meetings.length;
+
+    marker.addTo(markersLayer);
+    bounds.push([g.latitude,g.longitude]);
+  });
+
+  // Kartan zoomas inte automatiskt här, annars kan listan inte följa användarens aktuella kartvy.
+}
+
+function groupPopupHtml(g){
+  const times = g.meetings.map(m => {
+    const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join(" ");
+    const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
+    const mapLink = m.linkMap ? ' · <a href="'+esc(m.linkMap)+'" target="_blank">Karta</a>' : "";
+    return `
+      <div class="meeting-time">
+        ${esc(cleanDay(m.days))} ${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}
+        ${isOnline(m) ? " · Online" : " · Fysiskt"}
+        ${address ? "<br>" + esc(address) : ""}
+        ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
+        ${m.information ? "<div class=\"meeting-info\">" + formatInformation(m.information) + "</div>" : ""}
+        ${mapLink}<br>${types}
+      </div>
+    `;
+  }).join("");
+
+  const dist = g.distance != null ? "<br><b>Avstånd:</b> " + g.distance.toFixed(1) + " km" : "";
+
+  return `
+    <div style="min-width:260px">
+      <b>${esc(g.title)}</b><br>
+      ${esc(g.city)} · ${esc(g.district)}<br>
+      <b>${g.meetings.length} möte${g.meetings.length === 1 ? "" : "n"}</b>${dist}
+      <div>${times}</div>
+    </div>
+  `;
+}
+
+function buildListHtml(groups){
+  const meetings = groups
+    .flatMap(g => g.meetings.map(m => ({
+      ...m,
+      _groupKey: g.key,
+      _groupTitle: g.title,
+      _groupCity: g.city,
+      _groupDistrict: g.district,
+      _groupLat: g.latitude,
+      _groupLng: g.longitude,
+      _groupDistance: g.distance
+    })))
+    .sort(compareMeetingsByDayTime);
+
+  if (!meetings.length) {
+    return "<p>Inga möten matchar filtret.</p>";
+  }
+
+  let currentDay = "";
+  let html = "";
+
+  meetings.forEach(m => {
+    const day = cleanDay(m.days);
+
+    if (day !== currentDay) {
+      currentDay = day;
+      html += `<h2 class="day-heading">${esc(day)}</h2>`;
+    }
+
+    const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join("");
+    const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
+    const online = m.onlineMeeting?.url ? '<a href="'+esc(m.onlineMeeting.url)+'" target="_blank">Online-länk</a>' : "";
+    const mapLink = m.linkMap ? '<a href="'+esc(m.linkMap)+'" target="_blank">Karta</a>' : "";
+    const dist = m._groupDistance != null ? "<br><b>" + m._groupDistance.toFixed(1) + " km bort</b>" : "";
+    const station = m.station ? `<br><span class="muted">Närmaste hållplats: ${esc(m.station)}</span>` : "";
+    const info = m.information ? `<div class="meeting-info">${formatInformation(m.information)}</div>` : "";
+
+    html += `
+      <div class="meeting" data-lat="${esc(m._groupLat ?? "")}" data-lng="${esc(m._groupLng ?? "")}" data-popup-key="${esc(m._groupKey)}">
+        <h3>${esc(m.title || m._groupTitle || "Okänt möte")}</h3>
+        <div class="meeting-time-main"><b>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</b></div>
+        <div class="muted">${esc(getCity(m) || m._groupCity || "")} · ${esc(m.meetingDistrict?.district || m._groupDistrict || "")}</div>
+        ${address ? `<div>${esc(address)}</div>` : ""}
+        ${station}
+        ${dist}
+        ${info}
+        <div>${online} ${mapLink}</div>
+        <div>${types}</div>
+      </div>
+    `;
+  });
+
+  return html;
+}
+
+function bindListClicks(groups, containerId){
+  const container = $(containerId);
+  if (!container) return;
+
+  container.querySelectorAll(".meeting[data-lat][data-lng]").forEach(el => {
+    const lat = Number(el.getAttribute("data-lat"));
+    const lng = Number(el.getAttribute("data-lng"));
+    const key = el.getAttribute("data-popup-key");
+    const g = groups.find(x => x.key === key);
+
+    if (!isNaN(lat) && !isNaN(lng) && g && groupMatchesMap(g)) {
+      el.style.cursor = "pointer";
+      el.onclick = () => {
+        map.setView([lat, lng], 15);
+        L.popup().setLatLng([lat, lng]).setContent(groupPopupHtml(g)).openOn(map);
+      };
+    }
   });
 }
 
-function useMyLocation(){
-  if(!navigator.geolocation){setStatus('<span class="bad">Geolocation stöds inte.</span>');return}
-  setStatus("Hämtar din position...");
-  navigator.geolocation.getCurrentPosition(pos=>{
-    userPosition={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    render();
-    setStatus('<span class="ok">Position hämtad.</span> Möten sorteras efter avstånd.');
-  },err=>setStatus('<span class="bad">Kunde inte hämta position:</span> '+esc(err.message)),{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+
+function renderList(groups){
+  const html = buildListHtml(groups);
+
+  const desktop = $("list");
+  if (desktop) {
+    desktop.innerHTML = html;
+    bindListClicks(groups, "list");
+  }
+
+  const mobile = $("listMobile");
+  if (mobile) {
+    mobile.innerHTML = html;
+    bindListClicks(groups, "listMobile");
+  }
 }
+
+
+function buildStats(meetings){
+  const districtSummary = {};
+  const groupSummary = {};
+  const uniqueGroupsAll = new Set();
+
+  meetings.forEach(m => {
+    const district = m.meetingDistrict?.district || "Okänt distrikt";
+    const city = getCity(m) || "Okänd ort";
+    const cityKey = normalizeText(city);
+    const groupKey = normalizeGroupName(m.title);
+    const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
+
+    if (!districtSummary[district]) {
+      districtSummary[district] = {district, meetings:0, physical:0, online:0, groups:new Set()};
+    }
+
+    districtSummary[district].meetings++;
+    if (isOnline(m)) districtSummary[district].online++; else districtSummary[district].physical++;
+    districtSummary[district].groups.add(cityKey + "|||" + groupKey);
+    uniqueGroupsAll.add(combinedKey);
+
+    if (!groupSummary[combinedKey]) {
+      groupSummary[combinedKey] = {district, city, group:displayGroupName(m.title), meetings:0, physical:0, online:0, items:[]};
+    }
+
+    groupSummary[combinedKey].meetings++;
+    groupSummary[combinedKey].items.push(m);
+    if (isOnline(m)) groupSummary[combinedKey].online++; else groupSummary[combinedKey].physical++;
+  });
+
+  const districts = Object.values(districtSummary).map(d => ({
+    district:d.district, meetings:d.meetings, groups:d.groups.size, physical:d.physical, online:d.online
+  })).sort((a,b)=>b.meetings-a.meetings || a.district.localeCompare(b.district,"sv"));
+
+  const groups = Object.values(groupSummary).sort((a,b)=>
+    a.district.localeCompare(b.district,"sv") ||
+    a.city.localeCompare(b.city,"sv") ||
+    b.meetings-a.meetings ||
+    a.group.localeCompare(b.group,"sv")
+  );
+
+  return {
+    totalMeetings: meetings.length,
+    totalGroups: uniqueGroupsAll.size,
+    totalDistricts: districts.length,
+    physical: meetings.filter(m=>!isOnline(m)).length,
+    online: meetings.filter(isOnline).length,
+    districts, groups
+  };
+}
+
+function renderMissingCoords(meetings){
+  const missing = meetings.filter(m => !isOnline(m) && !hasCoords(m));
+  if (!missing.length) return '<div class="missing-coords"><b>Fysiska möten utan koordinater:</b> 0</div>';
+
+  const rows = missing.map(m => `
+    <tr>
+      <td>${esc(cleanDay(m.days))}</td>
+      <td>${esc((m.startTime || "").slice(0,5))}</td>
+      <td>${esc(m.title || "")}</td>
+      <td>${esc(getCity(m) || "")}</td>
+      <td>${esc(m.meetingDistrict?.district || "")}</td>
+      <td>${esc([m.location, m.address, m.zip].filter(Boolean).join(", ") || "Adress saknas")}</td>
+    </tr>
+  `).join("");
+
+  return `
+    <div class="missing-coords">
+      <b>Fysiska möten utan koordinater:</b> ${missing.length}
+      <table class="stats-table">
+        <thead><tr><th>Dag</th><th>Tid</th><th>Grupp</th><th>Ort</th><th>Distrikt</th><th>Adress</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderStats(meetings){
+  const el = $("stats");
+  if (!el) return;
+
+  if (!meetings.length) {
+    el.innerHTML = '<p class="muted">Ingen statistik ännu. Hämta möten först.</p>';
+    return;
+  }
+
+  const stats = buildStats(meetings);
+
+  const districtRows = stats.districts.map(d => `
+    <tr><td>${esc(d.district)}</td><td>${d.meetings}</td><td>${d.groups}</td><td>${d.physical}</td><td>${d.online}</td></tr>
+  `).join("");
+
+  const groupsByDistrict = {};
+  stats.groups.forEach(g => {
+    if (!groupsByDistrict[g.district]) groupsByDistrict[g.district] = [];
+    groupsByDistrict[g.district].push(g);
+  });
+
+  const groupAccordion = Object.keys(groupsByDistrict).sort((a,b)=>a.localeCompare(b,"sv")).map(district => {
+    const groups = groupsByDistrict[district];
+    const meetingSum = groups.reduce((sum,g)=>sum+g.meetings,0);
+    const rows = groups.map(g => `
+      <div class="group-row">
+        <div>${esc(g.group)}<span class="mobile-city">${esc(g.city)}</span></div>
+        <div class="desktop-city">${esc(g.city)}</div>
+        <div class="group-count">${g.meetings} möten</div>
+        <div>${g.physical} fysiska</div>
+        <div>${g.online} online</div>
+      </div>
+    `).join("");
+
+    return `
+      <details class="accordion-district">
+        <summary>${esc(district)} – ${groups.length} grupper/orter, ${meetingSum} möten</summary>
+        <div class="accordion-content">
+          <div class="group-row header"><div>Gruppnamn</div><div>Ort</div><div>Antal</div><div>Fysiska</div><div>Online</div></div>
+          ${rows}
+        </div>
+      </details>`;
+  }).join("");
+
+  const cardsHtml = `
+    <div class="stats-grid">
+      <div class="stat-card"><span>Totalt antal möten</span><b>${stats.totalMeetings}</b></div>
+      <div class="stat-card"><span>Fysiska möten</span><b>${stats.physical}</b></div>
+      <div class="stat-card"><span>Online-möten</span><b>${stats.online}</b></div>
+      <div class="stat-card"><span>Grupper/ort</span><b>${stats.totalGroups}</b></div>
+    </div>
+  `;
+
+  const cardsEl = $("statsCards");
+  if (cardsEl) cardsEl.innerHTML = cardsHtml;
+
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><span>Totalt antal möten</span><b>${stats.totalMeetings}</b></div>
+      <div class="stat-card"><span>Fysiska möten</span><b>${stats.physical}</b></div>
+      <div class="stat-card"><span>Online-möten</span><b>${stats.online}</b></div>
+      <div class="stat-card"><span>Grupper/ort</span><b>${stats.totalGroups}</b></div>
+    </div>
+    <h3>Summering per distrikt</h3>
+    <table class="stats-table">
+      <thead><tr><th>Distrikt</th><th>Möten</th><th>Grupp/ort</th><th>Fysiska</th><th>Online</th></tr></thead>
+      <tbody>${districtRows}</tbody>
+    </table>
+    <h3>Grupper per distrikt</h3>
+    <p class="muted">Statistik grupperas på distrikt + ort/meetingCity + gruppnamn.</p>
+    ${groupAccordion}
+  `;
+}
+
+function useMyLocation(){ handleDistanceFilterChange(); }
+
 function distanceToMeeting(m){
-  if(!userPosition || m.latitude==null || m.longitude==null) return null;
+  if (!userPosition || !hasCoords(m)) return null;
   return haversine(userPosition.lat,userPosition.lng,Number(m.latitude),Number(m.longitude));
 }
 function haversine(lat1,lon1,lat2,lon2){
-  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
-function downloadJson(){
-  if(!allMeetings.length){setStatus('<span class="bad">Hämta möten först.</span>');return}
-  const blob=new Blob([JSON.stringify(allMeetings,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="na-sverige-moten.json";a.click();URL.revokeObjectURL(url);
+function fitVisible(){
+  const groups = groupMeetingsForDisplay(filteredMeetings()).filter(groupMatchesMap);
+  if (groups.length) {
+    suppressMapMoveRender = true;
+    map.fitBounds(groups.map(g=>[g.latitude,g.longitude]), {padding:[30,30]});
+    setTimeout(() => {
+      suppressMapMoveRender = false;
+      renderAll(false);
+    }, 250);
+  }
 }
-function clearAll(reset=true){
-  allMeetings=[];
-  if(reset) userPosition=null;
-  $("rows").innerHTML="";$("summary").textContent="";$("debug").textContent="";
-  $("search").value="";$("dayFilter").innerHTML='<option value="">Alla dagar</option>';$("typeFilter").value="";
-  if(reset) setStatus("Rensat.");
+
+
+
+function showTab(tab){
+  const panels = {
+    meetings: $("meetingsPanel"),
+    stats: $("statsPanel")
+  };
+
+  const buttons = {
+    meetings: $("meetingsTabBtn"),
+    stats: $("statsTabBtn")
+  };
+
+  Object.keys(panels).forEach(key => {
+    if (panels[key]) panels[key].classList.toggle("active", key === tab);
+    if (buttons[key]) buttons[key].classList.toggle("active", key === tab);
+  });
+
+  if (tab === "stats") {
+    renderAll(false);
+    syncFilterMirror();
+  }
+
+  setTimeout(() => {
+    if (tab === "meetings" && map) {
+      map.invalidateSize();
+      fitVisible();
+    }
+  }, 100);
 }
+function syncFilterMirror(){
+  const pairs = [
+    ["search","searchStats"],
+    ["districtFilter","districtFilterStats"],
+    ["dayFilter","dayFilterStats"],
+    ["meetingTypeFilter","meetingTypeFilterStats"],
+    ["typeFilter","typeFilterStats"]
+  ];
+
+  pairs.forEach(([mainId, statsId]) => {
+    const main = $(mainId);
+    const stats = $(statsId);
+    if (!main || !stats) return;
+
+    if (main.multiple || stats.multiple) {
+      setSelectedValues(statsId, selectedValues(mainId));
+    } else {
+      stats.value = main.value;
+    }
+  });
+}
+
+function syncFilter(mainId, value){
+  const main = $(mainId);
+  if (main) main.value = value;
+  renderAll(false);
+  syncFilterMirror();
+}
+
+function syncMultiFilter(mainId, sourceEl){
+  const values = [...sourceEl.selectedOptions].map(o => o.value).filter(Boolean);
+  setSelectedValues(mainId, values);
+  renderAll(false);
+  syncFilterMirror();
+}
+
+
+
+function getCurrentFilteredGroupsForExport(){
+  const meetingList = filteredMeetings();
+  const groupList = groupMeetingsForDisplay(meetingList);
+  const searchActive = hasActiveTextSearch();
+
+  const visibleGroupList = listFollowsMap && map && !searchActive
+    ? groupList.filter(isGroupInMapView)
+    : groupList;
+
+  return visibleGroupList.sort(compareGroupsByDayTime);
+}
+
+function exportFilteredToPdf(){
+  if (!allMeetings.length) {
+    setStatus('<span class="bad">Inga möten hämtade ännu.</span>');
+    return;
+  }
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    setStatus('<span class="bad">PDF-biblioteket kunde inte laddas.</span>');
+    return;
+  }
+
+  const groups = getCurrentFilteredGroupsForExport();
+  const sortedMeetings = groups
+    .flatMap(g => g.meetings)
+    .sort(compareMeetingsByDayTime);
+  const meetingCount = sortedMeetings.length;
+
+  const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const usableWidth = pageWidth - margin * 2;
+  let y = 16;
+
+  function addPageIfNeeded(extra = 10){
+    if (y + extra > pageHeight - 14) {
+      doc.addPage();
+      y = 16;
+    }
+  }
+
+  function line(text, size = 10, style = "normal"){
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    const wrapped = doc.splitTextToSize(String(text || ""), usableWidth);
+    wrapped.forEach(row => {
+      addPageIfNeeded(6);
+      doc.text(row, margin, y);
+      y += size >= 14 ? 7 : 5;
+    });
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("NA Sverige - Möten", margin, y);
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Filtrerat urval: " + groups.length + " grupper / " + meetingCount + " möten", margin, y);
+  y += 8;
+
+  if (!groups.length) {
+    line("Inga möten matchar aktuellt filter.", 11);
+  }
+
+  let currentDay = "";
+
+  sortedMeetings.forEach(m => {
+    const day = cleanDay(m.days);
+
+    if (day !== currentDay) {
+      currentDay = day;
+      addPageIfNeeded(14);
+      y += 2;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(day, margin, y);
+      y += 7;
+    }
+
+    addPageIfNeeded(24);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`${(m.startTime || "").slice(0,5)} - ${(m.endTime || "").slice(0,5)}  ${m.title || ""}`, margin, y);
+    y += 5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    const typeText = getTypes(m).join(", ");
+    if (typeText) {
+      line(typeText, 9);
+    }
+
+    const place = [m.location, m.address, m.zip].filter(Boolean).join(", ");
+    const meta = [getCity(m), m.meetingDistrict?.district].filter(Boolean).join(" · ");
+    if (place) line(place, 9);
+    if (m.station) line("Närmaste hållplats: " + m.station, 9);
+    if (meta) line(meta, 9);
+    if (m.information) {
+      const infoText = String(m.information || "")
+        .replace(/\*\*/g, "")
+        .replace(/\n+/g, " ")
+        .trim();
+      if (infoText) line("Info: " + infoText, 9);
+    }
+
+    y += 3;
+  });
+
+  const date = new Date().toISOString().slice(0,10);
+  doc.save("na-sverige-moten-" + date + ".pdf");
+  setStatus('<span class="ok">PDF skapad.</span>');
+}
+
+
+function clearAllFilters(){
+  ["search"].forEach(id => {
+    const el = $(id);
+    if (el) el.value = "";
+  });
+
+  ["districtFilter","dayFilter","meetingTypeFilter"].forEach(id => {
+    setSelectedValues(id, []);
+  });
+
+  const distance = $("distanceFilter");
+  if (distance) distance.value = "";
+
+  const type = $("typeFilter");
+  if (type) type.value = "physical";
+
+  userPosition = null;
+  if (userMarker && map) {
+    map.removeLayer(userMarker);
+    userMarker = null;
+  }
+
+  syncFilterMirror();
+  renderAll(false);
+
+  if (map) {
+    map.setView([62.0, 15.0], 5);
+  }
+
+  setStatus('<span class="ok">Alla filter rensade.</span>');
+}
+
+
+
+
+function fitDistanceFilteredMeetings(){
+  if (!map || !userPosition) return;
+
+  const maxDistance = Number($("distanceFilter")?.value || 0);
+  if (!maxDistance) {
+    fitVisible();
+    return;
+  }
+
+  const meetingList = filteredMeetings();
+  const groups = groupMeetingsForDisplay(meetingList)
+    .filter(groupMatchesMap)
+    .filter(g => g.distance !== null && g.distance !== undefined && g.distance <= maxDistance);
+
+  const points = [];
+
+  if (userPosition) {
+    points.push([userPosition.lat, userPosition.lng]);
+  }
+
+  groups.forEach(g => {
+    points.push([g.latitude, g.longitude]);
+  });
+
+  if (points.length > 1) {
+    suppressMapMoveRender = true;
+    map.fitBounds(points, {
+      padding: [35, 35],
+      maxZoom: 13
+    });
+    setTimeout(() => {
+      suppressMapMoveRender = false;
+      renderAll(false);
+    }, 250);
+  } else if (points.length === 1) {
+    suppressMapMoveRender = true;
+    map.setView(points[0], 13);
+    setTimeout(() => {
+      suppressMapMoveRender = false;
+      renderAll(false);
+    }, 250);
+  }
+}
+
+
+function handleDistanceFilterChange(){
+  const distanceEl = $("distanceFilter");
+  const value = distanceEl ? distanceEl.value : "";
+
+  if (!value) {
+    userPosition = null;
+
+    if (userMarker && map) {
+      map.removeLayer(userMarker);
+      userMarker = null;
+    }
+
+    renderAll(false);
+    setStatus('<span class="ok">Avståndsfiltret rensat.</span>');
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    setStatus('<span class="bad">Din webbläsare stödjer inte platsdelning.</span>');
+    if (distanceEl) distanceEl.value = "";
+    return;
+  }
+
+  setStatus("Hämtar din position...");
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userPosition = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+
+      if (userMarker && map) {
+        map.removeLayer(userMarker);
+      }
+
+      if (map && typeof L !== "undefined") {
+        userMarker = L.circleMarker([userPosition.lat, userPosition.lng], {
+          radius: 8,
+          color: "#111",
+          fillColor: "#111",
+          fillOpacity: 0.9,
+          weight: 2
+        }).addTo(map).bindPopup("Du är här");
+      }
+
+      renderAll(false);
+      fitDistanceFilteredMeetings();
+
+      setStatus(
+        '<span class="ok">Position hämtad.</span> Visar möten inom ' +
+        value +
+        ' km.'
+      );
+    },
+    err => {
+      userPosition = null;
+
+      if (distanceEl) distanceEl.value = "";
+
+      let message = err.message || "Kunde inte hämta position.";
+
+      if (err.code === 1) {
+        message = "Platsåtkomst nekades. Tillåt platsdelning i webbläsaren och försök igen.";
+      }
+
+      setStatus('<span class="bad">' + esc(message) + '</span>');
+      renderAll(false);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+}
+document.addEventListener("DOMContentLoaded", () => {
+  initMap();
+  fetchAllMeetings();
+});
 </script>
-</body>
-</html>
+
+
+</body></html>
