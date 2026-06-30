@@ -73,7 +73,14 @@ window.importEvents = async function () {
       start_datetime: event.startDate || null,
       end_datetime: event.endDate || null,
 
-      web_url: event.webUrl || null,
+      web_url:
+            event.webUrl ||
+            event.webURL ||
+            event.web_url ||
+            event.url ||
+          event.link ||
+          event.website ||
+          null,
       excerpt: event.excerpt || null,
       description: event.description || null,
 
