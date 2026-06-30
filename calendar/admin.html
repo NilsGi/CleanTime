@@ -442,7 +442,10 @@ function setVal(id, value) {
 }
 
 function combine(date, time) {
-  return `${date}T${time}:00`;
+  // Inputfältens datum/tid är svensk lokal tid.
+  // Vi konverterar till ISO/UTC innan sparning i Supabase timestamptz.
+  const localDate = new Date(`${date}T${time}:00`);
+  return localDate.toISOString();
 }
 
 function fillDateTime(prefix, value) {
@@ -452,12 +455,17 @@ function fillDateTime(prefix, value) {
     return;
   }
 
-  // Undvik tidszonskonvertering som kan flytta datumet en dag.
-  const datePart = value.slice(0, 10);
-  const timePart = value.slice(11, 16);
+  // Värdet från Supabase är en tidpunkt. Visa den som lokal tid i inputfälten.
+  // Använd INTE toISOString() här, då hoppar datumet till UTC.
+  const d = new Date(value);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
 
-  setVal(`${prefix}_date`, datePart);
-  setVal(`${prefix}_time`, timePart);
+  setVal(`${prefix}_date`, `${year}-${month}-${day}`);
+  setVal(`${prefix}_time`, `${hour}:${minute}`);
 }
 
 function formatDate(value) {
