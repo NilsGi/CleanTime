@@ -246,6 +246,15 @@ select[multiple]{
   display:none;
 }
 
+
+/* Dölj gamla rubriker på statistikfliken */
+#statsTab label[for="groupFilterStats"],
+#statsTab label[for="cityFilterStats"],
+#groupFilterStats,
+#cityFilterStats{
+  display:none !important;
+}
+
 </style>
 </head>
 
@@ -339,11 +348,11 @@ select[multiple]{
 
     <div class="filter-grid">
       <div>
-        <label>Grupp</label>
+        
         <input id="groupFilterStats" placeholder="T.ex. Huddinge NA" oninput="syncFilter('groupFilter', this.value)">
       </div>
       <div>
-        <label>Ort / meetingCity</label>
+        
         <input id="cityFilterStats" placeholder="T.ex. Stockholm" oninput="syncFilter('cityFilter', this.value)">
       </div>
     </div>
