@@ -1,14 +1,10 @@
 /**
  * /functions/mote.js
- *
- * Proxy för möten från Strapi.
  */
-
-const STRAPI_URL = "https://DIN-STRAPI-ADRESS.se";
-const STRAPI_TOKEN = "DIN_TOKEN";
 
 const CACHE_TTL_SECONDS = 300;
 const PAGE_SIZE = 100;
+const CMS_BASE_URL = "https://cms.nasverige.org";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,10 +34,7 @@ function errorResponse(message, status = 500, details = null) {
 }
 
 function normalizeText(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function cleanDay(day) {
@@ -50,22 +43,11 @@ function cleanDay(day) {
 
 function dayOrder(day) {
   const raw = String(day || "").trim();
-
   const prefix = raw.match(/^([a-g])\./i);
   if (prefix) return "abcdefg".indexOf(prefix[1].toLowerCase());
 
-  const name = cleanDay(raw).toLowerCase();
-  const order = [
-    "måndag",
-    "tisdag",
-    "onsdag",
-    "torsdag",
-    "fredag",
-    "lördag",
-    "söndag"
-  ];
-
-  const index = order.indexOf(name);
+  const order = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"];
+  const index = order.indexOf(cleanDay(raw).toLowerCase());
   return index >= 0 ? index : 99;
 }
 
@@ -73,7 +55,6 @@ function timeValue(time) {
   const parts = String(time || "99:99").split(":");
   const h = Number(parts[0]);
   const m = Number(parts[1]);
-
   if (Number.isNaN(h) || Number.isNaN(m)) return 9999;
   return h * 60 + m;
 }
@@ -127,9 +108,7 @@ function primaryKey(meeting) {
     meeting?.endTime,
     meeting?.address,
     meeting?.zip
-  ]
-    .map(normalizeText)
-    .join("|");
+  ].map(normalizeText).join("|");
 }
 
 function dedupeMeetings(meetings) {
@@ -157,30 +136,35 @@ function dedupeMeetings(meetings) {
 }
 
 function buildEndpoint(page, pageSize) {
-  return `/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort[0]=id:asc&populate=*`;
+  return `/api/meetings?populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=id:asc`;
 }
 
-async function callStrapi(endpoint) {
-  const url = `${STRAPI_URL}/api${endpoint}`;
+async function callStrapi(context, endpoint) {
+  const token = context.env.NASVERIGE_CMS_TOKEN;
+
+  if (!token) {
+    throw new Error("NASVERIGE_CMS_TOKEN saknas i Cloudflare.");
+  }
+
+  const url = `${CMS_BASE_URL}${endpoint}`;
 
   const response = await fetch(url, {
-    method: "GET",
     headers: {
-      "Accept": "application/json",
-      "Authorization": `Bearer ${STRAPI_TOKEN}`
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json"
     }
   });
 
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(`Strapi HTTP ${response.status}: ${text.slice(0, 500)}`);
+    throw new Error(`Strapi HTTP ${response.status}: ${text.slice(0, 1000)}`);
   }
 
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Strapi svarade inte med JSON: ${text.slice(0, 500)}`);
+    throw new Error(`Strapi svarade inte med JSON: ${text.slice(0, 1000)}`);
   }
 }
 
@@ -190,9 +174,7 @@ function uniqueSorted(values) {
 }
 
 function buildFilters(meetings) {
-  const districts = uniqueSorted(
-    meetings.map(meeting => getDistrict(meeting))
-  );
+  const districts = uniqueSorted(meetings.map(meeting => getDistrict(meeting)));
 
   const cities = uniqueSorted(
     meetings.flatMap(meeting =>
@@ -200,17 +182,14 @@ function buildFilters(meetings) {
     )
   );
 
-  const groups = uniqueSorted(
-    meetings.map(meeting => meeting.title)
-  );
+  const groups = uniqueSorted(meetings.map(meeting => meeting.title));
 
   const meetingTypes = uniqueSorted(
     meetings.flatMap(meeting => getTypes(meeting))
   );
 
-  const days = uniqueSorted(
-    meetings.map(meeting => meeting.days)
-  ).sort((a, b) => dayOrder(a) - dayOrder(b));
+  const days = uniqueSorted(meetings.map(meeting => meeting.days))
+    .sort((a, b) => dayOrder(a) - dayOrder(b));
 
   return {
     districts,
@@ -295,7 +274,7 @@ function simplifyMeeting(meeting) {
   };
 }
 
-async function fetchAllMeetings() {
+async function fetchAllMeetings(context) {
   const raw = [];
   let page = 1;
   let pageCount = 1;
@@ -303,7 +282,7 @@ async function fetchAllMeetings() {
 
   do {
     const endpoint = buildEndpoint(page, PAGE_SIZE);
-    const json = await callStrapi(endpoint);
+    const json = await callStrapi(context, endpoint);
 
     if (!json || !Array.isArray(json.data)) {
       throw new Error(`Oväntat Strapi-svar. json.data saknas: ${JSON.stringify(json).slice(0, 500)}`);
@@ -351,9 +330,10 @@ export async function onRequestOptions() {
 export async function onRequestGet(context) {
   try {
     const cache = caches.default;
-    const cacheKey = new Request(new URL(context.request.url).origin + "/mote?all=1&v=3");
+    const cacheKey = new Request(new URL(context.request.url).origin + "/mote?all=1&v=4");
 
     const cached = await cache.match(cacheKey);
+
     if (cached) {
       return new Response(cached.body, {
         status: cached.status,
@@ -366,7 +346,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    const data = await fetchAllMeetings();
+    const data = await fetchAllMeetings(context);
 
     const response = jsonResponse(data, 200, {
       "X-Cache": "MISS"
@@ -376,7 +356,11 @@ export async function onRequestGet(context) {
 
     return response;
   } catch (error) {
-    return errorResponse("Kunde inte hämta alla möten.", 500, String(error?.message || error));
+    return errorResponse(
+      "Kunde inte hämta alla möten.",
+      500,
+      String(error?.message || error)
+    );
   }
 }
 
@@ -399,7 +383,8 @@ export async function onRequestPost(context) {
         return errorResponse("Endast /meetings-endpoints är tillåtna.", 400);
       }
 
-      const json = await callStrapi(body.endpoint);
+      const endpoint = `/api${body.endpoint}`;
+      const json = await callStrapi(context, endpoint);
 
       return jsonResponse({
         ok: true,
