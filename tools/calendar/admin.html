@@ -8,21 +8,17 @@
 
 <style>
 :root {
-  --na-blue: #003DA5;
-  --na-blue-dark: #002b75;
-  --na-blue-deep: #001f57;
-  --na-blue-light: #2f6fd6;
-  --white: #ffffff;
-  --soft-white: rgba(255, 255, 255, 0.88);
-  --muted-white: rgba(255, 255, 255, 0.70);
-  --panel: rgba(255, 255, 255, 0.96);
-  --panel-soft: #f5f8ff;
+  --na-blue: #101b8f;
+  --na-blue-dark: #0a146f;
+  --bg: #eef3f8;
+  --card: #ffffff;
+  --soft: #f6f8ff;
   --text: #172033;
   --muted: #5c667a;
-  --border: rgba(0, 61, 165, 0.16);
-  --white-border: rgba(255, 255, 255, 0.22);
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
-  --radius: 24px;
+  --border: #d7e2ee;
+  --danger-bg: #fff0f0;
+  --danger-text: #8b1e1e;
+  --danger-border: #f3c3c3;
 }
 
 * {
@@ -31,152 +27,153 @@
 
 html,
 body {
-  min-height: 100%;
   margin: 0;
+  min-height: 100%;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg);
   color: var(--text);
-  background:
-    radial-gradient(circle at 18% 15%, rgba(47, 111, 214, 0.55), transparent 34%),
-    radial-gradient(circle at 84% 80%, rgba(47, 111, 214, 0.38), transparent 38%),
-    linear-gradient(135deg, var(--na-blue-deep), var(--na-blue-dark) 46%, var(--na-blue));
-  padding: 28px;
 }
 
-.page {
-  width: min(100%, 1100px);
-  margin: 0 auto;
+header {
+  background: var(--na-blue);
+  color: #fff;
+  padding: 14px 20px;
+  box-shadow: none;
 }
 
-.site-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  text-align: center;
-  margin: 0 0 24px;
-}
-
-.logo-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-}
-
-.logo {
-  width: min(190px, 58vw);
-  height: auto;
-  display: block;
-  object-fit: contain;
-}
-
-.top-actions {
+.header-inner {
   width: 100%;
+  min-height: 48px;
+  margin: 0;
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-logo {
+  height: 44px;
+  width: auto;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.header-title h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 850;
+  color: #fff;
+  letter-spacing: -0.03em;
+}
+
+.header-title span {
+  display: none;
+}
+
+.header-spacer {
+  flex: 1;
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 11px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.32);
-  background: rgba(255,255,255,0.13);
-  color: var(--white);
+  justify-content: center;
+  min-height: 40px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.46);
+  background: rgba(255,255,255,.12);
+  color: #fff;
   text-decoration: none;
-  font-weight: 750;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
-  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,.16);
+  white-space: nowrap;
 }
 
 .back-button:hover,
 .back-button:focus-visible {
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.20);
-  border-color: rgba(255,255,255,0.52);
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.70);
   outline: none;
 }
 
-.shell {
-  position: relative;
-  overflow: hidden;
-  background: rgba(0, 30, 84, 0.64);
-  border: 1px solid var(--white-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
-  padding: clamp(18px, 4vw, 34px);
-}
-
-.shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.12), transparent 34%),
-    radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 28%);
-  pointer-events: none;
-}
-
 main {
-  position: relative;
-  z-index: 1;
-  background: var(--panel);
-  padding: clamp(20px, 4vw, 34px);
-  border-radius: 20px;
-  box-shadow: 0 14px 34px rgba(0,0,0,0.15);
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 22px 20px 34px;
 }
 
-.page-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 8px 26px rgba(16,42,67,.10);
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 22px 24px 18px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 18px;
-  margin-bottom: 24px;
+  background: linear-gradient(135deg, #ffffff, #f7f9ff);
 }
 
-h1 {
+.panel-head h2 {
   margin: 0;
-  color: var(--na-blue-deep);
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-h2 {
-  margin: 28px 0 10px;
-  color: var(--na-blue-deep);
-  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
-  letter-spacing: -0.02em;
+  color: var(--na-blue);
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
 }
 
 .lead {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.45;
 }
 
+.panel-body {
+  padding: 22px 24px 26px;
+}
+
 .import-card {
-  background: linear-gradient(135deg, rgba(0, 61, 165, 0.08), rgba(47, 111, 214, 0.04));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--soft);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-  margin-bottom: 26px;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+}
+
+.import-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.form-section-title {
+  margin: 24px 0 10px;
+  color: var(--na-blue);
+  font-size: 1.35rem;
 }
 
 label {
   display: block;
   margin-top: 14px;
-  font-weight: 750;
+  font-weight: 800;
   color: #24304a;
 }
 
@@ -186,11 +183,10 @@ textarea {
   width: 100%;
   padding: 12px 13px;
   margin-top: 6px;
-  box-sizing: border-box;
   font-size: 16px;
   border-radius: 12px;
   border: 1px solid #ccd6eb;
-  background: #ffffff;
+  background: #fff;
   color: var(--text);
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -200,7 +196,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--na-blue);
-  box-shadow: 0 0 0 4px rgba(0, 61, 165, 0.12);
+  box-shadow: 0 0 0 4px rgba(16, 27, 143, 0.13);
 }
 
 textarea {
@@ -214,16 +210,23 @@ textarea {
   gap: 14px;
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 button {
-  margin-top: 16px;
+  margin: 0;
   padding: 11px 16px;
   cursor: pointer;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--na-blue);
-  color: var(--white);
-  font-weight: 750;
-  font-size: 0.98rem;
+  color: #fff;
+  font-weight: 800;
+  font-size: .98rem;
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -231,32 +234,37 @@ button:hover,
 button:focus-visible {
   transform: translateY(-1px);
   background: var(--na-blue-dark);
-  box-shadow: 0 10px 22px rgba(0, 61, 165, 0.22);
+  box-shadow: 0 8px 20px rgba(16, 27, 143, .22);
   outline: none;
 }
 
+button.secondary,
 button[type="button"] {
   background: #eef3ff;
-  color: var(--na-blue-deep);
+  color: var(--na-blue);
   border-color: var(--border);
 }
 
+button.secondary:hover,
 button[type="button"]:hover,
+button.secondary:focus-visible,
 button[type="button"]:focus-visible {
-  background: #dfe9ff;
+  background: #dfe7ff;
 }
 
 .event-row {
   border: 1px solid var(--border);
-  background: var(--panel-soft);
+  background: var(--soft);
   padding: 14px 16px;
   border-radius: 16px;
   margin-top: 12px;
   line-height: 1.45;
+  box-shadow: 0 1px 5px rgba(16,42,67,.05);
 }
 
 .event-row strong {
-  color: var(--na-blue-deep);
+  color: var(--na-blue);
+  font-size: 1.05rem;
 }
 
 .actions {
@@ -270,19 +278,20 @@ button[type="button"]:focus-visible {
   margin-top: 0;
   margin-right: 0;
   padding: 8px 12px;
-  font-size: 0.92rem;
+  font-size: .92rem;
+  border-radius: 9px;
 }
 
 .actions button:nth-child(2) {
   background: #eef3ff;
-  color: var(--na-blue-deep);
+  color: var(--na-blue);
   border-color: var(--border);
 }
 
 .actions button:nth-child(3) {
-  background: #fff0f0;
-  color: #8b1e1e;
-  border-color: #f3c3c3;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger-border);
 }
 
 #log {
@@ -298,20 +307,39 @@ button[type="button"]:focus-visible {
 }
 
 @media (max-width: 720px) {
-  body {
-    padding: 16px;
+  header {
+    padding: 12px 14px;
   }
 
-  .logo {
-    width: min(170px, 64vw);
+  .header-inner {
+    gap: 10px;
   }
 
-  .top-actions {
-    justify-content: center;
+  .header-logo {
+    height: 38px;
   }
 
-  .page-title {
-    display: block;
+  .header-title h1 {
+    font-size: 22px;
+  }
+
+  .back-button {
+    min-height: 36px;
+    padding: 6px 12px;
+  }
+
+  main {
+    padding: 16px 14px 28px;
+  }
+
+  .panel-head,
+  .panel-body {
+    padding: 18px 16px;
+  }
+
+  .import-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .row {
@@ -319,12 +347,12 @@ button[type="button"]:focus-visible {
     gap: 0;
   }
 
-  button {
+  .button-row button,
+  .import-card button {
     width: 100%;
   }
 
   .actions button {
-    width: auto;
     flex: 1 1 auto;
   }
 }
@@ -332,88 +360,96 @@ button[type="button"]:focus-visible {
 </head>
 
 <body>
-  <div class="page">
-    <header class="site-header">
-      <a class="logo-link" href="/tools" aria-label="Till startsidan">
-        <img class="logo" src="/assets/na-logo-vit.png" alt="NA Sverige">
-      </a>
-      <div class="top-actions">
-        <a class="back-button" href="/tools">← Tillbaka till startsidan</a>
+<header>
+  <div class="header-inner">
+    <a href="/tools" aria-label="Till startsidan">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+    </a>
+
+    <div class="header-title">
+      <h1>Skapa kalenderpost</h1>
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <a class="back-button" href="/tools">Tillbaka</a>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Skapa kalenderpost</h2>
+      <p class="lead">Lägg till, redigera, dölj eller ta bort manuella händelser i kalendern.</p>
+    </div>
+
+    <div class="panel-body">
+      <div class="import-card">
+        <p>Hämta och uppdatera kalenderposter från nasverige.org.</p>
+        <button onclick="importFromNasverige()">Importera från nasverige.org</button>
       </div>
-    </header>
 
-    <section class="shell">
-      <main>
-        <div class="page-title">
-          <div>
-            <h1>Skapa kalenderpost</h1>
-            <p class="lead">Lägg till, redigera, dölj eller ta bort manuella händelser i kalendern.</p>
-          </div>
+      <h2 class="form-section-title" id="formTitle">Lägg till manuell händelse</h2>
+
+      <label>Typ</label>
+      <select id="event_type">
+        <option value="distrikt">Distrikt</option>
+        <option value="uksam">UKSAM</option>
+        <option value="region">Region</option>
+      </select>
+
+      <label>Titel</label>
+      <input id="title">
+
+      <label>Organisatör</label>
+      <input id="organizer">
+
+      <label>Adress</label>
+      <input id="address">
+
+      <div class="row">
+        <div>
+          <label>Startdatum</label>
+          <input id="start_date" type="date">
         </div>
-
-        <div class="import-card">
-          <button onclick="importFromNasverige()">Importera från nasverige.org</button>
+        <div>
+          <label>Starttid</label>
+          <input id="start_time" type="time">
         </div>
+      </div>
 
-        <h2 id="formTitle">Lägg till manuell händelse</h2>
-
-        <label>Typ</label>
-        <select id="event_type">
-          <option value="distrikt">Distrikt</option>
-          <option value="uksam">UKSAM</option>
-          <option value="region">Region</option>
-        </select>
-
-        <label>Titel</label>
-        <input id="title">
-
-        <label>Organisatör</label>
-        <input id="organizer">
-
-        <label>Adress</label>
-        <input id="address">
-
-        <div class="row">
-          <div>
-            <label>Startdatum</label>
-            <input id="start_date" type="date">
-          </div>
-          <div>
-            <label>Starttid</label>
-            <input id="start_time" type="time">
-          </div>
+      <div class="row">
+        <div>
+          <label>Slutdatum</label>
+          <input id="end_date" type="date">
         </div>
-
-        <div class="row">
-          <div>
-            <label>Slutdatum</label>
-            <input id="end_date" type="date">
-          </div>
-          <div>
-            <label>Sluttid</label>
-            <input id="end_time" type="time">
-          </div>
+        <div>
+          <label>Sluttid</label>
+          <input id="end_time" type="time">
         </div>
+      </div>
 
-        <label>Länk</label>
-        <input id="web_url" type="url">
+      <label>Länk</label>
+      <input id="web_url" type="url">
 
-        <label>Excerpt</label>
-        <textarea id="excerpt"></textarea>
+      <label>Excerpt</label>
+      <textarea id="excerpt"></textarea>
 
-        <label>Description</label>
-        <textarea id="description"></textarea>
+      <label>Description</label>
+      <textarea id="description"></textarea>
 
+      <div class="button-row">
         <button onclick="saveEvent()" id="saveBtn">Spara händelse</button>
         <button onclick="resetForm()" type="button">Avbryt/rensa</button>
+      </div>
 
-        <pre id="log"></pre>
+      <pre id="log"></pre>
 
-        <h2>Manuella händelser</h2>
-        <div id="manualEvents">Laddar...</div>
-      </main>
-    </section>
-  </div>
+      <h2 class="form-section-title">Manuella händelser</h2>
+      <div id="manualEvents">Laddar...</div>
+    </div>
+  </section>
+</main>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -786,4 +822,5 @@ loadManualEvents();
 
 </body>
 </html>
+
 
