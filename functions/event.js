@@ -1,57 +1,113 @@
 // Cloudflare Pages Function
-// URL blir: /event
-// Hämtar event från NA Sveriges Strapi CMS
+// Route: /event
+// Hämtar evenemang från Strapi CMS: https://cms.nasverige.org
+
+const CMS_BASE_URL = "https://cms.nasverige.org";
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "access-control-allow-origin": "*",
+      "cache-control": "no-store"
+    }
+  });
+}
+
+function buildCmsUrl(requestUrl) {
+  const incoming = new URL(requestUrl);
+  const page = incoming.searchParams.get("page") || "1";
+  const pageSize = incoming.searchParams.get("pageSize") || "100";
+
+  const cmsUrl = new URL("/api/events", CMS_BASE_URL);
+  cmsUrl.searchParams.set("populate", "*");
+  cmsUrl.searchParams.set("sort", "startDate:asc");
+  cmsUrl.searchParams.set("pagination[page]", page);
+  cmsUrl.searchParams.set("pagination[pageSize]", pageSize);
+
+  return cmsUrl.toString();
+}
+
+function normalizeEvent(item) {
+  const a = item?.attributes || item || {};
+
+  return {
+    id: item?.id || a.id || null,
+    title: a.title || a.name || a.heading || "Namnlöst event",
+    description: a.description || a.text || a.content || "",
+    startDate: a.startDate || a.start || a.date || a.startsAt || null,
+    endDate: a.endDate || a.end || a.endsAt || null,
+    location: a.location || a.place || a.venue || "",
+    address: a.address || "",
+    city: a.city || "",
+    district: a.district || "",
+    url: a.url || a.link || "",
+    raw: item
+  };
+}
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, OPTIONS",
+      "access-control-allow-headers": "content-type, authorization"
+    }
+  });
+}
 
 export async function onRequestGet(context) {
-  const url = new URL(context.request.url);
+  const token = context.env.NASVERIGE_CMS_TOKEN;
+  const cmsUrl = buildCmsUrl(context.request.url);
 
-  const pageSize = url.searchParams.get("pageSize") || "100";
-  const page = url.searchParams.get("page") || "1";
+  const headers = {
+    accept: "application/json"
+  };
 
-  const CMS_URL =
-    `https://cms.nasverige.org/api/events` +
-    `?populate=*` +
-    `&sort=startDate:asc` +
-    `&pagination[page]=${encodeURIComponent(page)}` +
-    `&pagination[pageSize]=${encodeURIComponent(pageSize)}`;
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
 
   try {
-    const response = await fetch(CMS_URL, {
-      headers: {
-        "Accept": "application/json"
-        // Om API:t kräver token senare:
-        // "Authorization": `Bearer ${context.env.NASVERIGE_CMS_TOKEN}`
-      }
-    });
+    const response = await fetch(cmsUrl, { headers });
+    const text = await response.text();
 
-    if (!response.ok) {
-      return Response.json({
-        success: false,
-        source: "nasverige-cms",
-        error: `CMS svarade med ${response.status}`,
-        cmsUrl: CMS_URL
-      }, { status: response.status });
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { raw: text };
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+      return json({
+        success: false,
+        status: response.status,
+        message: response.status === 403
+          ? "CMS svarade med 403. Lägg till NASVERIGE_CMS_TOKEN i Cloudflare Pages eller aktivera Public permission för event.find i Strapi."
+          : `CMS svarade med ${response.status}`,
+        cmsUrl,
+        cmsResponse: data
+      }, response.status);
+    }
 
-    return Response.json({
+    const rawEvents = Array.isArray(data?.data) ? data.data : [];
+    const events = rawEvents.map(normalizeEvent);
+
+    return json({
       success: true,
       source: "nasverige-cms",
-      count: data?.data?.length || 0,
-      events: data?.data || [],
+      count: events.length,
+      events,
       meta: data?.meta || null
-    }, {
-      headers: {
-        "Cache-Control": "public, max-age=300"
-      }
     });
-
   } catch (error) {
-    return Response.json({
+    return json({
       success: false,
-      source: "nasverige-cms",
-      error: error.message
-    }, { status: 500 });
+      message: error.message,
+      cmsUrl
+    }, 500);
   }
 }
