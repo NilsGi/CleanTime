@@ -1388,59 +1388,81 @@ function clearAllFilters(){
 
 
 function handleDistanceFilterChange(){
-  const value = $("distanceFilter").value;
+  const distanceEl = $("distanceFilter");
+  const value = distanceEl ? distanceEl.value : "";
 
   if (!value) {
     userPosition = null;
+
     if (userMarker && map) {
       map.removeLayer(userMarker);
       userMarker = null;
     }
-    renderAll(false);
-    return;
-  }
 
-  if (userPosition) {
     renderAll(false);
+    setStatus('<span class="ok">Avståndsfiltret rensat.</span>');
     return;
   }
 
   if (!navigator.geolocation) {
-    setStatus('<span class="bad">Geolocation stöds inte.</span>');
-    $("distanceFilter").value = "";
+    setStatus('<span class="bad">Din webbläsare stödjer inte platsdelning.</span>');
+    if (distanceEl) distanceEl.value = "";
     return;
   }
 
   setStatus("Hämtar din position...");
-  navigator.geolocation.getCurrentPosition(pos => {
-    userPosition = {
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude
-    };
 
-    if (userMarker && map) map.removeLayer(userMarker);
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userPosition = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
 
-    userMarker = L.circleMarker([userPosition.lat, userPosition.lng], {
-      radius:8,
-      color:"#111",
-      fillColor:"#111",
-      fillOpacity:0.9,
-      weight:2
-    }).addTo(map).bindPopup("Du är här");
+      if (userMarker && map) {
+        map.removeLayer(userMarker);
+      }
 
-    renderAll(false);
-    setStatus('<span class="ok">Position hämtad.</span> Avståndsfiltret är aktivt.');
-  }, err => {
-    setStatus('<span class="bad">Kunde inte hämta position:</span> ' + esc(err.message));
-    $("distanceFilter").value = "";
-  }, {
-    enableHighAccuracy:true,
-    timeout:10000,
-    maximumAge:60000
-  });
+      if (map && typeof L !== "undefined") {
+        userMarker = L.circleMarker([userPosition.lat, userPosition.lng], {
+          radius: 8,
+          color: "#111",
+          fillColor: "#111",
+          fillOpacity: 0.9,
+          weight: 2
+        }).addTo(map).bindPopup("Du är här");
+      }
+
+      renderAll(false);
+      fitVisible();
+
+      setStatus(
+        '<span class="ok">Position hämtad.</span> Visar möten inom ' +
+        value +
+        ' km.'
+      );
+    },
+    err => {
+      userPosition = null;
+
+      if (distanceEl) distanceEl.value = "";
+
+      let message = err.message || "Kunde inte hämta position.";
+
+      if (err.code === 1) {
+        message = "Platsåtkomst nekades. Tillåt platsdelning i webbläsaren och försök igen.";
+      }
+
+      setStatus('<span class="bad">' + esc(message) + '</span>');
+      renderAll(false);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
 }
-
-
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
   fetchAllMeetings();
