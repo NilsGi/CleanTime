@@ -240,6 +240,12 @@ select[multiple]{
   }
 }
 
+
+/* Dolda äldre extra sökfält om de finns kvar i någon cachead mall */
+#groupFilter,#cityFilter,#groupFilterStats,#cityFilterStats{
+  display:none;
+}
+
 </style>
 </head>
 
@@ -262,18 +268,7 @@ select[multiple]{
 <div id="status" class="muted"><span class="bad">Fel:</span> Load failed</div>
 
 <label>Sök grupp/ort</label>
-<input id="search" placeholder="Sök gruppnamn eller meetingCity..." oninput="renderAll()">
-
-<div class="filter-grid">
-  <div>
-    <label>Grupp</label>
-    <input id="groupFilter" placeholder="T.ex. Huddinge NA" oninput="renderAll()">
-  </div>
-  <div>
-    <label>Ort / meetingCity</label>
-    <input id="cityFilter" placeholder="T.ex. Stockholm" oninput="renderAll()">
-  </div>
-</div>
+<input id="search" placeholder="Sök möte, ort, adress, station, info..." oninput="renderAll()">
 
 <div class="filter-grid">
   <div>
@@ -340,7 +335,7 @@ select[multiple]{
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
     <label>Sök grupp/ort</label>
-    <input id="searchStats" placeholder="Sök gruppnamn eller meetingCity..." oninput="syncFilter('search', this.value)">
+    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="syncFilter('search', this.value)">
 
     <div class="filter-grid">
       <div>
@@ -676,7 +671,25 @@ function getCity(m){ return (m.meetingCity||[]).map(c=>c.city).join(", "); }
 function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
 function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
 function hasCoords(m){ return m.latitude !== null && m.longitude !== null && !isNaN(Number(m.latitude)) && !isNaN(Number(m.longitude)); }
-function meetingText(m){ return [m.title, getCity(m)].join(" ").toLowerCase(); }
+function meetingText(m){
+  return [
+    m.title,
+    getCity(m),
+    m.meetingDistrict?.district,
+    m.location,
+    m.address,
+    m.zip,
+    m.station,
+    m.information,
+    getTypes(m).join(" ")
+  ].join(" ").toLowerCase();
+}
+
+function hasActiveTextSearch(){
+  const q = $("search")?.value?.trim();
+  return !!q;
+}
+
 
 function formatInformation(text){
   const raw = String(text || "").trim();
@@ -727,8 +740,6 @@ function populateFilters(){
 
 function filteredMeetings(){
   const q = $("search").value.trim().toLowerCase();
-  const groupQ = $("groupFilter").value.trim().toLowerCase();
-  const cityQ = $("cityFilter").value.trim().toLowerCase();
   const districts = selectedValues("districtFilter");
   const meetingTypes = selectedValues("meetingTypeFilter");
   const days = selectedValues("dayFilter");
@@ -737,8 +748,6 @@ function filteredMeetings(){
 
   let list = allMeetings.filter(m => {
     if (q && !meetingText(m).includes(q)) return false;
-    if (groupQ && !String(m.title || "").toLowerCase().includes(groupQ)) return false;
-    if (cityQ && !getCity(m).toLowerCase().includes(cityQ)) return false;
     if (districts.length && !districts.includes(m.meetingDistrict?.district)) return false;
     if (meetingTypes.length && !meetingTypes.some(t => getTypes(m).includes(t))) return false;
     if (days.length && !days.includes(m.days)) return false;
@@ -814,7 +823,9 @@ function renderAll(syncFromMap = false){
   const meetingList = filteredMeetings();
   const groupList = groupMeetingsForDisplay(meetingList);
   const mapGroups = groupList.filter(groupMatchesMap);
-  const visibleGroupList = listFollowsMap && map
+  const searchActive = hasActiveTextSearch();
+
+  const visibleGroupList = listFollowsMap && map && !searchActive
     ? groupList.filter(isGroupInMapView)
     : groupList;
 
@@ -832,6 +843,11 @@ function renderAll(syncFromMap = false){
     distanceText;
 
   renderMarkers(mapGroups);
+
+  if (searchActive) {
+    fitGroupsOnMap(mapGroups);
+  }
+
   renderStats(meetingList);
   renderList(visibleGroupList.slice(0,150));
 
@@ -844,6 +860,33 @@ function renderAll(syncFromMap = false){
     $("list").appendChild(p);
   }
 }
+
+
+function fitGroupsOnMap(groups){
+  if (!map || !groups || !groups.length) return;
+
+  const points = groups
+    .filter(groupMatchesMap)
+    .map(g => [g.latitude, g.longitude]);
+
+  if (!points.length) return;
+
+  suppressMapMoveRender = true;
+
+  if (points.length === 1) {
+    map.setView(points[0], 14);
+  } else {
+    map.fitBounds(points, {
+      padding: [35, 35],
+      maxZoom: 13
+    });
+  }
+
+  setTimeout(() => {
+    suppressMapMoveRender = false;
+  }, 250);
+}
+
 
 function renderMarkers(groups){
   markersLayer.clearLayers();
@@ -1198,8 +1241,6 @@ function showTab(tab){
 function syncFilterMirror(){
   const pairs = [
     ["search","searchStats"],
-    ["groupFilter","groupFilterStats"],
-    ["cityFilter","cityFilterStats"],
     ["districtFilter","districtFilterStats"],
     ["dayFilter","dayFilterStats"],
     ["meetingTypeFilter","meetingTypeFilterStats"],
@@ -1238,7 +1279,9 @@ function syncMultiFilter(mainId, sourceEl){
 function getCurrentFilteredGroupsForExport(){
   const meetingList = filteredMeetings();
   const groupList = groupMeetingsForDisplay(meetingList);
-  const visibleGroupList = listFollowsMap && map
+  const searchActive = hasActiveTextSearch();
+
+  const visibleGroupList = listFollowsMap && map && !searchActive
     ? groupList.filter(isGroupInMapView)
     : groupList;
 
@@ -1354,7 +1397,7 @@ function exportFilteredToPdf(){
 
 
 function clearAllFilters(){
-  ["search","groupFilter","cityFilter"].forEach(id => {
+  ["search"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
   });
