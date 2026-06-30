@@ -8,58 +8,53 @@ export async function onRequest(context) {
     );
   }
 
-  const pageSize = 100;
-  let page = 1;
-  let allEvents = [];
-  let lastMeta = null;
+  const url =
+    "https://cms.nasverige.org/api/events" +
+    "?fields[0]=title" +
+    "&fields[1]=slug" +
+    "&fields[2]=organizer" +
+    "&fields[3]=address" +
+    "&fields[4]=price" +
+    "&fields[5]=startDate" +
+    "&fields[6]=endDate" +
+    "&fields[7]=webUrl" +
+    "&fields[8]=excerpt" +
+    "&fields[9]=description" +
+    "&populate=*"+
+    "&pagination[pageSize]=100";
 
   try {
-    while (true) {
-      const url =
-        "https://cms.nasverige.org/api/events" +
-        "?populate=*" +
-        `&pagination[page]=${page}` +
-        `&pagination[pageSize]=${pageSize}`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json"
-        }
-      });
-
-      const text = await response.text();
-
-      if (!response.ok) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            status: response.status,
-            statusText: response.statusText,
-            url,
-            response: text
-          }, null, 2),
-          { status: response.status, headers: { "Content-Type": "application/json" } }
-        );
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
       }
+    });
 
-      const json = JSON.parse(text);
-      allEvents = allEvents.concat(json.data || []);
-      lastMeta = json.meta || null;
+    const text = await response.text();
 
-      const pagination = json.meta?.pagination;
-      if (!pagination || page >= pagination.pageCount) break;
-
-      page++;
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: response.status,
+          statusText: response.statusText,
+          url,
+          response: text
+        }, null, 2),
+        { status: response.status, headers: { "Content-Type": "application/json" } }
+      );
     }
+
+    const json = JSON.parse(text);
 
     return Response.json({
       success: true,
-      count: allEvents.length,
-      meta: lastMeta,
-      fields: allEvents[0] ? Object.keys(allEvents[0]) : [],
-      firstEvent: allEvents[0] || null,
-      events: allEvents
+      count: json.data?.length || 0,
+      fields: json.data?.[0] ? Object.keys(json.data[0]) : [],
+      firstEvent: json.data?.[0] || null,
+      events: json.data || [],
+      meta: json.meta || null
     });
 
   } catch (error) {
