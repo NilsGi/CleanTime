@@ -8,81 +8,233 @@
 <style>
 :root {
   --na-blue: #101b8f;
-  --bg: #f4f5f8;
+  --na-blue-dark: #071163;
+  --na-blue-soft: #eef1ff;
+  --bg: #eef3f8;
   --card: #ffffff;
-  --text: #1d1d1f;
-  --muted: #666;
-  --border: #ddd;
+  --text: #102033;
+  --muted: #607086;
+  --border: #d7e2ee;
+  --shadow: 0 10px 30px rgba(16, 42, 67, .10);
+  --shadow-soft: 0 3px 12px rgba(16, 42, 67, .08);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: var(--bg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(16, 27, 143, .13), transparent 34rem),
+    linear-gradient(180deg, #f7f9fd 0%, var(--bg) 100%);
   color: var(--text);
 }
 
-header {
-  background: var(--na-blue);
-  color: white;
-  padding: 14px 20px;
+.site-header {
+  background: linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+  color: #fff;
+  padding: 13px 20px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, .22);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
-header img {
-  height: 44px;
+.header-logo {
+  height: 46px;
   width: auto;
+  display: block;
 }
 
-header h1 {
+.header-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.header-title h1 {
   margin: 0;
   font-size: 28px;
+  font-weight: 850;
+  letter-spacing: -.02em;
 }
+
+.header-title span {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 650;
+  opacity: .88;
+}
+
+.back-button {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 5px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.55);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.back-button:hover { background: rgba(255,255,255,.18); }
 
 main {
   max-width: 1200px;
-  margin: auto;
-  padding: 20px;
+  margin: 0 auto;
+  padding: 22px 20px 44px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: end;
+  margin: 8px 0 18px;
+}
+
+.hero h2 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -.04em;
+  color: var(--na-blue-dark);
+}
+
+.hero p {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+#status {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--na-blue);
+  font-weight: 800;
+  box-shadow: var(--shadow-soft);
+  white-space: nowrap;
+}
+
+#status::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--na-blue);
+  box-shadow: 0 0 0 4px rgba(16, 27, 143, .11);
 }
 
 .toolbar {
-  background: var(--card);
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(215,226,238,.95);
   padding: 16px;
-  border-radius: 14px;
+  border-radius: 18px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: minmax(210px, 1.4fr) minmax(150px, .9fr) minmax(150px, .9fr) minmax(230px, 1.2fr) minmax(160px, .9fr);
   gap: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.field {
+  min-width: 0;
+}
+
+.field label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 input, select, button {
-  padding: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
   font-size: 15px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 11px;
+}
+
+input, select {
+  background: #fff;
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+input:focus, select:focus {
+  outline: 3px solid rgba(16, 27, 143, .14);
+  border-color: var(--na-blue);
 }
 
 button {
   cursor: pointer;
   background: var(--na-blue);
-  color: white;
-  border: none;
+  color: #fff;
+  border-color: var(--na-blue);
+  font-weight: 800;
+  box-shadow: 0 3px 10px rgba(16, 27, 143, .20);
 }
 
+button:hover { filter: brightness(1.06); }
+
 .view-buttons {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
 }
 
 .view-buttons button {
-  flex: 1;
+  padding: 11px 8px;
+  background: var(--na-blue-soft);
+  color: var(--na-blue);
+  border: 1px solid rgba(16, 27, 143, .18);
+  box-shadow: none;
+}
+
+.view-buttons button.is-active {
+  background: var(--na-blue);
+  color: #fff;
+  border-color: var(--na-blue);
+  box-shadow: 0 3px 10px rgba(16, 27, 143, .20);
+}
+
+#calendar { animation: fadeIn .18s ease-out; }
+
+@keyframes fadeIn {
+  from { opacity: .5; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .event-list {
@@ -91,151 +243,342 @@ button {
 }
 
 .event-card {
-  background: white;
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 18px 18px 20px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.event-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--na-blue);
+}
+
+.event-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .event-card h2 {
-  margin: 0 0 8px;
-  color: var(--na-blue);
+  margin: 0 0 9px;
+  color: var(--na-blue-dark);
+  font-size: clamp(20px, 2.3vw, 26px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+
+.event-card p {
+  margin: 10px 0 0;
+  line-height: 1.55;
 }
 
 .meta {
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  font-weight: 600;
 }
 
-.type {
-  display: inline-block;
-  background: #eef0ff;
+.type, .event-date-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  background: var(--na-blue-soft);
   color: var(--na-blue);
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 13px;
-  margin-bottom: 8px;
+  font-weight: 850;
+}
+
+.event-date-pill {
+  background: #f5f7fb;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+details {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+summary {
+  cursor: pointer;
+  color: var(--na-blue);
+  font-weight: 850;
 }
 
 .actions {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
 .actions a, .actions button {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   background: var(--na-blue);
-  color: white;
+  color: #fff;
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--na-blue);
   font-size: 14px;
+  font-weight: 850;
+  min-height: 38px;
+}
+
+.actions a:nth-child(n+2), .actions button:nth-child(n+2) {
+  background: var(--na-blue-soft);
+  color: var(--na-blue);
+  border-color: rgba(16, 27, 143, .18);
+  box-shadow: none;
 }
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.month-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 15px 18px;
+  color: var(--na-blue-dark);
+  box-shadow: var(--shadow-soft);
+  font-weight: 900;
+  font-size: 22px;
+  text-transform: capitalize;
 }
 
 .day-name {
-  font-weight: bold;
+  font-weight: 900;
+  color: var(--muted);
   text-align: center;
-  padding: 8px;
+  padding: 9px 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
 }
 
 .day {
-  background: white;
-  min-height: 130px;
-  border-radius: 10px;
-  padding: 8px;
-  box-shadow: 0 1px 5px rgba(0,0,0,.06);
+  background: #fff;
+  min-height: 132px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 9px;
+  box-shadow: 0 1px 5px rgba(16,42,67,.05);
+}
+
+.day.is-today {
+  outline: 3px solid rgba(16, 27, 143, .14);
+  border-color: var(--na-blue);
+}
+
+.day.empty {
+  background: rgba(255,255,255,.45);
+  box-shadow: none;
 }
 
 .day-number {
-  font-weight: bold;
-  margin-bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  font-weight: 900;
+  margin-bottom: 7px;
+  color: var(--na-blue-dark);
+}
+
+.day.is-today .day-number {
+  background: var(--na-blue);
+  color: #fff;
 }
 
 .day-event {
-  background: #eef0ff;
+  background: var(--na-blue-soft);
   color: var(--na-blue);
-  padding: 5px;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  font-size: 13px;
+  border: 1px solid rgba(16, 27, 143, .12);
+  padding: 6px 7px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.25;
   cursor: pointer;
+  font-weight: 750;
+}
+
+.day-event:hover {
+  background: var(--na-blue);
+  color: #fff;
 }
 
 .week-list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .week-day {
-  background: white;
-  padding: 14px;
-  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
 }
 
 .week-day h3 {
-  margin-top: 0;
-  color: var(--na-blue);
+  margin: 0 0 12px;
+  color: var(--na-blue-dark);
+  font-size: 22px;
+  text-transform: capitalize;
+}
+
+.week-day > p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.empty-state {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+  box-shadow: var(--shadow-soft);
+}
+
+.empty-state b {
+  display: block;
+  color: var(--na-blue-dark);
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1050px) {
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field.full-mobile {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 800px) {
-  .toolbar {
+  .site-header { padding: 12px 14px; }
+  .header-inner { gap: 12px; }
+  .header-logo { height: 40px; }
+  .header-title h1 { font-size: 22px; }
+  .header-title span { display: none; }
+  .back-button { min-height: 30px; padding: 5px 11px; font-size: 15px; }
+
+  main { padding: 18px 14px 32px; }
+
+  .hero {
     grid-template-columns: 1fr;
+    align-items: start;
   }
 
-  .calendar-grid {
-    grid-template-columns: 1fr;
-  }
+  #status { justify-self: start; white-space: normal; }
 
-  .day-name {
-    display: none;
-  }
+  .toolbar { grid-template-columns: 1fr; border-radius: 16px; }
 
-  header h1 {
-    font-size: 22px;
-  }
+  .calendar-grid { grid-template-columns: 1fr; }
+  .month-heading { font-size: 20px; }
+  .day-name { display: none; }
+  .day { min-height: auto; }
+
+  .event-card { padding: 17px 16px 17px 19px; }
+  .actions a, .actions button { width: 100%; }
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <img src="/assets/na-logo-vit.png" alt="NA">
-  <h1>Kalender</h1>
+<header class="site-header">
+  <div class="header-inner">
+    <img src="/assets/na-logo-vit.png" alt="NA" class="header-logo">
+    <div class="header-title">
+      <h1>Kalender</h1>
+      <span>NA Sverige</span>
+    </div>
+    <a class="back-button" href="/tools">Tillbaka</a>
+  </div>
 </header>
 
 <main>
 
-<div class="toolbar">
-  <input id="search" placeholder="Sök evenemang...">
+<section class="hero" aria-labelledby="pageTitle">
+  <div>
+    <h2 id="pageTitle">Kommande händelser</h2>
+    <p>Här hittar du event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.</p>
+  </div>
+  <div id="status">Laddar kalender...</div>
+</section>
 
-  <select id="typeFilter">
-    <option value="">Alla typer</option>
-    <option value="event">Event</option>
-    <option value="distrikt">Distrikt</option>
-    <option value="uksam">UKSAM</option>
-    <option value="region">Region</option>
-  </select>
-
-  <select id="monthFilter"></select>
-
-  <div class="view-buttons">
-    <button onclick="setView('list')">Lista</button>
-    <button onclick="setView('week')">Vecka</button>
-    <button onclick="setView('month')">Månad</button>
+<section class="toolbar" aria-label="Filtrera kalender">
+  <div class="field">
+    <label for="search">Sök</label>
+    <input id="search" placeholder="Sök evenemang...">
   </div>
 
-  <button onclick="downloadAllIcs()">Prenumerera / ICS</button>
-</div>
+  <div class="field">
+    <label for="typeFilter">Typ</label>
+    <select id="typeFilter">
+      <option value="">Alla typer</option>
+      <option value="event">Event</option>
+      <option value="distrikt">Distrikt</option>
+      <option value="uksam">UKSAM</option>
+      <option value="region">Region</option>
+    </select>
+  </div>
 
-<div id="status">Laddar kalender...</div>
+  <div class="field">
+    <label for="monthFilter">Månad</label>
+    <select id="monthFilter"></select>
+  </div>
+
+  <div class="field full-mobile">
+    <label>Vy</label>
+    <div class="view-buttons">
+      <button type="button" data-view="list" onclick="setView('list')">Lista</button>
+      <button type="button" data-view="week" onclick="setView('week')">Vecka</button>
+      <button type="button" data-view="month" onclick="setView('month')">Månad</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>&nbsp;</label>
+    <button type="button" onclick="downloadAllIcs()">Prenumerera / ICS</button>
+  </div>
+</section>
+
 <div id="calendar"></div>
 
 </main>
@@ -309,6 +652,14 @@ window.setView = function(view) {
   render();
 };
 
+function updateViewButtons() {
+  document.querySelectorAll("[data-view]").forEach(button => {
+    const active = button.dataset.view === currentView;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 function getFilteredEvents(options = {}) {
   const search = document.getElementById("search").value.toLowerCase();
   const type = document.getElementById("typeFilter").value;
@@ -338,6 +689,8 @@ function getFilteredEvents(options = {}) {
 }
 
 function render() {
+  updateViewButtons();
+
   // Månadsvy får visa vald månad även om den ligger bakåt i tiden.
   // Listvy och veckovy visar bara pågående/kommande event.
   const events = getFilteredEvents({
@@ -351,6 +704,17 @@ function render() {
 
 function renderList(events) {
   calendar.className = "event-list";
+
+  if (!events.length) {
+    calendar.innerHTML = `
+      <div class="empty-state">
+        <b>Inga händelser hittades</b>
+        Prova att ändra sökningen, typen eller månadsvyn.
+      </div>
+    `;
+    return;
+  }
+
   calendar.innerHTML = events.map(eventCard).join("");
 }
 
@@ -391,27 +755,33 @@ function renderMonth(events) {
   const totalDays = startOffset + last.getDate();
 
   const dayNames = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
+  const monthLabel = selectedMonth.toLocaleDateString("sv-SE", {
+    year: "numeric",
+    month: "long"
+  });
 
-  let html = dayNames.map(d => `<div class="day-name">${d}</div>`).join("");
+  let html = `<div class="month-heading">${monthLabel}</div>`;
+  html += dayNames.map(d => `<div class="day-name">${d}</div>`).join("");
 
   for (let i = 0; i < totalDays; i++) {
     if (i < startOffset) {
-      html += `<div class="day"></div>`;
+      html += `<div class="day empty"></div>`;
       continue;
     }
 
     const dayNumber = i - startOffset + 1;
     const date = new Date(year, month, dayNumber);
+    const todayClass = sameDay(date, new Date()) ? " is-today" : "";
 
     const dayEvents = events.filter(e =>
       eventOccursOnDate(e, date)
     );
 
     html += `
-      <div class="day">
+      <div class="day${todayClass}">
         <div class="day-number">${dayNumber}</div>
         ${dayEvents.map(e => `
-          <div class="day-event" onclick="showEvent('${e.id}')">
+          <div class="day-event" onclick="showEvent('${e.id}')" title="${escapeAttr(e.title)}">
             ${time(e.start_datetime)} ${escapeHtml(e.title)}
           </div>
         `).join("")}
@@ -424,14 +794,19 @@ function renderMonth(events) {
 
 function eventCard(e) {
   return `
-    <div class="event-card" id="event-${e.id}">
-      <span class="type">${labelType(e.event_type)}</span>
+    <article class="event-card" id="event-${e.id}">
+      <div class="event-card-top">
+        <span class="type">${labelType(e.event_type)}</span>
+        <span class="event-date-pill">${formatDateShort(e.start_datetime)}</span>
+      </div>
+
       <h2>${escapeHtml(e.title)}</h2>
 
       <div class="meta">
         ${formatDate(e.start_datetime)}
         ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
-        ${e.address ? "<br>" + escapeHtml(e.address) : ""}
+        ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
+        ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
       </div>
 
       ${e.excerpt ? `<p>${escapeHtml(e.excerpt)}</p>` : ""}
@@ -439,10 +814,10 @@ function eventCard(e) {
 
       <div class="actions">
         ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
-        <button onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
+        <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
         <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
       </div>
-    </div>
+    </article>
   `;
 }
 
@@ -566,6 +941,14 @@ function formatDate(value) {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
+  });
+}
+
+function formatDateShort(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "short"
   });
 }
 
