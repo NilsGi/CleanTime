@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NA Sverige - Distriktskarta</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#eef3f8;color:#111}
+header{background:#0a1981;color:#fff;padding:14px 20px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+
+main{display:grid;grid-template-columns:390px 1fr;min-height:calc(100vh - 62px)}
+aside{background:#fff;border-right:1px solid #d7e2ee;padding:14px;overflow:auto;max-height:calc(100vh - 62px)}
+#map{height:calc(100vh - 62px);min-height:520px;background:#ddd}
+button{padding:10px 13px;border:0;border-radius:10px;background:#0a1981;color:#fff;cursor:pointer;margin:4px 5px 8px 0;font-weight:700;box-shadow:0 2px 6px rgba(10,25,129,.25)}
+button.secondary{background:#d9e1ff;color:#0a1981;border:1px solid rgba(10,25,129,.15)}
+input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;margin:5px 0 10px}
+.ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.stat-card{background:#f4f8fc;border:1px solid #d7e2ee;border-radius:12px;padding:10px}
+.stat-card b{display:block;font-size:22px}
+.district-card{border:1px solid #d7e2ee;border-radius:14px;margin:10px 0;background:#fbfdff;overflow:hidden;box-shadow:0 1px 4px rgba(16,42,67,.06)}
+.district-card-inner{padding:12px}
+.district-top{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}
+.district-name{font-weight:800;font-size:16px}
+.district-meta{font-size:13px;color:#555;margin-top:3px}
+.swatch{display:inline-block;width:14px;height:14px;border-radius:50%;margin-top:3px}
+.toggle-box{width:auto;margin:2px 0 0}
+.table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
+.table th,.table td{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
+.table th{background:#eee}
+details{border-top:1px dashed #ddd;margin-top:8px;padding-top:8px}
+summary{cursor:pointer;font-weight:700}
+.meeting-dot div{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)
+}
+
+.leaflet-control-attribution .leaflet-attribution-flag{display:none!important}
+.leaflet-control-attribution a[href*="leafletjs.com"]{display:none!important}
+@media(max-width:900px){
+  main{display:block}
+  aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}
+  #map{height:70vh;min-height:420px}
+}
+
+.district-cluster-marker{
+  background:transparent!important;
+  border:0!important;
+}
+
+
+.custom-district-cluster,
+.custom-district-cluster div,
+.district-cluster-marker,
+.district-cluster-marker div{
+  background:transparent!important;
+  border:0!important;
+}
+
+.custom-district-cluster > div{
+  background:var(--cluster-color)!important;
+}
+
+
+:root{
+  --ct-bg:#eef3f8;
+  --ct-dark:#102a43;
+  --ct-dark-2:#07111f;
+  --ct-accent:#1976d2;
+  --ct-soft:#dbe8f5;
+  --ct-border:#d7e2ee;
+}
+.header-inner{display:flex;align-items:center;gap:14px}
+.header-logo{height:44px;width:auto;display:block}
+
+input,select{
+  border-color:var(--ct-border);
+}
+input:focus,select:focus{
+  outline:2px solid rgba(25,118,210,.25);
+  border-color:var(--ct-accent);
+}
+.meeting-dot div{
+  box-shadow:0 1px 6px rgba(16,42,67,.45)!important;
+}
+
+
+.header-inner{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.header-logo{
+  height:46px;
+  width:auto;
+  display:block;
+}
+.header-titles{
+  display:flex;
+  flex-direction:column;
+}
+.header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+.header-titles .subtitle{
+  margin-top:3px;
+  color:#fff;
+  opacity:.92;
+  font-size:15px;
+  font-weight:600;
+}
+@media(max-width:700px){
+  header{padding:12px 14px}
+  .header-logo{height:40px}
+  .header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+  .header-titles .subtitle{font-size:14px}
+}
+
+
+button:hover{filter:brightness(1.08)}
+button.secondary:hover{background:#cfd9ff}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+    <div class="header-titles">
+      <h1>Distriktskarta</h1>
+    </div>
+  </div>
+</header>
+
+<main>
+<aside>
+<button onclick="fetchDistrictMap()">Uppdatera karta</button>
+<button class="secondary" onclick="showAllDistricts()">Visa alla distrikt</button>
+<button class="secondary" onclick="hideAllDistricts()">Dölj alla</button>
+
+<div id="status" class="muted">Startar...</div>
+
+<label>Sök distrikt, ort eller grupp</label>
+<input id="search" placeholder="T.ex. GOSSNAD, Stockholm, Årstagruppen..." oninput="renderDistricts()">
+
+<label>Visa</label>
+<select id="displayMode" onchange="renderDistricts()">
+<option value="all">Alla möten</option>
+<option value="physical">Endast fysiska möten</option>
+<option value="online">Endast online-möten</option>
+</select>
+
+<div id="summary"></div>
+<div id="districtList"></div>
+</aside>
+
+<div id="map"></div>
+</main>
+
+<script>
+const PROXY_URL = "/mote";
+
+let map = null;
+let markerLayer = null;
+let allMeetings = [];
+let districtData = [];
+let enabledDistricts = new Set();
+
+const colors = [
+  "#1976d2", "#00a6a6", "#6c5ce7", "#2e7d32", "#f57c00",
+  "#c2185b", "#455a64", "#00897b", "#5e35b1", "#ef6c00",
+  "#0277bd", "#7cb342", "#ad1457", "#546e7a", "#3949ab",
+  "#0097a7", "#8e24aa", "#6d4c41", "#1565c0", "#00838f"
+];
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function setStatus(html){$("status").innerHTML=html}
+
+function initMap(){
+  if(typeof L === "undefined"){
+    setStatus('<span class="bad">Leaflet kunde inte laddas.</span>');
+    return false;
+  }
+
+  map = L.map("map").setView([62,15],5);
+  map.attributionControl.setPrefix(false);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,
+    attribution:"© OpenStreetMap"
+  }).addTo(map);
+
+  if (typeof L.markerClusterGroup === "function") {
+    markerLayer = L.markerClusterGroup({
+      showCoverageOnHover:false,
+      spiderfyOnMaxZoom:true,
+      disableClusteringAtZoom:14,
+      maxClusterRadius:42,
+
+      iconCreateFunction: function(cluster){
+        const children = cluster.getAllChildMarkers();
+        const counts = {};
+
+        children.forEach(marker => {
+          const district = marker.options.district || "Okänt distrikt";
+          counts[district] = (counts[district] || 0) + 1;
+        });
+
+        const dominantDistrict = Object.keys(counts)
+          .sort((a,b) => counts[b] - counts[a])[0];
+
+        const districtInfo = districtData.find(d => d.district === dominantDistrict);
+        const color = districtInfo?.color || "#1976d2";
+
+        return L.divIcon({
+          html: '<div style="' +
+            '--cluster-color:' + color + ';' +
+            'background:' + color + '!important;' +
+            'width:42px;height:42px;border-radius:50%;' +
+            'color:#fff;display:flex;align-items:center;justify-content:center;' +
+            'font-weight:800;border:3px solid #fff!important;' +
+            'box-shadow:0 2px 7px rgba(0,0,0,.35);' +
+          '">' + cluster.getChildCount() + '</div>',
+          className: "custom-district-cluster",
+          iconSize: [42,42],
+          iconAnchor: [21,21]
+        });
+      }
+    }).addTo(map);
+  } else {
+    markerLayer = L.layerGroup().addTo(map);
+  }
+
+  setStatus('<span class="ok">Kartan laddad.</span> Hämtar möten...');
+  return true;
+}
+
+async function fetchDistrictMap(){
+  if(!map && !initMap()) return;
+
+  try{
+    setStatus("Hämtar möten...");
+    const res = await fetch(PROXY_URL,{headers:{"Accept":"application/json"}});
+    const json = await res.json();
+
+    if(!res.ok || !json.ok || !Array.isArray(json.data)){
+      throw new Error(json.error || "Kunde inte hämta möten från /mote");
+    }
+
+    allMeetings = json.data;
+    buildDistrictData();
+    enabledDistricts = new Set(districtData.map(d => d.district));
+    renderDistricts();
+    fitVisibleMeetings();
+
+    setStatus('<span class="ok">Klart.</span> Hämtade '+allMeetings.length+' möten.');
+  }catch(e){
+    setStatus('<span class="bad">Fel:</span> '+esc(e.message));
+    console.error(e);
+  }
+}
+
+function getDistrict(m){return m._district || m.meetingDistrict?.district || "Okänt distrikt"}
+function getCity(m){return m._city || (m.meetingCity||[]).map(c=>c.city).filter(Boolean).join(", ")}
+function getTypes(m){return Array.isArray(m._types) ? m._types : (m.meetingTypes||[]).map(t=>t.title).filter(Boolean)}
+function isOnline(m){return typeof m._isOnline === "boolean" ? m._isOnline : getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting}
+function hasCoords(m){return m.latitude!=null && m.longitude!=null && !Number.isNaN(Number(m.latitude)) && !Number.isNaN(Number(m.longitude))}
+function cleanDay(day){return String(day||"").replace(/^[a-g]\.\s*/,"")}
+function timeShort(t){return String(t||"").slice(0,5)}
+function formatInformation(text){
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+  return esc(raw).replace(/\*\*(.*?)\*\*/g,"<b>$1</b>").replace(/\n/g,"<br>");
+}
+
+function buildDistrictData(){
+  const groups = {};
+
+  allMeetings.forEach(m => {
+    const district = getDistrict(m);
+
+    if(!groups[district]){
+      groups[district] = {
+        district,
+        meetings:[],
+        physical:0,
+        online:0,
+        withCoords:0,
+        cities:new Set(),
+        color:colors[Object.keys(groups).length % colors.length]
+      };
+    }
+
+    const g = groups[district];
+    g.meetings.push(m);
+
+    if(isOnline(m)) g.online++;
+    else g.physical++;
+
+    const city = getCity(m);
+    if(city) city.split(",").map(x=>x.trim()).filter(Boolean).forEach(c=>g.cities.add(c));
+
+    if(hasCoords(m)) g.withCoords++;
+  });
+
+  districtData = Object.values(groups).map(g => {
+    g.citiesList = [...g.cities].sort((a,b)=>a.localeCompare(b,"sv"));
+    return g;
+  }).sort((a,b)=>b.meetings.length-a.meetings.length || a.district.localeCompare(b.district,"sv"));
+}
+
+function matchesSearch(m, q){
+  if(!q) return true;
+
+  const hay = [
+    m.title,
+    getDistrict(m),
+    getCity(m),
+    m.location,
+    m.address,
+    m.zip,
+    m.station,
+    m.information,
+    getTypes(m).join(" ")
+  ].join(" ").toLowerCase();
+
+  return hay.includes(q);
+}
+
+function filteredMeetings(){
+  const q = $("search").value.trim().toLowerCase();
+  const mode = $("displayMode").value;
+
+  return allMeetings.filter(m => {
+    const district = getDistrict(m);
+
+    if(!enabledDistricts.has(district)) return false;
+    if(mode === "physical" && isOnline(m)) return false;
+    if(mode === "online" && !isOnline(m)) return false;
+    if(!matchesSearch(m, q)) return false;
+
+    return true;
+  });
+}
+
+function renderDistricts(){
+  markerLayer.clearLayers();
+
+  const meetings = filteredMeetings();
+  const byDistrict = {};
+  let physical = 0;
+  let online = 0;
+  let shownOnMap = 0;
+
+  meetings.forEach(m => {
+    const district = getDistrict(m);
+
+    if(!byDistrict[district]){
+      const districtInfo = districtData.find(d => d.district === district);
+      byDistrict[district] = {
+        district,
+        color: districtInfo?.color || "#1976d2",
+        meetings:0
+      };
+    }
+
+    byDistrict[district].meetings++;
+
+    if(isOnline(m)) online++;
+    else physical++;
+
+    if(hasCoords(m)){
+      shownOnMap++;
+      const marker = L.marker([Number(m.latitude), Number(m.longitude)], {
+        district: district,
+        icon: L.divIcon({
+          className:"meeting-dot",
+          html:'<div style="background:'+byDistrict[district].color+'"></div>',
+          iconSize:[22,22],
+          iconAnchor:[11,11]
+        })
+      }).bindPopup(meetingPopup(m, byDistrict[district].color));
+
+      markerLayer.addLayer(marker);
+    }
+  });
+
+  $("summary").innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><span>Möten</span><b>${meetings.length}</b></div>
+      <div class="stat-card"><span>På kartan</span><b>${shownOnMap}</b></div>
+      <div class="stat-card"><span>Fysiska</span><b>${physical}</b></div>
+      <div class="stat-card"><span>Online</span><b>${online}</b></div>
+    </div>
+  `;
+
+  renderDistrictList(byDistrict);
+}
+
+function meetingPopup(m, color){
+  const types = getTypes(m).map(t=>'<span style="display:inline-block;background:#eee;border-radius:999px;padding:2px 7px;margin:2px;font-size:12px">'+esc(t)+'</span>').join(" ");
+  const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
+  const online = m.onlineMeeting?.url ? '<br><a href="'+esc(m.onlineMeeting.url)+'" target="_blank">Online-länk</a>' : "";
+  const mapLink = m.linkMap ? '<br><a href="'+esc(m.linkMap)+'" target="_blank">Öppna karta</a>' : "";
+  const station = m.station ? '<br><span class="muted">Närmaste hållplats: '+esc(m.station)+'</span>' : "";
+  const info = m.information ? '<div style="margin-top:6px;padding:7px;background:#f7f7f7;border-left:3px solid '+color+'">'+formatInformation(m.information)+'</div>' : "";
+
+  return `
+    <div style="min-width:260px">
+      <b>${esc(m.title || "Okänt möte")}</b><br>
+      ${esc(cleanDay(m.days))} ${esc(timeShort(m.startTime))}–${esc(timeShort(m.endTime))}<br>
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>
+      ${esc(getDistrict(m))}<br>
+      ${esc(getCity(m))}
+      ${address ? "<br>"+esc(address) : ""}
+      ${station}
+      ${info}
+      ${online}${mapLink}
+      <div>${types}</div>
+    </div>
+  `;
+}
+
+function renderDistrictList(currentCounts){
+  const el = $("districtList");
+  el.innerHTML = "";
+
+  districtData.forEach(d => {
+    const countShown = currentCounts[d.district]?.meetings || 0;
+    const checked = enabledDistricts.has(d.district);
+
+    const div = document.createElement("div");
+    div.className = "district-card";
+    div.innerHTML = `
+      <div class="district-card-inner">
+        <div class="district-top">
+          <span class="swatch" style="background:${d.color}"></span>
+          <div>
+            <div class="district-name">${esc(d.district)}</div>
+            <div class="district-meta">
+              ${countShown} visas · ${d.meetings.length} totalt<br>
+              ${d.physical} fysiska · ${d.online} online<br>
+              ${d.citiesList.slice(0,8).map(esc).join(", ")}${d.citiesList.length>8?"…":""}
+            </div>
+          </div>
+          <input class="toggle-box" type="checkbox" ${checked ? "checked" : ""} onchange="toggleDistrict('${esc(d.district).replace(/'/g,"&#039;")}', this.checked)">
+        </div>
+        <details>
+          <summary>Visa orter och möten</summary>
+          ${districtDetailTable(d)}
+        </details>
+      </div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function districtDetailTable(d){
+  const byCity = {};
+  d.meetings.forEach(m => {
+    const city = getCity(m) || "Okänd ort";
+    (byCity[city] ??= []).push(m);
+  });
+
+  return Object.entries(byCity)
+    .sort((a,b)=>a[0].localeCompare(b[0],"sv"))
+    .map(([city,meetings]) => `
+      <h4>${esc(city)} · ${meetings.length} möten</h4>
+      <table class="table">
+        <thead><tr><th>Dag</th><th>Tid</th><th>Grupp</th></tr></thead>
+        <tbody>
+          ${meetings.sort(compareMeetingDayTime).map(m => `
+            <tr>
+              <td>${esc(cleanDay(m.days))}</td>
+              <td>${esc(timeShort(m.startTime))}–${esc(timeShort(m.endTime))}</td>
+              <td>${esc(m.title)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `).join("");
+}
+
+function compareMeetingDayTime(a,b){
+  return (a._dayOrder ?? 99) - (b._dayOrder ?? 99)
+    || (a._startMinutes ?? 9999) - (b._startMinutes ?? 9999)
+    || (a._endMinutes ?? 9999) - (b._endMinutes ?? 9999)
+    || String(a.title || "").localeCompare(String(b.title || ""),"sv");
+}
+
+function toggleDistrict(district, checked){
+  if(checked) enabledDistricts.add(district);
+  else enabledDistricts.delete(district);
+
+  renderDistricts();
+}
+
+function showAllDistricts(){
+  enabledDistricts = new Set(districtData.map(d => d.district));
+  renderDistricts();
+  fitVisibleMeetings();
+}
+
+function hideAllDistricts(){
+  enabledDistricts = new Set();
+  renderDistricts();
+}
+
+function fitVisibleMeetings(){
+  const points = filteredMeetings()
+    .filter(hasCoords)
+    .map(m => [Number(m.latitude), Number(m.longitude)]);
+
+  if(points.length){
+    map.fitBounds(points,{padding:[40,40],maxZoom:7});
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initMap();
+  fetchDistrictMap();
+});
+</script>
+</body>
+</html>
