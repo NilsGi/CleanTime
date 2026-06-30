@@ -1,0 +1,160 @@
+<html lang="sv"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NA Sverige - Distriktskarta</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
+header{background:#111;color:#fff;padding:16px 20px} header h1{margin:0;font-size:22px}
+main{display:grid;grid-template-columns:390px 1fr;min-height:calc(100vh - 62px)}
+aside{background:#fff;border-right:1px solid #ddd;padding:14px;overflow:auto;max-height:calc(100vh - 62px)}
+#map{height:calc(100vh - 62px);min-height:520px;background:#ddd}
+button{padding:10px 13px;border:0;border-radius:8px;background:#111;color:#fff;cursor:pointer;margin:4px 5px 8px 0}
+input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;margin:5px 0 10px}
+.ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.stat-card{background:#f3f3f3;border-radius:10px;padding:10px}.stat-card b{display:block;font-size:22px}
+.district-card{border:1px solid #ddd;border-radius:12px;margin:10px 0;background:#fafafa;overflow:hidden}
+.district-card button{display:block;width:100%;margin:0;background:transparent;color:#111;text-align:left;border-radius:0;padding:12px}
+.district-card button:hover{background:#eee}.district-name{font-weight:800;font-size:16px}.district-meta{font-size:13px;color:#555;margin-top:3px}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
+.table th,.table td{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}.table th{background:#eee}
+details{border-top:1px dashed #ddd;margin-top:8px;padding:8px 12px}summary{cursor:pointer;font-weight:700}
+.leaflet-control-attribution .leaflet-attribution-flag{display:none!important}
+.leaflet-control-attribution a[href*="leafletjs.com"]{display:none!important}
+.district-label{background:#fff;border:1px solid #ccc;border-radius:999px;padding:2px 6px;font-weight:700;color:#111}
+@media(max-width:900px){main{display:block}aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}#map{height:70vh;min-height:420px}}
+</style>
+</head>
+<body class="">
+<header><h1>NA Sverige - Distriktskarta</h1></header>
+<main>
+<aside>
+<button onclick="fetchDistrictMap()">Uppdatera karta</button>
+<button onclick="fitAllDistricts()">Visa alla distrikt</button>
+<div id="status" class="muted"><span class="bad">Fel:</span> Load failed</div>
+<label>Sök distrikt eller ort</label>
+<input id="search" placeholder="T.ex. GOSSNAD, Stockholm, Malmö..." oninput="renderDistricts()">
+<label>Visa</label>
+<select id="displayMode" onchange="renderDistricts()">
+<option value="all">Alla distrikt</option>
+<option value="physical">Endast fysiska möten</option>
+<option value="online">Endast online-möten</option>
+</select>
+<div id="summary"></div>
+<div id="districtList"></div>
+</aside>
+<div id="map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0" style="position: relative;"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(-2.910448px, 10.35072px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="https://b.tile.openstreetmap.org/5/17/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, -7px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/17/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, 249px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/16/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, -7px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/18/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, -7px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/5/16/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, 249px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/18/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, 249px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/17/7.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, -263px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/16/7.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, -263px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/5/18/7.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, -263px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(4439.910448px, 2274.64928px, 0px) scale(16);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control">© OpenStreetMap</div></div></div></div>
+</main>
+<script>
+const PROXY_URL="/mote";
+let map=null,districtLayer=null,markerLayer=null,allMeetings=[],districtData=[];
+const colors=["#1976d2","#d32f2f","#388e3c","#f57c00","#7b1fa2","#00796b","#c2185b","#455a64","#5d4037","#0288d1","#689f38","#fbc02d","#512da8","#e64a19","#0097a7","#303f9f"];
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function setStatus(html){$("status").innerHTML=html}
+function initMap(){
+ if(typeof L==="undefined"){setStatus('<span class="bad">Leaflet kunde inte laddas.</span>');return false}
+ map=L.map("map").setView([62,15],5); map.attributionControl.setPrefix(false);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+ districtLayer=L.layerGroup().addTo(map); markerLayer=L.layerGroup().addTo(map);
+ setStatus('<span class="ok">Kartan laddad.</span> Hämtar möten...'); return true;
+}
+async function fetchDistrictMap(){
+ if(!map && !initMap())return;
+ try{
+  setStatus("Hämtar möten...");
+  const res=await fetch(PROXY_URL,{headers:{"Accept":"application/json"}});
+  const json=await res.json();
+  if(!res.ok||!json.ok||!Array.isArray(json.data))throw new Error(json.error||"Kunde inte hämta möten från /mote");
+  allMeetings=json.data; buildDistrictData(); renderDistricts(); fitAllDistricts();
+  setStatus('<span class="ok">Klart.</span> Hämtade '+allMeetings.length+' möten.');
+ }catch(e){setStatus('<span class="bad">Fel:</span> '+esc(e.message));console.error(e)}
+}
+function getDistrict(m){return m._district||m.meetingDistrict?.district||"Okänt distrikt"}
+function getCity(m){return m._city||(m.meetingCity||[]).map(c=>c.city).filter(Boolean).join(", ")}
+function getTypes(m){return Array.isArray(m._types)?m._types:(m.meetingTypes||[]).map(t=>t.title).filter(Boolean)}
+function isOnline(m){return typeof m._isOnline==="boolean"?m._isOnline:getTypes(m).includes("Virtuellt möte")||!!m.onlineMeeting}
+function hasCoords(m){return m.latitude!=null&&m.longitude!=null&&!Number.isNaN(Number(m.latitude))&&!Number.isNaN(Number(m.longitude))}
+function cleanDay(day){return String(day||"").replace(/^[a-g]\\.\s*/,"")}
+function timeShort(t){return String(t||"").slice(0,5)}
+function buildDistrictData(){
+ const groups={};
+ allMeetings.forEach(m=>{
+  const district=getDistrict(m);
+  if(!groups[district])groups[district]={district,meetings:[],physical:0,online:0,withCoords:0,cities:new Set(),boundsPoints:[],center:null,color:colors[Object.keys(groups).length%colors.length]};
+  const g=groups[district]; g.meetings.push(m); isOnline(m)?g.online++:g.physical++;
+  const city=getCity(m); if(city)city.split(",").map(x=>x.trim()).filter(Boolean).forEach(c=>g.cities.add(c));
+  if(!isOnline(m)&&hasCoords(m)){g.withCoords++;g.boundsPoints.push([Number(m.latitude),Number(m.longitude)])}
+ });
+ districtData=Object.values(groups).map(g=>{
+  if(g.boundsPoints.length){g.center=[g.boundsPoints.reduce((s,p)=>s+p[0],0)/g.boundsPoints.length,g.boundsPoints.reduce((s,p)=>s+p[1],0)/g.boundsPoints.length]}
+  g.citiesList=[...g.cities].sort((a,b)=>a.localeCompare(b,"sv")); return g;
+ }).sort((a,b)=>b.meetings.length-a.meetings.length||a.district.localeCompare(b.district,"sv"));
+}
+function filteredDistricts(){
+ const q=$("search").value.trim().toLowerCase(),mode=$("displayMode").value;
+ return districtData.filter(d=>{
+  if(mode==="physical"&&d.physical===0)return false;
+  if(mode==="online"&&d.online===0)return false;
+  if(q){const hay=[d.district,d.citiesList.join(" "),d.meetings.map(m=>m.title).join(" ")].join(" ").toLowerCase(); if(!hay.includes(q))return false}
+  return true;
+ });
+}
+function convexHull(points){
+ if(points.length<=2)return points;
+ const sorted=[...points].map(p=>[+p[0],+p[1]]).sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+ const cross=(o,a,b)=>(a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]);
+ const lower=[]; for(const p of sorted){while(lower.length>=2&&cross(lower.at(-2),lower.at(-1),p)<=0)lower.pop();lower.push(p)}
+ const upper=[]; for(let i=sorted.length-1;i>=0;i--){const p=sorted[i];while(upper.length>=2&&cross(upper.at(-2),upper.at(-1),p)<=0)upper.pop();upper.push(p)}
+ upper.pop();lower.pop();return lower.concat(upper);
+}
+function expandedHull(points){
+ if(!points.length)return [];
+ if(points.length===1){const [lat,lng]=points[0],d=.25;return [[lat-d,lng-d],[lat-d,lng+d],[lat+d,lng+d],[lat+d,lng-d]]}
+ if(points.length===2){const [[a,b],[c,d]]=points,x=.15;return [[a-x,b-x],[a+x,b+x],[c+x,d+x],[c-x,d-x]]}
+ const hull=convexHull(points),clat=points.reduce((s,p)=>s+p[0],0)/points.length,clng=points.reduce((s,p)=>s+p[1],0)/points.length;
+ return hull.map(([lat,lng])=>[clat+(lat-clat)*1.08,clng+(lng-clng)*1.08]);
+}
+function renderDistricts(){
+ districtLayer.clearLayers();markerLayer.clearLayers();
+ const districts=filteredDistricts(); let total=0,physical=0,online=0;
+ districts.forEach(d=>{
+  total+=d.meetings.length; physical+=d.physical; online+=d.online;
+  if(d.boundsPoints.length){
+   const polygon=L.polygon(expandedHull(d.boundsPoints),{color:d.color,weight:2,fillColor:d.color,fillOpacity:.18}).addTo(districtLayer);
+   polygon.bindPopup(districtPopup(d)); polygon.on("click",()=>showDistrictDetails(d.district));
+   if(d.center){
+    const marker=L.circleMarker(d.center,{radius:Math.min(24,10+Math.sqrt(d.meetings.length)),color:d.color,fillColor:d.color,fillOpacity:.9,weight:2}).addTo(markerLayer);
+    marker.bindTooltip(d.district+" · "+d.meetings.length,{permanent:true,direction:"center",className:"district-label"});
+    marker.bindPopup(districtPopup(d)); marker.on("click",()=>showDistrictDetails(d.district));
+   }
+  }
+ });
+ $("summary").innerHTML=`<div class="stats-grid"><div class="stat-card"><span>Distrikt</span><b>${districts.length}</b></div><div class="stat-card"><span>Möten</span><b>${total}</b></div><div class="stat-card"><span>Fysiska</span><b>${physical}</b></div><div class="stat-card"><span>Online</span><b>${online}</b></div></div>`;
+ renderDistrictList(districts);
+}
+function districtPopup(d){return `<div style="min-width:240px"><b>${esc(d.district)}</b><br>${d.meetings.length} möten<br>${d.physical} fysiska · ${d.online} online<br>${d.citiesList.length} orter</div>`}
+function renderDistrictList(districts){
+ const el=$("districtList"); el.innerHTML="";
+ if(!districts.length){el.innerHTML="<p>Inga distrikt matchar filtret.</p>";return}
+ districts.forEach(d=>{
+  const div=document.createElement("div"); div.className="district-card";
+  div.innerHTML=`<button onclick="focusDistrict('${esc(d.district).replace(/'/g,"&#039;")}')"><div class="district-name"><span class="swatch" style="background:${d.color}"></span>${esc(d.district)}</div><div class="district-meta">${d.meetings.length} möten · ${d.physical} fysiska · ${d.online} online<br>${d.citiesList.slice(0,8).map(esc).join(", ")}${d.citiesList.length>8?"…":""}</div></button><details><summary>Visa orter och möten</summary>${districtDetailTable(d)}</details>`;
+  el.appendChild(div);
+ });
+}
+function districtDetailTable(d){
+ const byCity={}; d.meetings.forEach(m=>{const city=getCity(m)||"Okänd ort";(byCity[city]??=[]).push(m)});
+ return Object.entries(byCity).sort((a,b)=>a[0].localeCompare(b[0],"sv")).map(([city,meetings])=>`<h4>${esc(city)} · ${meetings.length} möten</h4><table class="table"><thead><tr><th>Dag</th><th>Tid</th><th>Grupp</th></tr></thead><tbody>${meetings.sort(compareMeetingDayTime).map(m=>`<tr><td>${esc(cleanDay(m.days))}</td><td>${esc(timeShort(m.startTime))}–${esc(timeShort(m.endTime))}</td><td>${esc(m.title)}</td></tr>`).join("")}</tbody></table>`).join("");
+}
+function compareMeetingDayTime(a,b){return (a._dayOrder??99)-(b._dayOrder??99)||(a._startMinutes??9999)-(b._startMinutes??9999)||(a._endMinutes??9999)-(b._endMinutes??9999)||String(a.title||"").localeCompare(String(b.title||""),"sv")}
+function focusDistrict(name){const d=districtData.find(x=>x.district===name); if(!d)return; if(d.boundsPoints.length)map.fitBounds(d.boundsPoints,{padding:[40,40],maxZoom:9}); showDistrictDetails(name)}
+function showDistrictDetails(name){const card=[...document.querySelectorAll(".district-card")].find(el=>el.innerText.includes(name)); if(card){card.scrollIntoView({behavior:"smooth",block:"start"}); const det=card.querySelector("details"); if(det)det.open=true}}
+function fitAllDistricts(){const points=filteredDistricts().flatMap(d=>d.boundsPoints); if(points.length)map.fitBounds(points,{padding:[40,40]})}
+document.addEventListener("DOMContentLoaded",()=>{initMap();fetchDistrictMap()});
+</script>
+
+</body></html>
