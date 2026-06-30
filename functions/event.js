@@ -8,11 +8,13 @@ export async function onRequest(context) {
     }, { status: 500 });
   }
 
-const url =
-  "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=10";
-  
+  const url = new URL("https://cms.nasverige.org/api/events");
+  url.searchParams.set("populate", "*");
+  url.searchParams.set("pagination[page]", "1");
+  url.searchParams.set("pagination[pageSize]", "10");
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json"
@@ -21,26 +23,20 @@ const url =
 
     const text = await response.text();
 
-    let json = null;
-    try {
-      json = JSON.parse(text);
-    } catch (e) {}
-
-    const firstEvent = json?.data?.[0] || null;
-
-    return Response.json({
-      success: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      url,
-      rawText: text,
-      dataType: Array.isArray(json?.data) ? "array" : typeof json?.data,
-      count: json?.data?.length || 0,
-      meta: json?.meta || null,
-      firstEvent,
-      fields: firstEvent ? Object.keys(firstEvent) : [],
-      attributeFields: firstEvent?.attributes ? Object.keys(firstEvent.attributes) : []
-    });
+    return new Response(
+      JSON.stringify({
+        success: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        requestedUrl: url.toString(),
+        rawText: text
+      }, null, 2),
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
   } catch (error) {
     return Response.json({
