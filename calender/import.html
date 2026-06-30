@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Importera NA-event</title>
+</head>
+<body>
+
+<h1>Importera event till Supabase</h1>
+<button onclick="importEvents()">Importera från /event</button>
+
+<pre id="log"></pre>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "DIN_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "DIN_SUPABASE_ANON_KEY";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const log = document.getElementById("log");
+
+window.importEvents = async function () {
+  log.textContent = "Hämtar event...\n";
+
+  const res = await fetch("/event");
+  const data = await res.json();
+
+  const events = data.events || data.data || [];
+
+  log.textContent += `Hittade ${events.length} event\n`;
+
+  const rows = events.map(event => ({
+    source: "nasverige",
+    external_id: String(event.id),
+    external_slug: event.slug || null,
+
+    title: event.title || "Namnlöst evenemang",
+    organizer: event.organizer || null,
+    address: event.address || null,
+    price: event.price || null,
+
+    start_datetime: event.startDate || null,
+    end_datetime: event.endDate || null,
+
+    web_url: event.webUrl || null,
+    excerpt: event.excerpt || null,
+    description: event.description || null,
+
+    image_url: getImageUrl(event),
+    raw_data: event,
+
+    is_published: true,
+    is_hidden: false
+  }));
+
+  const { data: saved, error } = await supabase
+    .from("calendar_events")
+    .upsert(rows, {
+      onConflict: "source,external_id"
+    })
+    .select();
+
+  if (error) {
+    log.textContent += "\nFEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent += `\nKlart! Sparade/uppdaterade ${saved.length} event.`;
+};
+
+function getImageUrl(event) {
+  const image = event.images?.[0] || event.images?.data?.[0];
+
+  if (!image) return null;
+
+  const url = image.url || image.attributes?.url;
+
+  if (!url) return null;
+
+  return url.startsWith("http")
+    ? url
+    : "https://cms.nasverige.org" + url;
+}
+</script>
+
+</body>
+</html>
