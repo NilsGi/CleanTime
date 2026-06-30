@@ -1,26 +1,12 @@
 /**
  * /functions/mote.js
  *
- * Smart proxy för NA Sveriges mötes-API.
- *
- * Frontend kan nu bara göra:
- *
- *   const res = await fetch("/mote");
- *   const json = await res.json();
- *
- * Svaret innehåller:
- * - data: alla unika möten
- * - filters.districts
- * - filters.cities
- * - filters.groups
- * - filters.days
- * - filters.meetingTypes
- * - stats
- *
- * Filen är tänkt för Cloudflare Pages Functions.
+ * Proxy för möten från Strapi.
  */
 
-const NA_API_URL = "https://www.nasverige.org/api/posts/";
+const STRAPI_URL = "https://DIN-STRAPI-ADRESS.se";
+const STRAPI_TOKEN = "DIN_TOKEN";
+
 const CACHE_TTL_SECONDS = 300;
 const PAGE_SIZE = 100;
 
@@ -45,15 +31,9 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
 
 function errorResponse(message, status = 500, details = null) {
   return jsonResponse(
-    {
-      ok: false,
-      error: message,
-      details
-    },
+    { ok: false, error: message, details },
     status,
-    {
-      "Cache-Control": "no-store"
-    }
+    { "Cache-Control": "no-store" }
   );
 }
 
@@ -98,14 +78,6 @@ function timeValue(time) {
   return h * 60 + m;
 }
 
-function compareMeetings(a, b) {
-  return dayOrder(a.days) - dayOrder(b.days)
-    || timeValue(a.startTime) - timeValue(b.startTime)
-    || timeValue(a.endTime) - timeValue(b.endTime)
-    || String(a.title || "").localeCompare(String(b.title || ""), "sv")
-    || getCity(a).localeCompare(getCity(b), "sv");
-}
-
 function getCity(meeting) {
   return (meeting?.meetingCity || [])
     .map(city => city.city)
@@ -134,6 +106,14 @@ function hasCoords(meeting) {
     && meeting?.longitude !== undefined
     && !Number.isNaN(Number(meeting.latitude))
     && !Number.isNaN(Number(meeting.longitude));
+}
+
+function compareMeetings(a, b) {
+  return dayOrder(a.days) - dayOrder(b.days)
+    || timeValue(a.startTime) - timeValue(b.startTime)
+    || timeValue(a.endTime) - timeValue(b.endTime)
+    || String(a.title || "").localeCompare(String(b.title || ""), "sv")
+    || getCity(a).localeCompare(getCity(b), "sv");
 }
 
 function primaryKey(meeting) {
@@ -176,65 +156,32 @@ function dedupeMeetings(meetings) {
   };
 }
 
-function buildEndpoint(page, pageSize, sortMode = "sort_simple") {
-  const base = `/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
-
-  if (sortMode === "sort_simple") return `${base}&sort=id:asc`;
-  if (sortMode === "sort_array") return `${base}&sort[0]=id:asc`;
-  if (sortMode === "sort_encoded") return `${base}&sort%5B0%5D=id%3Aasc`;
-
-  return base;
+function buildEndpoint(page, pageSize) {
+  return `/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort[0]=id:asc&populate=*`;
 }
 
-async function callNasverige(endpoint) {
-  const response = await fetch(NA_API_URL, {
-    method: "POST",
+async function callStrapi(endpoint) {
+  const url = `${STRAPI_URL}/api${endpoint}`;
+
+  const response = await fetch(url, {
+    method: "GET",
     headers: {
       "Accept": "application/json",
-      "Content-Type": "text/plain;charset=UTF-8",
-      "Origin": "https://www.nasverige.org",
-      "Referer": "https://www.nasverige.org/moteslista/"
-    },
-    body: JSON.stringify({ endpoint })
+      "Authorization": `Bearer ${STRAPI_TOKEN}`
+    }
   });
 
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(`NA API HTTP ${response.status}: ${text.slice(0, 500)}`);
+    throw new Error(`Strapi HTTP ${response.status}: ${text.slice(0, 500)}`);
   }
 
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`NA API svarade inte med JSON: ${text.slice(0, 500)}`);
+    throw new Error(`Strapi svarade inte med JSON: ${text.slice(0, 500)}`);
   }
-}
-
-async function fetchPageWithFallback(page, pageSize, preferredSortMode = null) {
-  const modes = preferredSortMode
-    ? [preferredSortMode]
-    : ["sort_simple", "sort_array", "sort_encoded", "none"];
-
-  let lastResponse = null;
-
-  for (const mode of modes) {
-    const endpoint = buildEndpoint(page, pageSize, mode);
-    const json = await callNasverige(endpoint);
-    lastResponse = json;
-
-    if (json && Array.isArray(json.data)) {
-      return {
-        json,
-        sortMode: mode,
-        endpoint
-      };
-    }
-  }
-
-  throw new Error(
-    `Oväntat API-svar. json.data saknas. Sista svar: ${JSON.stringify(lastResponse).slice(0, 500)}`
-  );
 }
 
 function uniqueSorted(values) {
@@ -334,7 +281,6 @@ function buildStats(meetings) {
 }
 
 function simplifyMeeting(meeting) {
-  // Behåller originalfält men lägger även till färdiga hjälpfält.
   return {
     ...meeting,
     _city: getCity(meeting),
@@ -354,14 +300,13 @@ async function fetchAllMeetings() {
   let page = 1;
   let pageCount = 1;
   let apiTotal = 0;
-  let chosenSortMode = null;
 
   do {
-    const result = await fetchPageWithFallback(page, PAGE_SIZE, chosenSortMode);
-    const json = result.json;
+    const endpoint = buildEndpoint(page, PAGE_SIZE);
+    const json = await callStrapi(endpoint);
 
-    if (!chosenSortMode) {
-      chosenSortMode = result.sortMode;
+    if (!json || !Array.isArray(json.data)) {
+      throw new Error(`Oväntat Strapi-svar. json.data saknas: ${JSON.stringify(json).slice(0, 500)}`);
     }
 
     raw.push(...json.data);
@@ -373,15 +318,15 @@ async function fetchAllMeetings() {
   } while (page <= pageCount);
 
   const deduped = dedupeMeetings(raw);
+
   const meetings = deduped.meetings
     .map(simplifyMeeting)
     .sort(compareMeetings);
 
   return {
     ok: true,
-    source: "nasverige",
+    source: "strapi",
     fetchedAt: new Date().toISOString(),
-    sortMode: chosenSortMode,
     meta: {
       apiTotal,
       rawCount: raw.length,
@@ -406,7 +351,7 @@ export async function onRequestOptions() {
 export async function onRequestGet(context) {
   try {
     const cache = caches.default;
-    const cacheKey = new Request(new URL(context.request.url).origin + "/mote?all=1&v=2");
+    const cacheKey = new Request(new URL(context.request.url).origin + "/mote?all=1&v=3");
 
     const cached = await cache.match(cacheKey);
     if (cached) {
@@ -449,17 +394,16 @@ export async function onRequestPost(context) {
       return onRequestGet(context);
     }
 
-    // Bakåtkompatibelt läge om frontend fortfarande skickar en specifik endpoint.
     if (body.endpoint) {
       if (!String(body.endpoint).startsWith("/meetings")) {
         return errorResponse("Endast /meetings-endpoints är tillåtna.", 400);
       }
 
-      const json = await callNasverige(body.endpoint);
+      const json = await callStrapi(body.endpoint);
 
       return jsonResponse({
         ok: true,
-        source: "nasverige",
+        source: "strapi",
         mode: "single-endpoint",
         sentEndpoint: body.endpoint,
         ...json
