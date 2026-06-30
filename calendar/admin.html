@@ -1,3 +1,481 @@
+
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalenderadmin</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 20px;
+}
+
+main {
+  max-width: 1000px;
+  margin: auto;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+button {
+  margin-top: 16px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.event-row {
+  border-top: 1px solid #ddd;
+  padding: 12px 0;
+}
+
+.actions button {
+  margin-right: 8px;
+}
+
+#log {
+  background: #f2f2f2;
+  padding: 12px;
+  white-space: pre-wrap;
+  margin-top: 16px;
+  border-radius: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<main>
+  <h1>Kalenderadmin</h1>
+
+  <button onclick="importFromNasverige()">Importera från nasverige.org</button>
+
+  <h2 id="formTitle">Lägg till manuell händelse</h2>
+
+  <label>Typ</label>
+  <select id="event_type">
+    <option value="distrikt">Distrikt</option>
+    <option value="uksam">UKSAM</option>
+    <option value="region">Region</option>
+  </select>
+
+  <label>Titel</label>
+  <input id="title">
+
+  <label>Organisatör</label>
+  <input id="organizer">
+
+  <label>Adress</label>
+  <input id="address">
+
+  <div class="row">
+    <div>
+      <label>Startdatum</label>
+      <input id="start_date" type="date">
+    </div>
+    <div>
+      <label>Starttid</label>
+      <input id="start_time" type="time">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Slutdatum</label>
+      <input id="end_date" type="date">
+    </div>
+    <div>
+      <label>Sluttid</label>
+      <input id="end_time" type="time">
+    </div>
+  </div>
+
+  <label>Länk</label>
+  <input id="web_url" type="url">
+
+  <label>Excerpt</label>
+  <textarea id="excerpt"></textarea>
+
+  <label>Description</label>
+  <textarea id="description"></textarea>
+
+  <button onclick="saveEvent()" id="saveBtn">Spara händelse</button>
+  <button onclick="resetForm()" type="button">Avbryt/rensa</button>
+
+  <pre id="log"></pre>
+
+  <h2>Kommande manuella händelser</h2>
+  <div id="manualEvents">Laddar...</div>
+</main>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const log = document.getElementById("log");
+
+let editingId = null;
+
+window.saveEvent = async function () {
+  const title = val("title");
+  const startDate = val("start_date");
+  const startTime = val("start_time");
+
+  if (!title || !startDate || !startTime) {
+    log.textContent = "Titel, startdatum och starttid krävs.";
+    return;
+  }
+
+  const row = {
+    source: "manual",
+    event_type: val("event_type"),
+
+    title,
+    organizer: val("organizer") || null,
+    address: val("address") || null,
+
+    start_datetime: combine(startDate, startTime),
+    end_datetime: val("end_date") && val("end_time")
+      ? combine(val("end_date"), val("end_time"))
+      : null,
+
+    web_url: val("web_url") || null,
+    excerpt: val("excerpt") || null,
+    description: val("description") || null,
+
+    is_published: true,
+    is_hidden: false
+  };
+
+  let result;
+
+  if (editingId) {
+    result = await supabase
+      .from("calendar_events")
+      .update(row)
+      .eq("id", editingId)
+      .eq("source", "manual")
+      .select()
+      .single();
+  } else {
+    result = await supabase
+      .from("calendar_events")
+      .insert(row)
+      .select()
+      .single();
+  }
+
+  if (result.error) {
+    log.textContent = "FEL:\n" + JSON.stringify(result.error, null, 2);
+    return;
+  }
+
+  log.textContent = editingId
+    ? "Händelsen uppdaterad."
+    : "Händelsen sparad.";
+
+  resetForm();
+  loadManualEvents();
+};
+
+async function loadManualEvents() {
+  const container = document.getElementById("manualEvents");
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("calendar_events")
+    .select("*")
+    .eq("source", "manual")
+    .gte("start_datetime", now)
+    .order("start_datetime", { ascending: true });
+
+  if (error) {
+    container.innerHTML = "Kunde inte hämta manuella event.";
+    return;
+  }
+
+  if (!data || !data.length) {
+    container.innerHTML = "Inga kommande manuella händelser.";
+    return;
+  }
+
+  container.innerHTML = data.map(e => `
+    <div class="event-row">
+      <strong>${escapeHtml(e.title)}</strong><br>
+      ${formatDate(e.start_datetime)}<br>
+      ${escapeHtml(e.event_type || "")}
+      ${e.address ? " • " + escapeHtml(e.address) : ""}
+      <div class="actions">
+        <button onclick='editEvent(${JSON.stringify(e).replace(/'/g, "&apos;")})'>Redigera</button>
+        <button onclick='hideEvent("${e.id}")'>Dölj</button>
+        <button onclick='deleteEvent("${e.id}")'>Ta bort</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+window.editEvent = function (e) {
+  editingId = e.id;
+
+  document.getElementById("formTitle").textContent = "Redigera händelse";
+  document.getElementById("saveBtn").textContent = "Uppdatera händelse";
+
+  setVal("event_type", e.event_type || "distrikt");
+  setVal("title", e.title || "");
+  setVal("organizer", e.organizer || "");
+  setVal("address", e.address || "");
+  setVal("web_url", e.web_url || "");
+  setVal("excerpt", e.excerpt || "");
+  setVal("description", e.description || "");
+
+  fillDateTime("start", e.start_datetime);
+  fillDateTime("end", e.end_datetime);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+window.hideEvent = async function (id) {
+  if (!confirm("Dölja händelsen?")) return;
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .update({ is_hidden: true })
+    .eq("id", id)
+    .eq("source", "manual");
+
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent = "Händelsen dold.";
+  loadManualEvents();
+};
+
+window.deleteEvent = async function (id) {
+  if (!confirm("Ta bort händelsen permanent?")) return;
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .delete()
+    .eq("id", id)
+    .eq("source", "manual");
+
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent = "Händelsen borttagen.";
+  loadManualEvents();
+};
+
+window.importFromNasverige = async function () {
+  try {
+    log.textContent = "Startar import från nasverige.org...\n";
+
+    const events = await fetchAllEvents();
+
+    log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
+    log.textContent += "Sparar till Supabase...\n";
+
+    const rows = events.map(event => ({
+      source: "nasverige",
+      event_type: "event",
+
+      external_id: String(event.id),
+      external_slug: event.slug || null,
+
+      title: event.title || "Namnlöst evenemang",
+      organizer: event.organizer || null,
+      address: event.address || null,
+      price: event.price || null,
+
+      start_datetime: event.startDate || null,
+      end_datetime: event.endDate || null,
+
+      web_url: event.web || null,
+      excerpt: event.excerpt || null,
+      description: event.description || null,
+
+      image_url: getImageUrl(event),
+
+      raw_data: event,
+
+      is_published: true,
+      is_hidden: false
+    }));
+
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .upsert(rows, {
+        onConflict: "source,external_id"
+      })
+      .select();
+
+    if (error) {
+      log.textContent += "\nFEL:\n" + JSON.stringify(error, null, 2);
+      return;
+    }
+
+    log.textContent +=
+      `\nKlart!\n` +
+      `Sparade/uppdaterade ${data.length} event.`;
+
+  } catch (e) {
+    log.textContent += "\nFEL:\n" + e.message;
+  }
+};
+
+async function fetchAllEvents() {
+  let page = 1;
+  let allEvents = [];
+
+  while (true) {
+    log.textContent += `Hämtar sida ${page}...\n`;
+
+    const res = await fetch(`/event?page=${page}`);
+
+    if (!res.ok) {
+      throw new Error(`Fel ${res.status} på sida ${page}`);
+    }
+
+    const data = await res.json();
+
+    const events =
+      data.events ||
+      data.data ||
+      [];
+
+    log.textContent += `Sida ${page}: ${events.length} event\n`;
+
+    allEvents = allEvents.concat(events);
+
+    const pagination = data.meta?.pagination;
+
+    if (!pagination) break;
+    if (page >= pagination.pageCount) break;
+
+    page++;
+  }
+
+  return allEvents;
+}
+
+window.resetForm = function () {
+  editingId = null;
+
+  document.getElementById("formTitle").textContent = "Lägg till manuell händelse";
+  document.getElementById("saveBtn").textContent = "Spara händelse";
+
+  [
+    "title",
+    "organizer",
+    "address",
+    "start_date",
+    "start_time",
+    "end_date",
+    "end_time",
+    "web_url",
+    "excerpt",
+    "description"
+  ].forEach(id => setVal(id, ""));
+
+  setVal("event_type", "distrikt");
+};
+
+function val(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function setVal(id, value) {
+  document.getElementById(id).value = value || "";
+}
+
+function combine(date, time) {
+  return `${date}T${time}:00`;
+}
+
+function fillDateTime(prefix, value) {
+  if (!value) {
+    setVal(`${prefix}_date`, "");
+    setVal(`${prefix}_time`, "");
+    return;
+  }
+
+  const d = new Date(value);
+
+  setVal(`${prefix}_date`, d.toISOString().slice(0, 10));
+  setVal(`${prefix}_time`, d.toTimeString().slice(0, 5));
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("sv-SE");
+}
+
+function getImageUrl(event) {
+  const image =
+    event.images?.[0] ||
+    event.images?.data?.[0];
+
+  if (!image) return null;
+
+  const url =
+    image.url ||
+    image.attributes?.url;
+
+  if (!url) return null;
+
+  return url.startsWith("http")
+    ? url
+    : "https://cms.nasverige.org" + url;
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, m => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[m]));
+}
+
+loadManualEvents();
+</script>
+
+</body>
+</html>
