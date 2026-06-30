@@ -258,7 +258,9 @@ const status = document.getElementById("status");
 document.getElementById("search").addEventListener("input", render);
 document.getElementById("typeFilter").addEventListener("change", render);
 document.getElementById("monthFilter").addEventListener("change", e => {
-  selectedMonth = new Date(e.target.value + "-01T00:00:00");
+  const [year, month] = e.target.value.split("-").map(Number);
+  selectedMonth = new Date(year, month - 1, 1);
+  currentView = "month";
   render();
 });
 
@@ -291,7 +293,8 @@ function buildMonthFilter() {
 
   for (let i = 0; i < 18; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const value = d.toISOString().slice(0, 7);
+    const value =
+      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
     const label = d.toLocaleDateString("sv-SE", {
       year: "numeric",
       month: "long"
@@ -352,7 +355,7 @@ function renderWeek(events) {
   }
 
   calendar.innerHTML = days.map(day => {
-    const dayEvents = events.filter(e => sameDay(new Date(e.start_datetime), day));
+    const dayEvents = events.filter(e => eventOccursOnDate(e, day));
 
     return `
       <div class="week-day">
@@ -389,7 +392,7 @@ function renderMonth(events) {
     const date = new Date(year, month, dayNumber);
 
     const dayEvents = events.filter(e =>
-      sameDay(new Date(e.start_datetime), date)
+      eventOccursOnDate(e, date)
     );
 
     html += `
@@ -513,6 +516,23 @@ function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear()
     && a.getMonth() === b.getMonth()
     && a.getDate() === b.getDate();
+}
+
+function eventOccursOnDate(event, date) {
+  if (!event.start_datetime) return false;
+
+  const start = new Date(event.start_datetime);
+  const end = event.end_datetime
+    ? new Date(event.end_datetime)
+    : new Date(event.start_datetime);
+
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+
+  const dayEnd = new Date(date);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  return start <= dayEnd && end >= dayStart;
 }
 
 function formatDate(value) {
