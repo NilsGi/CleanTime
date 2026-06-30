@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NA Sverige</title>
+  <meta name="description" content="Startsida för NA Sveriges möten, distriktskarta och kalender." />
+
+  <style>
+    :root {
+      --na-blue: #003DA5;
+      --na-blue-dark: #002b75;
+      --na-blue-deep: #001f57;
+      --na-blue-light: #2f6fd6;
+      --white: #ffffff;
+      --soft-white: rgba(255, 255, 255, 0.88);
+      --border: rgba(255, 255, 255, 0.22);
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 18% 15%, rgba(47, 111, 214, 0.55), transparent 34%),
+        radial-gradient(circle at 84% 80%, rgba(47, 111, 214, 0.38), transparent 38%),
+        linear-gradient(135deg, var(--na-blue-deep), var(--na-blue-dark) 46%, var(--na-blue));
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .page {
+      width: min(100%, 980px);
+      padding-top: clamp(10px, 4vh, 42px);
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(0, 30, 84, 0.64);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      padding: clamp(28px, 5vw, 56px);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.12), transparent 34%),
+        radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 28%);
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 42px;
+      text-align: center;
+    }
+
+    .logo-heading {
+      margin: 0;
+      line-height: 0;
+    }
+
+    .logo {
+      width: min(210px, 58vw);
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .intro-text {
+      margin: 4px 0 0;
+      color: var(--soft-white);
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .menu-button {
+      min-height: 112px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+      color: var(--white);
+      text-decoration: none;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .menu-button:hover,
+    .menu-button:focus-visible {
+      transform: translateY(-3px);
+      background: linear-gradient(135deg, rgba(255,255,255,0.23), rgba(255,255,255,0.10));
+      border-color: rgba(255,255,255,0.48);
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+      outline: none;
+    }
+
+    .menu-button:active {
+      transform: translateY(-1px);
+    }
+
+    .button-text strong {
+      display: block;
+      font-size: clamp(1.2rem, 2.6vw, 1.55rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .button-text span {
+      display: block;
+      color: rgba(255,255,255,0.78);
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .button-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.15);
+      display: grid;
+      place-items: center;
+      font-size: 1.55rem;
+      flex: 0 0 auto;
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 30px;
+      color: rgba(255,255,255,0.68);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px;
+        align-items: stretch;
+      }
+
+      .page {
+        display: flex;
+        padding-top: 0;
+      }
+
+      .card {
+        width: 100%;
+        min-height: calc(100svh - 32px);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        border-radius: 22px;
+      }
+
+      header {
+        align-items: center;
+        flex-direction: column;
+        margin-bottom: 34px;
+      }
+
+      .logo {
+        width: min(180px, 62vw);
+      }
+
+      .button-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .menu-button {
+        min-height: 96px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card" aria-labelledby="page-title">
+      <div class="content">
+        <header>
+          <h1 id="page-title" class="logo-heading">
+            <img class="logo" src="/assets/na-logo-vit.png" alt="NA Sverige" />
+          </h1>
+          <p class="intro-text">Möten, karta och kalender samlat på ett ställe.</p>
+        </header>
+
+        <nav class="button-grid" aria-label="Huvudmeny">
+          <a class="menu-button" href="meetings/">
+            <span class="button-text">
+              <strong>Möteslista</strong>
+              <span>Sök och hitta NA-möten i Sverige.</span>
+            </span>
+            <span class="button-icon" aria-hidden="true">☷</span>
+          </a>
+
+          <a class="menu-button" href="map/">
+            <span class="button-text">
+              <strong>Distriktskarta</strong>
+              <span>Se distriktsindelning och geografisk översikt.</span>
+            </span>
+            <span class="button-icon" aria-hidden="true">⌖</span>
+          </a>
+
+          <a class="menu-button" href="calendar/">
+            <span class="button-text">
+              <strong>Kalender</strong>
+              <span>Visa kommande event och aktiviteter.</span>
+            </span>
+            <span class="button-icon" aria-hidden="true">□</span>
+          </a>
+
+          <a class="menu-button" href="calendar/admin.html">
+            <span class="button-text">
+              <strong>Skapa kalenderpost</strong>
+              <span>Lägg till eller administrera kalenderposter.</span>
+            </span>
+            <span class="button-icon" aria-hidden="true">＋</span>
+          </a>
+        </nav>
+      </div>
+
+      <footer>
+        Narcotics Anonymous Sverige
+      </footer>
+    </section>
+  </main>
+</body>
+</html>
