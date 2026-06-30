@@ -57,6 +57,13 @@ window.importEvents = async function () {
 
     const events = await fetchAllEvents();
 
+      log.textContent += "\nFält i första eventet:\n";
+log.textContent += Object.keys(events[0]).join(", ") + "\n\n";
+
+log.textContent += "Första eventet rådata:\n";
+log.textContent += JSON.stringify(events[0], null, 2);
+return;
+
     log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
     log.textContent += "Sparar till Supabase...\n";
 
