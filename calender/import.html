@@ -55,14 +55,7 @@ window.importEvents = async function () {
   try {
     log.textContent = "Startar import...\n";
 
-    const events = await fetchAllEvents();
-
-      log.textContent += "\nFält i första eventet:\n";
-log.textContent += Object.keys(events[0]).join(", ") + "\n\n";
-
-log.textContent += "Första eventet rådata:\n";
-log.textContent += JSON.stringify(events[0], null, 2);
-return;
+    const events = await fetchAllEvents()
 
     log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
     log.textContent += "Sparar till Supabase...\n";
@@ -80,14 +73,7 @@ return;
       start_datetime: event.startDate || null,
       end_datetime: event.endDate || null,
 
-      web_url:
-            event.webUrl ||
-            event.webURL ||
-            event.web_url ||
-            event.url ||
-          event.link ||
-          event.website ||
-          null,
+      web_url: event.web || null,
       excerpt: event.excerpt || null,
       description: event.description || null,
 
