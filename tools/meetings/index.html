@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NA Möten Sverige</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
+header{background:#0a1981;color:#fff;padding:14px 20px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+main{max-width:1200px;margin:auto;padding:20px}
+.card{background:white;border:1px solid #ddd;border-radius:14px;padding:16px;margin:14px 0}
+button{padding:10px 13px;border:0;border-radius:10px;background:#0a1981;color:#fff;cursor:pointer;margin:4px 5px 8px 0;font-weight:700;box-shadow:0 2px 6px rgba(10,25,129,.25)}
+button.secondary{background:#d9e1ff;color:#0a1981;border:1px solid rgba(10,25,129,.15)}
+input,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bbb;border-radius:9px;font-size:15px;margin:6px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid #ddd;padding:9px;text-align:left;vertical-align:top;font-size:14px}
+th{background:#f0f0f0;position:sticky;top:0}
+.ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
+pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border-radius:10px;padding:12px;max-height:380px;overflow:auto}
+.pill{display:inline-block;background:#eee;border-radius:999px;padding:3px 8px;margin:2px;font-size:12px}
+a{color:#0645ad}
+
+.header-inner{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.header-logo{
+  height:46px;
+  width:auto;
+  display:block;
+}
+.header-titles{
+  display:flex;
+  flex-direction:column;
+}
+.header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+.header-titles .subtitle{
+  margin-top:3px;
+  color:#fff;
+  opacity:.92;
+  font-size:15px;
+  font-weight:600;
+}
+@media(max-width:700px){
+  header{padding:12px 14px}
+  .header-logo{height:40px}
+  .header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+  .header-titles .subtitle{font-size:14px}
+}
+
+
+button:hover{filter:brightness(1.08)}
+button.secondary:hover{background:#cfd9ff}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+    <div class="header-titles">
+      <h1>Möteslista</h1>
+    </div>
+  </div>
+</header>
+<main>
+<div class="card">
+<button onclick="fetchAllMeetings()">Hämta alla möten</button>
+<button class="secondary" onclick="useMyLocation()">Använd min plats / närmast</button>
+<button class="secondary" onclick="downloadJson()">Ladda ner JSON</button>
+<button class="secondary" onclick="clearAll()">Rensa</button>
+<div id="status" class="muted">Inte startat.</div>
+</div>
+
+<div class="card">
+<h2>Filter</h2>
+<div class="grid">
+<div><label>Sök</label><input id="search" placeholder="Sök grupp, stad, adress..." oninput="render()"></div>
+<div><label>Dag</label><select id="dayFilter" onchange="render()"><option value="">Alla dagar</option></select></div>
+<div><label>Typ</label><select id="typeFilter" onchange="render()"><option value="">Alla typer</option><option value="online">Virtuella möten</option><option value="physical">Fysiska möten</option></select></div>
+</div>
+<div id="summary" class="muted"></div>
+</div>
+
+<div class="card">
+<h2>Möten</h2>
+<div style="overflow:auto;max-height:650px">
+<table>
+<thead><tr><th>Dag</th><th>Tid</th><th>Namn</th><th>Stad</th><th>Adress / online</th><th>Typ</th><th>Distans</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2>Rådata / felsökning</h2>
+<pre id="debug"></pre>
+</div>
+</main>
+
+<script>
+const PROXY_URL = "https://clean-time.se/mote";
+let allMeetings = [];
+let userPosition = null;
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function setStatus(html){$("status").innerHTML=html}
+function log(obj){$("debug").textContent=typeof obj==="string"?obj:JSON.stringify(obj,null,2)}
+
+async function callProxy(endpoint){
+  const res = await fetch(PROXY_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=UTF-8","Accept":"*/*"},
+    body:JSON.stringify({endpoint})
+  });
+  const text = await res.text();
+  if(!res.ok) throw new Error("HTTP "+res.status+"\n"+text.slice(0,1000));
+  return JSON.parse(text);
+}
+
+async function fetchAllMeetings(){
+  clearAll(false);
+  const pageSize=100;
+  let page=1, pageCount=1, total=null;
+  try{
+    do{
+      setStatus("Hämtar sida "+page+" av "+pageCount+"...");
+      const json = await callProxy(`/meetings?pagination[page]=${page}&pagination[pageSize]=${pageSize}`);
+      if(!json.data || !Array.isArray(json.data)) throw new Error("Oväntat API-svar.");
+      allMeetings.push(...json.data);
+      pageCount=json.meta?.pagination?.pageCount || pageCount;
+      total=json.meta?.pagination?.total || total;
+      page++;
+    }while(page<=pageCount);
+
+    populateFilters();
+    render();
+    setStatus(`<span class="ok">Klart.</span> Hämtade ${allMeetings.length} möten.`);
+    log({totalFetched:allMeetings.length, apiTotal:total, firstMeeting:allMeetings[0]||null});
+  }catch(e){
+    setStatus(`<span class="bad">Fel:</span> ${esc(e.message)}`);
+    log(String(e.stack||e));
+  }
+}
+
+function populateFilters(){
+  const days=[...new Set(allMeetings.map(m=>m.days).filter(Boolean))].sort();
+  $("dayFilter").innerHTML='<option value="">Alla dagar</option>';
+  days.forEach(d=>{
+    const opt=document.createElement("option");
+    opt.value=d; opt.textContent=cleanDay(d);
+    $("dayFilter").appendChild(opt);
+  });
+}
+
+function cleanDay(day){
+  return String(day||"").replace(/^[a-g]\.\s*/,"");
+}
+function getCity(m){return (m.meetingCity||[]).map(c=>c.city).join(", ")}
+function getTypes(m){return (m.meetingTypes||[]).map(t=>t.title)}
+function isOnline(m){return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting}
+function meetingText(m){return [m.title,m.theme,m.information,m.location,m.address,m.zip,getCity(m),m.meetingDistrict?.district,getTypes(m).join(" ")].join(" ").toLowerCase()}
+
+function filteredMeetings(){
+  const q=$("search").value.trim().toLowerCase();
+  const day=$("dayFilter").value;
+  const type=$("typeFilter").value;
+  let list=allMeetings.filter(m=>{
+    if(q && !meetingText(m).includes(q)) return false;
+    if(day && m.days!==day) return false;
+    if(type==="online" && !isOnline(m)) return false;
+    if(type==="physical" && isOnline(m)) return false;
+    return true;
+  });
+  if(userPosition){
+    list=list.map(m=>({...m,_distance:distanceToMeeting(m)})).sort((a,b)=>(a._distance??Infinity)-(b._distance??Infinity));
+  }else{
+    list.sort((a,b)=>String(a.days+a.startTime).localeCompare(String(b.days+b.startTime)));
+  }
+  return list;
+}
+
+function render(){
+  const list=filteredMeetings();
+  $("summary").textContent=`Visar ${list.length} av ${allMeetings.length} möten.`;
+  $("rows").innerHTML="";
+  list.forEach(m=>{
+    const types=getTypes(m).map(t=>`<span class="pill">${esc(t)}</span>`).join("");
+    const address=[m.location,m.address,m.zip].filter(Boolean).join("<br>");
+    const online=m.onlineMeeting?.url?`<a href="${esc(m.onlineMeeting.url)}" target="_blank">Online-länk</a>`:"";
+    const map=m.linkMap?`<br><a href="${esc(m.linkMap)}" target="_blank">Karta</a>`:"";
+    const dist=m._distance!=null?m._distance.toFixed(1)+" km":"";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${esc(cleanDay(m.days))}</td>
+      <td>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</td>
+      <td><b>${esc(m.title)}</b>${m.theme?`<br><span class="muted">${esc(m.theme)}</span>`:""}</td>
+      <td>${esc(getCity(m))}<br><span class="muted">${esc(m.meetingDistrict?.district||"")}</span></td>
+      <td>${address||online||'<span class="muted">Ingen adress</span>'}${online&&address?"<br>"+online:""}${map}</td>
+      <td>${types}</td>
+      <td>${esc(dist)}</td>`;
+    $("rows").appendChild(tr);
+  });
+}
+
+function useMyLocation(){
+  if(!navigator.geolocation){setStatus('<span class="bad">Geolocation stöds inte.</span>');return}
+  setStatus("Hämtar din position...");
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userPosition={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    render();
+    setStatus('<span class="ok">Position hämtad.</span> Möten sorteras efter avstånd.');
+  },err=>setStatus('<span class="bad">Kunde inte hämta position:</span> '+esc(err.message)),{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+function distanceToMeeting(m){
+  if(!userPosition || m.latitude==null || m.longitude==null) return null;
+  return haversine(userPosition.lat,userPosition.lng,Number(m.latitude),Number(m.longitude));
+}
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function downloadJson(){
+  if(!allMeetings.length){setStatus('<span class="bad">Hämta möten först.</span>');return}
+  const blob=new Blob([JSON.stringify(allMeetings,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="na-sverige-moten.json";a.click();URL.revokeObjectURL(url);
+}
+function clearAll(reset=true){
+  allMeetings=[];
+  if(reset) userPosition=null;
+  $("rows").innerHTML="";$("summary").textContent="";$("debug").textContent="";
+  $("search").value="";$("dayFilter").innerHTML='<option value="">Alla dagar</option>';$("typeFilter").value="";
+  if(reset) setStatus("Rensat.");
+}
+</script>
+</body>
+</html>
