@@ -9,35 +9,43 @@ export async function onRequest(context) {
   }
 
   const url =
-    "https://cms.nasverige.org/api/events" +
-    "?populate=*" +
-    "&pagination%5BpageSize%5D=5" +
-    "&sort=startDate:asc";
+    "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=10&sort=startDate:asc";
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json"
-    }
-  });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      }
+    });
 
-  const json = await response.json();
+    const text = await response.text();
 
-  const firstEvent = json.data?.[0];
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {}
 
-  return Response.json({
-    success: response.ok,
-    status: response.status,
-    count: json.data?.length || 0,
-    meta: json.meta || null,
+    const firstEvent = json?.data?.[0] || null;
 
-    // Visar hela första eventet
-    firstEvent,
+    return Response.json({
+      success: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      url,
+      rawText: text,
+      dataType: Array.isArray(json?.data) ? "array" : typeof json?.data,
+      count: json?.data?.length || 0,
+      meta: json?.meta || null,
+      firstEvent,
+      fields: firstEvent ? Object.keys(firstEvent) : [],
+      attributeFields: firstEvent?.attributes ? Object.keys(firstEvent.attributes) : []
+    });
 
-    // Visar vilka fält som finns
-    topLevelFields: firstEvent ? Object.keys(firstEvent) : [],
-    attributeFields: firstEvent?.attributes
-      ? Object.keys(firstEvent.attributes)
-      : Object.keys(firstEvent || {})
-  });
+  } catch (error) {
+    return Response.json({
+      success: false,
+      error: error.message
+    }, { status: 500 });
+  }
 }
