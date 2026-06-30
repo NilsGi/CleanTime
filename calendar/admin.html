@@ -187,18 +187,22 @@ window.saveEvent = async function () {
       .update(row)
       .eq("id", editingId)
       .eq("source", "manual")
-      .select()
-      .single();
+      .select("*");
   } else {
     result = await supabase
       .from("calendar_events")
       .insert(row)
-      .select()
-      .single();
+      .select("*");
   }
 
   if (result.error) {
-    log.textContent = "FEL:\n" + JSON.stringify(result.error, null, 2);
+    log.textContent = "FEL vid sparning:\n" + JSON.stringify(result.error, null, 2);
+    return;
+  }
+
+  if (!result.data || result.data.length === 0) {
+    log.textContent =
+      "Ingen rad uppdaterades. Trolig orsak: RLS-policy saknas för UPDATE i Supabase, eller så hittades inte eventet.";
     return;
   }
 
@@ -207,7 +211,7 @@ window.saveEvent = async function () {
     : "Händelsen sparad.";
 
   resetForm();
-  loadManualEvents();
+  await loadManualEvents();
 };
 
 async function loadManualEvents() {
@@ -261,6 +265,7 @@ window.editEventById = function (id) {
 
 window.editEvent = function (e) {
   editingId = e.id;
+  log.textContent = "Redigerar: " + (e.title || "");
 
   document.getElementById("formTitle").textContent = "Redigera händelse";
   document.getElementById("saveBtn").textContent = "Uppdatera händelse";
