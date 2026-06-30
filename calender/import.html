@@ -2,82 +2,175 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Importera NA-event</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 1000px;
+    margin: auto;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+pre {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+}
+</style>
 </head>
 <body>
 
-<h1>Importera event till Supabase</h1>
-<button onclick="importEvents()">Importera från /event</button>
+<h1>Importera NA-event</h1>
+
+<button onclick="importEvents()">
+    Importera alla event
+</button>
 
 <pre id="log"></pre>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient }
+from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 const log = document.getElementById("log");
 
 window.importEvents = async function () {
-  log.textContent = "Hämtar event...\n";
+  try {
+    log.textContent = "Startar import...\n";
 
-  const res = await fetch("/event");
-  const data = await res.json();
+    const events = await fetchAllEvents();
 
-  const events = data.events || data.data || [];
+    log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
+    log.textContent += "Sparar till Supabase...\n";
 
-  log.textContent += `Hittade ${events.length} event\n`;
+    const rows = events.map(event => ({
+      source: "nasverige",
+      external_id: String(event.id),
+      external_slug: event.slug || null,
 
-  const rows = events.map(event => ({
-    source: "nasverige",
-    external_id: String(event.id),
-    external_slug: event.slug || null,
+      title: event.title || "Namnlöst evenemang",
+      organizer: event.organizer || null,
+      address: event.address || null,
+      price: event.price || null,
 
-    title: event.title || "Namnlöst evenemang",
-    organizer: event.organizer || null,
-    address: event.address || null,
-    price: event.price || null,
+      start_datetime: event.startDate || null,
+      end_datetime: event.endDate || null,
 
-    start_datetime: event.startDate || null,
-    end_datetime: event.endDate || null,
+      web_url: event.webUrl || null,
+      excerpt: event.excerpt || null,
+      description: event.description || null,
 
-    web_url: event.webUrl || null,
-    excerpt: event.excerpt || null,
-    description: event.description || null,
+      image_url: getImageUrl(event),
 
-    image_url: getImageUrl(event),
-    raw_data: event,
+      raw_data: event,
 
-    is_published: true,
-    is_hidden: false
-  }));
+      is_published: true,
+      is_hidden: false
+    }));
 
-  const { data: saved, error } = await supabase
-    .from("calendar_events")
-    .upsert(rows, {
-      onConflict: "source,external_id"
-    })
-    .select();
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .upsert(rows, {
+        onConflict: "source,external_id"
+      })
+      .select();
 
-  if (error) {
-    log.textContent += "\nFEL:\n" + JSON.stringify(error, null, 2);
-    return;
+    if (error) {
+      log.textContent +=
+        "\nFEL:\n" +
+        JSON.stringify(error, null, 2);
+      return;
+    }
+
+    log.textContent +=
+      `\nKlart!\n` +
+      `Sparade/uppdaterade ${data.length} event.`;
+
+  } catch (e) {
+    log.textContent +=
+      "\nFEL:\n" +
+      e.message;
   }
-
-  log.textContent += `\nKlart! Sparade/uppdaterade ${saved.length} event.`;
 };
 
+async function fetchAllEvents() {
+  let page = 1;
+  let allEvents = [];
+
+  while (true) {
+    log.textContent +=
+      `Hämtar sida ${page}...\n`;
+
+    const res = await fetch(`/event?page=${page}`);
+
+    if (!res.ok) {
+      throw new Error(
+        `Fel ${res.status} på sida ${page}`
+      );
+    }
+
+    const data = await res.json();
+
+    const events =
+      data.events ||
+      data.data ||
+      [];
+
+    log.textContent +=
+      `Sida ${page}: ${events.length} event\n`;
+
+    allEvents = allEvents.concat(events);
+
+    const pagination =
+      data.meta?.pagination;
+
+    if (!pagination) {
+      break;
+    }
+
+    if (page >= pagination.pageCount) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allEvents;
+}
+
 function getImageUrl(event) {
-  const image = event.images?.[0] || event.images?.data?.[0];
+  const image =
+    event.images?.[0] ||
+    event.images?.data?.[0];
 
-  if (!image) return null;
+  if (!image) {
+    return null;
+  }
 
-  const url = image.url || image.attributes?.url;
+  const url =
+    image.url ||
+    image.attributes?.url;
 
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
 
   return url.startsWith("http")
     ? url
