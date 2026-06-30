@@ -9,19 +9,7 @@ export async function onRequest(context) {
   }
 
   const url =
-    "https://cms.nasverige.org/api/events" +
-    "?fields[0]=title" +
-    "&fields[1]=slug" +
-    "&fields[2]=organizer" +
-    "&fields[3]=address" +
-    "&fields[4]=price" +
-    "&fields[5]=startDate" +
-    "&fields[6]=endDate" +
-    "&fields[7]=webUrl" +
-    "&fields[8]=excerpt" +
-    "&fields[9]=description" +
-    "&populate=*"+
-    "&pagination[pageSize]=100";
+    "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=100";
 
   try {
     const response = await fetch(url, {
@@ -39,10 +27,12 @@ export async function onRequest(context) {
           success: false,
           status: response.status,
           statusText: response.statusText,
-          url,
           response: text
         }, null, 2),
-        { status: response.status, headers: { "Content-Type": "application/json" } }
+        {
+          status: response.status,
+          headers: { "Content-Type": "application/json" }
+        }
       );
     }
 
