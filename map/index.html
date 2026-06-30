@@ -13,13 +13,13 @@
 
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#eef3f8;color:#111}
-header{background:#1976d2;color:#fff;padding:14px 20px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+header{background:#0a1981;color:#fff;padding:14px 20px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
 
 main{display:grid;grid-template-columns:390px 1fr;min-height:calc(100vh - 62px)}
 aside{background:#fff;border-right:1px solid #d7e2ee;padding:14px;overflow:auto;max-height:calc(100vh - 62px)}
 #map{height:calc(100vh - 62px);min-height:520px;background:#ddd}
-button{padding:10px 13px;border:0;border-radius:10px;background:#102a43;color:#fff;cursor:pointer;margin:4px 5px 8px 0;font-weight:700}
-button.secondary{background:#dbe8f5;color:#102a43}
+button{padding:10px 13px;border:0;border-radius:10px;background:#0a1981;color:#fff;cursor:pointer;margin:4px 5px 8px 0;font-weight:700;box-shadow:0 2px 6px rgba(10,25,129,.25)}
+button.secondary{background:#d9e1ff;color:#0a1981;border:1px solid rgba(10,25,129,.15)}
 input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;margin:5px 0 10px}
 .ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
@@ -79,7 +79,7 @@ summary{cursor:pointer;font-weight:700}
 }
 .header-inner{display:flex;align-items:center;gap:14px}
 .header-logo{height:44px;width:auto;display:block}
-header h1{margin:0;font-size:24px;font-weight:700;color:#fff}
+
 input,select{
   border-color:var(--ct-border);
 }
@@ -91,6 +91,39 @@ input:focus,select:focus{
   box-shadow:0 1px 6px rgba(16,42,67,.45)!important;
 }
 
+
+.header-inner{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.header-logo{
+  height:46px;
+  width:auto;
+  display:block;
+}
+.header-titles{
+  display:flex;
+  flex-direction:column;
+}
+.header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+.header-titles .subtitle{
+  margin-top:3px;
+  color:#fff;
+  opacity:.92;
+  font-size:15px;
+  font-weight:600;
+}
+@media(max-width:700px){
+  header{padding:12px 14px}
+  .header-logo{height:40px}
+  .header-titles h1{margin:0;font-size:26px;font-weight:800;color:#fff;line-height:1.08}
+  .header-titles .subtitle{font-size:14px}
+}
+
+
+button:hover{filter:brightness(1.08)}
+button.secondary:hover{background:#cfd9ff}
 </style>
 </head>
 
@@ -98,7 +131,9 @@ input:focus,select:focus{
 <header>
   <div class="header-inner">
     <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
-    <h1>Distriktskarta</h1>
+    <div class="header-titles">
+      <h1>Distriktskarta</h1>
+    </div>
   </div>
 </header>
 
