@@ -3,174 +3,594 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NA Sverige Event</title>
+<title>NA Sverige Kalender</title>
 
 <style>
-body{
-    font-family:Arial,sans-serif;
-    background:#f5f5f5;
-    margin:0;
-    padding:20px;
+:root {
+  --na-blue: #101b8f;
+  --bg: #f4f5f8;
+  --card: #ffffff;
+  --text: #1d1d1f;
+  --muted: #666;
+  --border: #ddd;
 }
 
-h1{
-    text-align:center;
+* {
+  box-sizing: border-box;
 }
 
-#status{
-    text-align:center;
-    margin-bottom:20px;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
-.event{
-    background:#fff;
-    padding:20px;
-    margin-bottom:20px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
+header {
+  background: var(--na-blue);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.field{
-    margin-bottom:8px;
+header img {
+  height: 44px;
+  width: auto;
 }
 
-.field strong{
-    display:inline-block;
-    width:120px;
+header h1 {
+  margin: 0;
+  font-size: 28px;
 }
 
-img{
-    max-width:300px;
-    margin-top:10px;
-    border-radius:8px;
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
 }
 
-pre{
-    background:#f7f7f7;
-    padding:15px;
-    overflow:auto;
-    border-radius:8px;
-    font-size:12px;
+.toolbar {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+input, select, button {
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+button {
+  cursor: pointer;
+  background: var(--na-blue);
+  color: white;
+  border: none;
+}
+
+.view-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.view-buttons button {
+  flex: 1;
+}
+
+.event-list {
+  display: grid;
+  gap: 14px;
+}
+
+.event-card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.event-card h2 {
+  margin: 0 0 8px;
+  color: var(--na-blue);
+}
+
+.meta {
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.type {
+  display: inline-block;
+  background: #eef0ff;
+  color: var(--na-blue);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions a, .actions button {
+  text-decoration: none;
+  background: var(--na-blue);
+  color: white;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.day-name {
+  font-weight: bold;
+  text-align: center;
+  padding: 8px;
+}
+
+.day {
+  background: white;
+  min-height: 130px;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 1px 5px rgba(0,0,0,.06);
+}
+
+.day-number {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.day-event {
+  background: #eef0ff;
+  color: var(--na-blue);
+  padding: 5px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.week-list {
+  display: grid;
+  gap: 12px;
+}
+
+.week-day {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.week-day h3 {
+  margin-top: 0;
+  color: var(--na-blue);
+}
+
+@media (max-width: 800px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .day-name {
+    display: none;
+  }
+
+  header h1 {
+    font-size: 22px;
+  }
 }
 </style>
 </head>
+
 <body>
 
-<h1>NA Sverige Evenemang</h1>
+<header>
+  <img src="/assets/na-logo-vit.png" alt="NA">
+  <h1>Kalender</h1>
+</header>
 
-<div id="status">Laddar...</div>
+<main>
 
-<div id="events"></div>
+<div class="toolbar">
+  <input id="search" placeholder="Sök evenemang...">
 
-<script>
-async function loadEvents() {
-    const status = document.getElementById("status");
-    const container = document.getElementById("events");
+  <select id="typeFilter">
+    <option value="">Alla typer</option>
+    <option value="event">Event</option>
+    <option value="distrikt">Distrikt</option>
+    <option value="uksam">UKSAM</option>
+    <option value="region">Region</option>
+  </select>
 
-    try {
-        const response = await fetch("/event");
+  <select id="monthFilter"></select>
 
-        if (!response.ok) {
-            throw new Error(`Fel ${response.status}`);
-        }
+  <div class="view-buttons">
+    <button onclick="setView('list')">Lista</button>
+    <button onclick="setView('week')">Vecka</button>
+    <button onclick="setView('month')">Månad</button>
+  </div>
 
-        const data = await response.json();
+  <button onclick="downloadAllIcs()">Prenumerera / ICS</button>
+</div>
 
-        console.log(data);
+<div id="status">Laddar kalender...</div>
+<div id="calendar"></div>
 
-        const events =
-            data.events ||
-            data.data ||
-            [];
+</main>
 
-        status.innerHTML =
-            `${events.length} evenemang hittades`;
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-        container.innerHTML = "";
+const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
-        events.forEach(event => {
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            const e = event.attributes || event;
+let allEvents = [];
+let currentView = "list";
+let selectedMonth = new Date();
 
-            let html = `
-                <div class="event">
-                    <h2>${e.title || "Namnlöst evenemang"}</h2>
-            `;
+const calendar = document.getElementById("calendar");
+const status = document.getElementById("status");
 
-            Object.entries(e).forEach(([key, value]) => {
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("typeFilter").addEventListener("change", render);
+document.getElementById("monthFilter").addEventListener("change", e => {
+  selectedMonth = new Date(e.target.value + "-01T00:00:00");
+  render();
+});
 
-                if (
-                    value === null ||
-                    value === undefined ||
-                    value === ""
-                ) {
-                    return;
-                }
+init();
 
-                if (typeof value === "object") {
-                    return;
-                }
+async function init() {
+  buildMonthFilter();
 
-                html += `
-                    <div class="field">
-                        <strong>${key}</strong>
-                        ${value}
-                    </div>
-                `;
-            });
+  const { data, error } = await supabase
+    .from("calendar_events")
+    .select("*")
+    .eq("is_published", true)
+    .eq("is_hidden", false)
+    .gte("start_datetime", new Date().toISOString())
+    .order("start_datetime", { ascending: true });
 
-            // Försök visa bilder
-            const images =
-                e.images?.data ||
-                e.images ||
-                [];
+  if (error) {
+    status.textContent = "Kunde inte hämta kalendern.";
+    return;
+  }
 
-            if (Array.isArray(images)) {
-                images.forEach(img => {
+  allEvents = data || [];
+  status.textContent = `${allEvents.length} kommande händelser`;
+  render();
+}
 
-                    const url =
-                        img?.url ||
-                        img?.attributes?.url;
+function buildMonthFilter() {
+  const select = document.getElementById("monthFilter");
+  const now = new Date();
 
-                    if (url) {
-                        html += `
-                            <img src="${url.startsWith('http') ? url : 'https://cms.nasverige.org' + url}">
-                        `;
-                    }
-                });
-            }
+  for (let i = 0; i < 18; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const value = d.toISOString().slice(0, 7);
+    const label = d.toLocaleDateString("sv-SE", {
+      year: "numeric",
+      month: "long"
+    });
 
-            html += `
-                <details>
-                    <summary>Visa rå JSON</summary>
-                    <pre>${escapeHtml(JSON.stringify(event, null, 2))}</pre>
-                </details>
-                </div>
-            `;
+    select.innerHTML += `<option value="${value}">${label}</option>`;
+  }
+}
 
-            container.innerHTML += html;
-        });
+window.setView = function(view) {
+  currentView = view;
+  render();
+};
 
-    } catch (error) {
-        console.error(error);
-        status.innerHTML =
-            `Kunde inte hämta event: ${error.message}`;
+function getFilteredEvents() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const type = document.getElementById("typeFilter").value;
+
+  return allEvents.filter(e => {
+    const text = [
+      e.title,
+      e.organizer,
+      e.address,
+      e.excerpt,
+      e.description
+    ].join(" ").toLowerCase();
+
+    if (search && !text.includes(search)) return false;
+    if (type && e.event_type !== type) return false;
+
+    return true;
+  });
+}
+
+function render() {
+  const events = getFilteredEvents();
+
+  if (currentView === "month") renderMonth(events);
+  else if (currentView === "week") renderWeek(events);
+  else renderList(events);
+}
+
+function renderList(events) {
+  calendar.className = "event-list";
+  calendar.innerHTML = events.map(eventCard).join("");
+}
+
+function renderWeek(events) {
+  calendar.className = "week-list";
+
+  const start = startOfWeek(new Date());
+  const days = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    days.push(d);
+  }
+
+  calendar.innerHTML = days.map(day => {
+    const dayEvents = events.filter(e => sameDay(new Date(e.start_datetime), day));
+
+    return `
+      <div class="week-day">
+        <h3>${day.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" })}</h3>
+        ${dayEvents.length ? dayEvents.map(eventCard).join("") : "<p>Inga händelser.</p>"}
+      </div>
+    `;
+  }).join("");
+}
+
+function renderMonth(events) {
+  calendar.className = "calendar-grid";
+
+  const year = selectedMonth.getFullYear();
+  const month = selectedMonth.getMonth();
+
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+
+  const startOffset = (first.getDay() + 6) % 7;
+  const totalDays = startOffset + last.getDate();
+
+  const dayNames = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
+
+  let html = dayNames.map(d => `<div class="day-name">${d}</div>`).join("");
+
+  for (let i = 0; i < totalDays; i++) {
+    if (i < startOffset) {
+      html += `<div class="day"></div>`;
+      continue;
     }
+
+    const dayNumber = i - startOffset + 1;
+    const date = new Date(year, month, dayNumber);
+
+    const dayEvents = events.filter(e =>
+      sameDay(new Date(e.start_datetime), date)
+    );
+
+    html += `
+      <div class="day">
+        <div class="day-number">${dayNumber}</div>
+        ${dayEvents.map(e => `
+          <div class="day-event" onclick="showEvent('${e.id}')">
+            ${time(e.start_datetime)} ${escapeHtml(e.title)}
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  calendar.innerHTML = html;
+}
+
+function eventCard(e) {
+  return `
+    <div class="event-card" id="event-${e.id}">
+      <span class="type">${labelType(e.event_type)}</span>
+      <h2>${escapeHtml(e.title)}</h2>
+
+      <div class="meta">
+        ${formatDate(e.start_datetime)}
+        ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
+        ${e.address ? "<br>" + escapeHtml(e.address) : ""}
+      </div>
+
+      ${e.excerpt ? `<p>${escapeHtml(e.excerpt)}</p>` : ""}
+      ${e.description ? `<details><summary>Mer information</summary><p>${escapeHtml(e.description)}</p></details>` : ""}
+
+      <div class="actions">
+        ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
+        <button onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
+        <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
+      </div>
+    </div>
+  `;
+}
+
+window.showEvent = function(id) {
+  currentView = "list";
+  render();
+
+  setTimeout(() => {
+    document.getElementById("event-" + id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }, 50);
+};
+
+window.downloadEventIcs = function(id) {
+  const event = allEvents.find(e => e.id === id);
+  if (!event) return;
+
+  downloadFile(
+    slug(event.title) + ".ics",
+    createIcs([event])
+  );
+};
+
+window.downloadAllIcs = function() {
+  downloadFile(
+    "na-sverige-kalender.ics",
+    createIcs(getFilteredEvents())
+  );
+};
+
+function createIcs(events) {
+  const now = icsDate(new Date());
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//NA Sverige//Kalender//SV",
+    "CALSCALE:GREGORIAN",
+    ...events.flatMap(e => [
+      "BEGIN:VEVENT",
+      `UID:${e.id}@nasverige-kalender`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${icsDate(new Date(e.start_datetime))}`,
+      e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
+      `SUMMARY:${icsEscape(e.title)}`,
+      e.address ? `LOCATION:${icsEscape(e.address)}` : "",
+      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.web_url].filter(Boolean).join("\\n\\n"))}`,
+      e.web_url ? `URL:${e.web_url}` : "",
+      "END:VEVENT"
+    ].filter(Boolean)),
+    "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+function googleCalendarUrl(e) {
+  const start = googleDate(new Date(e.start_datetime));
+  const end = e.end_datetime
+    ? googleDate(new Date(e.end_datetime))
+    : googleDate(new Date(new Date(e.start_datetime).getTime() + 60 * 60 * 1000));
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: e.title || "",
+    dates: `${start}/${end}`,
+    details: [e.excerpt, e.description, e.web_url].filter(Boolean).join("\n\n"),
+    location: e.address || ""
+  });
+
+  return "https://calendar.google.com/calendar/render?" + params.toString();
+}
+
+function startOfWeek(date) {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("sv-SE", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function time(value) {
+  return new Date(value).toLocaleTimeString("sv-SE", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function icsDate(date) {
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function googleDate(date) {
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function icsEscape(text) {
+  return String(text || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
 }
 
 function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, function(match) {
-        return {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        }[match];
-    });
+  return String(str || "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  }[m]));
 }
 
-loadEvents();
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, "&quot;");
+}
+
+function labelType(type) {
+  return {
+    event: "Event",
+    distrikt: "Distrikt",
+    uksam: "UKSAM",
+    region: "Region"
+  }[type] || type || "Event";
+}
+
+function slug(text) {
+  return String(text || "event")
+    .toLowerCase()
+    .replace(/[^a-z0-9åäö]+/gi, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
