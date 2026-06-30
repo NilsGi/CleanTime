@@ -1387,6 +1387,52 @@ function clearAllFilters(){
 
 
 
+
+function fitDistanceFilteredMeetings(){
+  if (!map || !userPosition) return;
+
+  const maxDistance = Number($("distanceFilter")?.value || 0);
+  if (!maxDistance) {
+    fitVisible();
+    return;
+  }
+
+  const meetingList = filteredMeetings();
+  const groups = groupMeetingsForDisplay(meetingList)
+    .filter(groupMatchesMap)
+    .filter(g => g.distance !== null && g.distance !== undefined && g.distance <= maxDistance);
+
+  const points = [];
+
+  if (userPosition) {
+    points.push([userPosition.lat, userPosition.lng]);
+  }
+
+  groups.forEach(g => {
+    points.push([g.latitude, g.longitude]);
+  });
+
+  if (points.length > 1) {
+    suppressMapMoveRender = true;
+    map.fitBounds(points, {
+      padding: [35, 35],
+      maxZoom: 13
+    });
+    setTimeout(() => {
+      suppressMapMoveRender = false;
+      renderAll(false);
+    }, 250);
+  } else if (points.length === 1) {
+    suppressMapMoveRender = true;
+    map.setView(points[0], 13);
+    setTimeout(() => {
+      suppressMapMoveRender = false;
+      renderAll(false);
+    }, 250);
+  }
+}
+
+
 function handleDistanceFilterChange(){
   const distanceEl = $("distanceFilter");
   const value = distanceEl ? distanceEl.value : "";
@@ -1434,7 +1480,7 @@ function handleDistanceFilterChange(){
       }
 
       renderAll(false);
-      fitVisible();
+      fitDistanceFilteredMeetings();
 
       setStatus(
         '<span class="ok">Position hämtad.</span> Visar möten inom ' +
