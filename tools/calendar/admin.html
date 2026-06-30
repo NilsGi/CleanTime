@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skapa kalenderpost</title>
+<meta name="description" content="Adminverktyg för att skapa och hantera kalenderposter för NA Sverige.">
+
+<style>
+:root {
+  --na-blue: #003DA5;
+  --na-blue-dark: #002b75;
+  --na-blue-deep: #001f57;
+  --na-blue-light: #2f6fd6;
+  --white: #ffffff;
+  --soft-white: rgba(255, 255, 255, 0.88);
+  --muted-white: rgba(255, 255, 255, 0.70);
+  --panel: rgba(255, 255, 255, 0.96);
+  --panel-soft: #f5f8ff;
+  --text: #172033;
+  --muted: #5c667a;
+  --border: rgba(0, 61, 165, 0.16);
+  --white-border: rgba(255, 255, 255, 0.22);
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+  --radius: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 18% 15%, rgba(47, 111, 214, 0.55), transparent 34%),
+    radial-gradient(circle at 84% 80%, rgba(47, 111, 214, 0.38), transparent 38%),
+    linear-gradient(135deg, var(--na-blue-deep), var(--na-blue-dark) 46%, var(--na-blue));
+  padding: 28px;
+}
+
+.page {
+  width: min(100%, 1100px);
+  margin: 0 auto;
+}
+
+.site-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.logo {
+  width: min(190px, 58vw);
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.top-actions {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.32);
+  background: rgba(255,255,255,0.13);
+  color: var(--white);
+  text-decoration: none;
+  font-weight: 750;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.20);
+  border-color: rgba(255,255,255,0.52);
+  outline: none;
+}
+
+.shell {
+  position: relative;
+  overflow: hidden;
+  background: rgba(0, 30, 84, 0.64);
+  border: 1px solid var(--white-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  padding: clamp(18px, 4vw, 34px);
+}
+
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.12), transparent 34%),
+    radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 28%);
+  pointer-events: none;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  background: var(--panel);
+  padding: clamp(20px, 4vw, 34px);
+  border-radius: 20px;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.15);
+}
+
+.page-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  color: var(--na-blue-deep);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin: 28px 0 10px;
+  color: var(--na-blue-deep);
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.import-card {
+  background: linear-gradient(135deg, rgba(0, 61, 165, 0.08), rgba(47, 111, 214, 0.04));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 26px;
+}
+
+label {
+  display: block;
+  margin-top: 14px;
+  font-weight: 750;
+  color: #24304a;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px 13px;
+  margin-top: 6px;
+  box-sizing: border-box;
+  font-size: 16px;
+  border-radius: 12px;
+  border: 1px solid #ccd6eb;
+  background: #ffffff;
+  color: var(--text);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--na-blue);
+  box-shadow: 0 0 0 4px rgba(0, 61, 165, 0.12);
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+button {
+  margin-top: 16px;
+  padding: 11px 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--na-blue);
+  color: var(--white);
+  font-weight: 750;
+  font-size: 0.98rem;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+button:hover,
+button:focus-visible {
+  transform: translateY(-1px);
+  background: var(--na-blue-dark);
+  box-shadow: 0 10px 22px rgba(0, 61, 165, 0.22);
+  outline: none;
+}
+
+button[type="button"] {
+  background: #eef3ff;
+  color: var(--na-blue-deep);
+  border-color: var(--border);
+}
+
+button[type="button"]:hover,
+button[type="button"]:focus-visible {
+  background: #dfe9ff;
+}
+
+.event-row {
+  border: 1px solid var(--border);
+  background: var(--panel-soft);
+  padding: 14px 16px;
+  border-radius: 16px;
+  margin-top: 12px;
+  line-height: 1.45;
+}
+
+.event-row strong {
+  color: var(--na-blue-deep);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.actions button {
+  margin-top: 0;
+  margin-right: 0;
+  padding: 8px 12px;
+  font-size: 0.92rem;
+}
+
+.actions button:nth-child(2) {
+  background: #eef3ff;
+  color: var(--na-blue-deep);
+  border-color: var(--border);
+}
+
+.actions button:nth-child(3) {
+  background: #fff0f0;
+  color: #8b1e1e;
+  border-color: #f3c3c3;
+}
+
+#log {
+  background: #eef3ff;
+  color: #1d2b48;
+  border: 1px solid var(--border);
+  padding: 14px;
+  white-space: pre-wrap;
+  margin-top: 18px;
+  border-radius: 14px;
+  min-height: 48px;
+  overflow-x: auto;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 16px;
+  }
+
+  .logo {
+    width: min(170px, 64vw);
+  }
+
+  .top-actions {
+    justify-content: center;
+  }
+
+  .page-title {
+    display: block;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .actions button {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+</style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="logo-link" href="/tools" aria-label="Till startsidan">
+        <img class="logo" src="/assets/na-logo-vit.png" alt="NA Sverige">
+      </a>
+      <div class="top-actions">
+        <a class="back-button" href="/tools">← Tillbaka till startsidan</a>
+      </div>
+    </header>
+
+    <section class="shell">
+      <main>
+        <div class="page-title">
+          <div>
+            <h1>Skapa kalenderpost</h1>
+            <p class="lead">Lägg till, redigera, dölj eller ta bort manuella händelser i kalendern.</p>
+          </div>
+        </div>
+
+        <div class="import-card">
+          <button onclick="importFromNasverige()">Importera från nasverige.org</button>
+        </div>
+
+        <h2 id="formTitle">Lägg till manuell händelse</h2>
+
+        <label>Typ</label>
+        <select id="event_type">
+          <option value="distrikt">Distrikt</option>
+          <option value="uksam">UKSAM</option>
+          <option value="region">Region</option>
+        </select>
+
+        <label>Titel</label>
+        <input id="title">
+
+        <label>Organisatör</label>
+        <input id="organizer">
+
+        <label>Adress</label>
+        <input id="address">
+
+        <div class="row">
+          <div>
+            <label>Startdatum</label>
+            <input id="start_date" type="date">
+          </div>
+          <div>
+            <label>Starttid</label>
+            <input id="start_time" type="time">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Slutdatum</label>
+            <input id="end_date" type="date">
+          </div>
+          <div>
+            <label>Sluttid</label>
+            <input id="end_time" type="time">
+          </div>
+        </div>
+
+        <label>Länk</label>
+        <input id="web_url" type="url">
+
+        <label>Excerpt</label>
+        <textarea id="excerpt"></textarea>
+
+        <label>Description</label>
+        <textarea id="description"></textarea>
+
+        <button onclick="saveEvent()" id="saveBtn">Spara händelse</button>
+        <button onclick="resetForm()" type="button">Avbryt/rensa</button>
+
+        <pre id="log"></pre>
+
+        <h2>Manuella händelser</h2>
+        <div id="manualEvents">Laddar...</div>
+      </main>
+    </section>
+  </div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const log = document.getElementById("log");
+
+let editingId = null;
+let manualEvents = [];
+
+window.saveEvent = async function () {
+  const title = val("title");
+  const startDate = val("start_date");
+  const startTime = val("start_time");
+
+  if (!title || !startDate || !startTime) {
+    log.textContent = "Titel, startdatum och starttid krävs.";
+    return;
+  }
+
+  const row = {
+    source: "manual",
+    event_type: val("event_type"),
+
+    title,
+    organizer: val("organizer") || null,
+    address: val("address") || null,
+
+    start_datetime: combine(startDate, startTime),
+    end_datetime: val("end_date") && val("end_time")
+      ? combine(val("end_date"), val("end_time"))
+      : null,
+
+    web_url: val("web_url") || null,
+    excerpt: val("excerpt") || null,
+    description: val("description") || null,
+
+    is_published: true,
+    is_hidden: false,
+    updated_at: new Date().toISOString()
+  };
+
+  let result;
+
+  if (editingId) {
+    result = await supabase
+      .from("calendar_events")
+      .update(row)
+      .eq("id", editingId)
+      .eq("source", "manual")
+      .select("*");
+  } else {
+    result = await supabase
+      .from("calendar_events")
+      .insert(row)
+      .select("*");
+  }
+
+  if (result.error) {
+    log.textContent = "FEL vid sparning:\n" + JSON.stringify(result.error, null, 2);
+    return;
+  }
+
+  if (!result.data || result.data.length === 0) {
+    log.textContent =
+      "Ingen rad uppdaterades. Trolig orsak: RLS-policy saknas för UPDATE i Supabase, eller så hittades inte eventet.";
+    return;
+  }
+
+  log.textContent = editingId
+    ? "Händelsen uppdaterad."
+    : "Händelsen sparad.";
+
+  resetForm();
+  await loadManualEvents();
+};
+
+async function loadManualEvents() {
+  const container = document.getElementById("manualEvents");
+
+  const { data, error } = await supabase
+    .from("calendar_events")
+    .select("*")
+    .eq("source", "manual")
+    .eq("is_hidden", false)
+    .order("start_datetime", { ascending: true });
+
+  if (error) {
+    container.innerHTML = "Kunde inte hämta manuella event.";
+    return;
+  }
+
+  manualEvents = data || [];
+
+  if (!manualEvents.length) {
+    container.innerHTML = "Inga manuella händelser.";
+    return;
+  }
+
+  container.innerHTML = manualEvents.map(e => `
+    <div class="event-row">
+      <strong>${escapeHtml(e.title)}</strong><br>
+      ${formatDate(e.start_datetime)}<br>
+      ${escapeHtml(e.event_type || "")}
+      ${e.address ? " • " + escapeHtml(e.address) : ""}
+      <div class="actions">
+        <button onclick="editEventById('${e.id}')">Redigera</button>
+        <button onclick='hideEvent("${e.id}")'>Dölj</button>
+        <button onclick='deleteEvent("${e.id}")'>Ta bort</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+window.editEventById = function (id) {
+  const event = manualEvents.find(e => e.id === id);
+
+  if (!event) {
+    log.textContent = "Kunde inte hitta händelsen.";
+    return;
+  }
+
+  editEvent(event);
+};
+
+window.editEvent = function (e) {
+  editingId = e.id;
+  log.textContent = "Redigerar: " + (e.title || "");
+
+  document.getElementById("formTitle").textContent = "Redigera händelse";
+  document.getElementById("saveBtn").textContent = "Uppdatera händelse";
+
+  setVal("event_type", e.event_type || "distrikt");
+  setVal("title", e.title || "");
+  setVal("organizer", e.organizer || "");
+  setVal("address", e.address || "");
+  setVal("web_url", e.web_url || "");
+  setVal("excerpt", e.excerpt || "");
+  setVal("description", e.description || "");
+
+  fillDateTime("start", e.start_datetime);
+  fillDateTime("end", e.end_datetime);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+window.hideEvent = async function (id) {
+  if (!confirm("Dölja händelsen?")) return;
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .update({ is_hidden: true })
+    .eq("id", id)
+    .eq("source", "manual");
+
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent = "Händelsen dold.";
+  loadManualEvents();
+};
+
+window.deleteEvent = async function (id) {
+  if (!confirm("Ta bort händelsen permanent?")) return;
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .delete()
+    .eq("id", id)
+    .eq("source", "manual");
+
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent = "Händelsen borttagen.";
+  loadManualEvents();
+};
+
+window.importFromNasverige = async function () {
+  try {
+    log.textContent = "Startar import från nasverige.org...\n";
+
+    const events = await fetchAllEvents();
+
+    log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
+    log.textContent += "Sparar till Supabase...\n";
+
+    const rows = events.map(event => ({
+      source: "nasverige",
+      event_type: "event",
+
+      external_id: String(event.id),
+      external_slug: event.slug || null,
+
+      title: event.title || "Namnlöst evenemang",
+      organizer: event.organizer || null,
+      address: event.address || null,
+      price: event.price || null,
+
+      start_datetime: event.startDate || null,
+      end_datetime: event.endDate || null,
+
+      web_url: event.web || null,
+      excerpt: event.excerpt || null,
+      description: event.description || null,
+
+      image_url: getImageUrl(event),
+
+      raw_data: event,
+
+      is_published: true,
+      is_hidden: false
+    }));
+
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .upsert(rows, {
+        onConflict: "source,external_id"
+      })
+      .select();
+
+    if (error) {
+      log.textContent += "\nFEL:\n" + JSON.stringify(error, null, 2);
+      return;
+    }
+
+    log.textContent +=
+      `\nKlart!\n` +
+      `Sparade/uppdaterade ${data.length} event.`;
+
+  } catch (e) {
+    log.textContent += "\nFEL:\n" + e.message;
+  }
+};
+
+async function fetchAllEvents() {
+  let page = 1;
+  let allEvents = [];
+
+  while (true) {
+    log.textContent += `Hämtar sida ${page}...\n`;
+
+    const res = await fetch(`/event?page=${page}`);
+
+    if (!res.ok) {
+      throw new Error(`Fel ${res.status} på sida ${page}`);
+    }
+
+    const data = await res.json();
+
+    const events =
+      data.events ||
+      data.data ||
+      [];
+
+    log.textContent += `Sida ${page}: ${events.length} event\n`;
+
+    allEvents = allEvents.concat(events);
+
+    const pagination = data.meta?.pagination;
+
+    if (!pagination) break;
+    if (page >= pagination.pageCount) break;
+
+    page++;
+  }
+
+  return allEvents;
+}
+
+window.resetForm = function () {
+  editingId = null;
+
+  document.getElementById("formTitle").textContent = "Lägg till manuell händelse";
+  document.getElementById("saveBtn").textContent = "Spara händelse";
+
+  [
+    "title",
+    "organizer",
+    "address",
+    "start_date",
+    "start_time",
+    "end_date",
+    "end_time",
+    "web_url",
+    "excerpt",
+    "description"
+  ].forEach(id => setVal(id, ""));
+
+  setVal("event_type", "distrikt");
+};
+
+function val(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function setVal(id, value) {
+  document.getElementById(id).value = value || "";
+}
+
+function combine(date, time) {
+  // Inputfältens datum/tid är svensk lokal tid.
+  // Vi konverterar till ISO/UTC innan sparning i Supabase timestamptz.
+  const localDate = new Date(`${date}T${time}:00`);
+  return localDate.toISOString();
+}
+
+function fillDateTime(prefix, value) {
+  if (!value) {
+    setVal(`${prefix}_date`, "");
+    setVal(`${prefix}_time`, "");
+    return;
+  }
+
+  // Värdet från Supabase är en tidpunkt. Visa den som lokal tid i inputfälten.
+  // Använd INTE toISOString() här, då hoppar datumet till UTC.
+  const d = new Date(value);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
+
+  setVal(`${prefix}_date`, `${year}-${month}-${day}`);
+  setVal(`${prefix}_time`, `${hour}:${minute}`);
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("sv-SE");
+}
+
+function getImageUrl(event) {
+  const image =
+    event.images?.[0] ||
+    event.images?.data?.[0];
+
+  if (!image) return null;
+
+  const url =
+    image.url ||
+    image.attributes?.url;
+
+  if (!url) return null;
+
+  return url.startsWith("http")
+    ? url
+    : "https://cms.nasverige.org" + url;
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, m => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[m]));
+}
+
+loadManualEvents();
+</script>
+
+</body>
+</html>
+
