@@ -8,7 +8,7 @@ export async function onRequest(context) {
     );
   }
 
-  const pageSize = 100;
+  const pageSize = 10000;
   let page = 1;
   let allEvents = [];
   let lastMeta = null;
