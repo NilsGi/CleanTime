@@ -1,261 +1,140 @@
-<html lang="sv"><head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NA Sverige Kalender - test</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #172033;
-      --muted: #657083;
-      --border: #dfe5ee;
-      --accent: #165dff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    header {
-      padding: 28px 18px 16px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    p { margin: 0; color: var(--muted); }
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 18px 40px;
-    }
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin: 18px 0;
-    }
-    input, select, button {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font: inherit;
-      background: white;
-    }
-    button {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .status {
-      margin: 14px 0;
-      color: var(--muted);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(23, 32, 51, 0.06);
-    }
-    .date {
-      color: var(--accent);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .title {
-      font-size: 18px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    .meta, .desc {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.45;
-    }
-    .desc { margin-top: 10px; }
-    a { color: var(--accent); }
-    .empty, .error {
-      padding: 16px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-    }
-    .error { color: #a40000; }
-  </style>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NA Sverige Kalender</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+#status {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+#events {
+    max-width: 1000px;
+    margin: auto;
+}
+
+.event {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.event h2 {
+    margin-top: 0;
+}
+
+.meta {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.description {
+    white-space: pre-wrap;
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>NA Sverige Kalender</h1>
-    <p>Testvy som hämtar event via <code>/event</code> från <code>/functions/event.js</code>.</p>
-  </header>
 
-  <main>
-    <div class="toolbar">
-      <input id="search" type="search" placeholder="Sök titel, plats eller text...">
-      <select id="sourceFilter">
-        <option value="all">Alla event</option>
-        <option value="online">Online</option>
-        <option value="physical">Fysiska</option>
-      </select>
-      <button id="reloadBtn">Hämta event</button>
-    </div>
+<h1>NA Sverige Evenemang</h1>
 
-    <div id="status" class="status"></div>
-    <section id="events" class="grid"><div class="error">Kunde inte hämta event: Load failed</div></section>
-  </main>
+<div id="status">Laddar evenemang...</div>
 
-  <script>
-    let allEvents = [];
+<div id="events"></div>
 
-    const $ = (id) => document.getElementById(id);
+<script>
+async function loadEvents() {
+    const status = document.getElementById("status");
+    const container = document.getElementById("events");
 
-    function getAttributes(item) {
-      // Strapi v4 kan returnera { id, attributes }, men ibland ligger fälten direkt på objektet.
-      return item?.attributes || item || {};
-    }
+    try {
+        const response = await fetch("/event");
 
-    function pick(obj, keys, fallback = "") {
-      for (const key of keys) {
-        const value = obj?.[key];
-        if (value !== undefined && value !== null && value !== "") return value;
-      }
-      return fallback;
-    }
+        if (!response.ok) {
+            throw new Error(`Fel ${response.status}`);
+        }
 
-    function formatDate(value) {
-      if (!value) return "Datum saknas";
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return new Intl.DateTimeFormat("sv-SE", {
-        weekday: "short",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      }).format(date);
-    }
+        const data = await response.json();
 
-    function stripHtml(value) {
-      if (!value) return "";
-      const div = document.createElement("div");
-      div.innerHTML = String(value);
-      return div.textContent || div.innerText || "";
-    }
+        console.log(data);
 
-    function isOnlineEvent(attrs) {
-      const text = JSON.stringify(attrs).toLowerCase();
-      return text.includes("online") || text.includes("zoom") || text.includes("digital");
-    }
+        // Om event.js returnerar hela Strapi-svaret
+        const events = data.data || data.events || [];
 
-    function normalizeEvent(item) {
-      const attrs = getAttributes(item);
+        status.innerHTML = `${events.length} evenemang hittades`;
 
-      const title = pick(attrs, ["title", "name", "heading", "rubrik"], "Namnlöst event");
-      const start = pick(attrs, ["startDate", "start_date", "date", "datum", "start"], null);
-      const end = pick(attrs, ["endDate", "end_date", "end", "slut"], null);
-      const location = pick(attrs, ["location", "place", "venue", "address", "plats", "stad"], "");
-      const description = pick(attrs, ["description", "body", "content", "text", "beskrivning"], "");
-      const url = pick(attrs, ["url", "link", "externalUrl"], "");
+        container.innerHTML = "";
 
-      return {
-        id: item?.id || attrs?.id || crypto.randomUUID(),
-        raw: attrs,
-        title,
-        start,
-        end,
-        location: typeof location === "object" ? JSON.stringify(location) : location,
-        description: stripHtml(typeof description === "object" ? JSON.stringify(description) : description),
-        url,
-        online: isOnlineEvent(attrs)
-      };
-    }
+        if (events.length === 0) {
+            container.innerHTML = "<p>Inga evenemang hittades.</p>";
+            return;
+        }
 
-    function render() {
-      const query = $("search").value.trim().toLowerCase();
-      const filter = $("sourceFilter").value;
-      const container = $("events");
+        events.forEach(event => {
 
-      let events = allEvents;
+            const attrs = event.attributes || event;
 
-      if (filter === "online") events = events.filter(e => e.online);
-      if (filter === "physical") events = events.filter(e => !e.online);
+            const title =
+                attrs.title ||
+                attrs.name ||
+                "Namnlöst evenemang";
 
-      if (query) {
-        events = events.filter(e => [e.title, e.location, e.description]
-          .join(" ")
-          .toLowerCase()
-          .includes(query));
-      }
+            const start =
+                attrs.startDate ||
+                attrs.start ||
+                attrs.date ||
+                "";
 
-      if (!events.length) {
-        container.innerHTML = `<div class="empty">Inga event hittades.</div>`;
-        return;
-      }
+            const description =
+                attrs.description ||
+                "";
 
-      container.innerHTML = events.map(event => `
-        <article class="card">
-          <div class="date">${formatDate(event.start)}</div>
-          <div class="title">${event.title}</div>
-          ${event.location ? `<div class="meta">📍 ${event.location}</div>` : ""}
-          ${event.end ? `<div class="meta">Slutar: ${formatDate(event.end)}</div>` : ""}
-          ${event.description ? `<div class="desc">${event.description.slice(0, 220)}${event.description.length > 220 ? "..." : ""}</div>` : ""}
-          ${event.url ? `<p class="desc"><a href="${event.url}" target="_blank" rel="noopener">Läs mer</a></p>` : ""}
-        </article>
-      `).join("");
-    }
+            const location =
+                attrs.location ||
+                attrs.place ||
+                "";
 
-    async function loadEvents() {
-      const status = $("status");
-      const container = $("events");
-      status.textContent = "Hämtar event...";
-      container.innerHTML = "";
+            container.innerHTML += `
+                <div class="event">
+                    <h2>${title}</h2>
 
-      try {
-        const endpoint = new URL("/event", window.location.origin);
-        endpoint.searchParams.set("pageSize", "100");
+                    <div class="meta">
+                        ${start}
+                        ${location ? " • " + location : ""}
+                    </div>
 
-        const response = await fetch(endpoint.toString(), {
-          headers: { "Accept": "application/json" }
+                    <div class="description">
+                        ${description}
+                    </div>
+                </div>
+            `;
         });
 
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (_) {
-          throw new Error(`Svaret var inte JSON. Status ${response.status}. ${text.slice(0, 120)}`);
-        }
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || `Fel ${response.status}`);
-        }
-
-        allEvents = (data.events || []).map(normalizeEvent);
-        status.textContent = `Hämtade ${allEvents.length} event från ${data.source}.`;
-        render();
-      } catch (error) {
-        status.textContent = "";
-        container.innerHTML = `<div class="error">Kunde inte hämta event: ${error.message}</div>`;
-      }
+    } catch (error) {
+        console.error(error);
+        status.innerHTML =
+            `Kunde inte hämta event: ${error.message}`;
     }
+}
 
-    $("reloadBtn").addEventListener("click", loadEvents);
-    $("search").addEventListener("input", render);
-    $("sourceFilter").addEventListener("change", render);
+loadEvents();
+</script>
 
-    loadEvents();
-  </script>
-
-
-</body></html>
+</body>
+</html>
