@@ -282,7 +282,8 @@ async function init() {
   }
 
   allEvents = data || [];
-  status.textContent = `${allEvents.length} händelser hämtade`;
+  const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
+  status.textContent = `${upcomingCount} kommande händelser`;
   render();
 }
 
@@ -308,11 +309,19 @@ window.setView = function(view) {
   render();
 };
 
-function getFilteredEvents() {
+function getFilteredEvents(options = {}) {
   const search = document.getElementById("search").value.toLowerCase();
   const type = document.getElementById("typeFilter").value;
+  const includePast = options.includePast === true;
+  const now = new Date();
 
   return allEvents.filter(e => {
+    // Listvy och veckovy visar bara aktuella/kommande event.
+    // Månadsvyn kan visa historiska månader när man väljer dem i filtret.
+    if (!includePast && isPastEvent(e, now)) {
+      return false;
+    }
+
     const text = [
       e.title,
       e.organizer,
@@ -329,7 +338,11 @@ function getFilteredEvents() {
 }
 
 function render() {
-  const events = getFilteredEvents();
+  // Månadsvy får visa vald månad även om den ligger bakåt i tiden.
+  // Listvy och veckovy visar bara pågående/kommande event.
+  const events = getFilteredEvents({
+    includePast: currentView === "month"
+  });
 
   if (currentView === "month") renderMonth(events);
   else if (currentView === "week") renderWeek(events);
@@ -532,6 +545,16 @@ function eventOccursOnDate(event, date) {
   dayEnd.setHours(23, 59, 59, 999);
 
   return start <= dayEnd && end >= dayStart;
+}
+
+function isPastEvent(event, now = new Date()) {
+  if (!event.start_datetime) return true;
+
+  const end = event.end_datetime
+    ? new Date(event.end_datetime)
+    : new Date(event.start_datetime);
+
+  return end < now;
 }
 
 function formatDate(value) {
