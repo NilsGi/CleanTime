@@ -145,6 +145,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const log = document.getElementById("log");
 
 let editingId = null;
+let manualEvents = [];
 
 window.saveEvent = async function () {
   const title = val("title");
@@ -174,7 +175,8 @@ window.saveEvent = async function () {
     description: val("description") || null,
 
     is_published: true,
-    is_hidden: false
+    is_hidden: false,
+    updated_at: new Date().toISOString()
   };
 
   let result;
@@ -224,25 +226,38 @@ async function loadManualEvents() {
     return;
   }
 
-  if (!data || !data.length) {
+  manualEvents = data || [];
+
+  if (!manualEvents.length) {
     container.innerHTML = "Inga kommande manuella händelser.";
     return;
   }
 
-  container.innerHTML = data.map(e => `
+  container.innerHTML = manualEvents.map(e => `
     <div class="event-row">
       <strong>${escapeHtml(e.title)}</strong><br>
       ${formatDate(e.start_datetime)}<br>
       ${escapeHtml(e.event_type || "")}
       ${e.address ? " • " + escapeHtml(e.address) : ""}
       <div class="actions">
-        <button onclick='editEvent(${JSON.stringify(e).replace(/'/g, "&apos;")})'>Redigera</button>
+        <button onclick="editEventById('${e.id}')">Redigera</button>
         <button onclick='hideEvent("${e.id}")'>Dölj</button>
         <button onclick='deleteEvent("${e.id}")'>Ta bort</button>
       </div>
     </div>
   `).join("");
 }
+
+window.editEventById = function (id) {
+  const event = manualEvents.find(e => e.id === id);
+
+  if (!event) {
+    log.textContent = "Kunde inte hitta händelsen.";
+    return;
+  }
+
+  editEvent(event);
+};
 
 window.editEvent = function (e) {
   editingId = e.id;
@@ -434,9 +449,14 @@ function fillDateTime(prefix, value) {
   }
 
   const d = new Date(value);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
 
-  setVal(`${prefix}_date`, d.toISOString().slice(0, 10));
-  setVal(`${prefix}_time`, d.toTimeString().slice(0, 5));
+  setVal(`${prefix}_date`, `${year}-${month}-${day}`);
+  setVal(`${prefix}_time`, `${hour}:${minute}`);
 }
 
 function formatDate(value) {
