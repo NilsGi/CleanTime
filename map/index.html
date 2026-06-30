@@ -39,8 +39,7 @@ summary{cursor:pointer;font-weight:700}
   width:18px;height:18px;border-radius:50%;
   border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)
 }
-.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(25,118,210,.25)!important}
-.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#1976d2!important;color:#fff!important;font-weight:800}
+
 .leaflet-control-attribution .leaflet-attribution-flag{display:none!important}
 .leaflet-control-attribution a[href*="leafletjs.com"]{display:none!important}
 @media(max-width:900px){
@@ -48,6 +47,25 @@ summary{cursor:pointer;font-weight:700}
   aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}
   #map{height:70vh;min-height:420px}
 }
+
+.district-cluster-marker{
+  background:transparent!important;
+  border:0!important;
+}
+
+
+.custom-district-cluster,
+.custom-district-cluster div,
+.district-cluster-marker,
+.district-cluster-marker div{
+  background:transparent!important;
+  border:0!important;
+}
+
+.custom-district-cluster > div{
+  background:var(--cluster-color)!important;
+}
+
 </style>
 </head>
 
@@ -118,7 +136,37 @@ function initMap(){
       showCoverageOnHover:false,
       spiderfyOnMaxZoom:true,
       disableClusteringAtZoom:14,
-      maxClusterRadius:42
+      maxClusterRadius:42,
+
+      iconCreateFunction: function(cluster){
+        const children = cluster.getAllChildMarkers();
+        const counts = {};
+
+        children.forEach(marker => {
+          const district = marker.options.district || "Okänt distrikt";
+          counts[district] = (counts[district] || 0) + 1;
+        });
+
+        const dominantDistrict = Object.keys(counts)
+          .sort((a,b) => counts[b] - counts[a])[0];
+
+        const districtInfo = districtData.find(d => d.district === dominantDistrict);
+        const color = districtInfo?.color || "#1976d2";
+
+        return L.divIcon({
+          html: '<div style="' +
+            '--cluster-color:' + color + ';' +
+            'background:' + color + '!important;' +
+            'width:42px;height:42px;border-radius:50%;' +
+            'color:#fff;display:flex;align-items:center;justify-content:center;' +
+            'font-weight:800;border:3px solid #fff!important;' +
+            'box-shadow:0 2px 7px rgba(0,0,0,.35);' +
+          '">' + cluster.getChildCount() + '</div>',
+          className: "custom-district-cluster",
+          iconSize: [42,42],
+          iconAnchor: [21,21]
+        });
+      }
     }).addTo(map);
   } else {
     markerLayer = L.layerGroup().addTo(map);
@@ -265,6 +313,7 @@ function renderDistricts(){
     if(hasCoords(m)){
       shownOnMap++;
       const marker = L.marker([Number(m.latitude), Number(m.longitude)], {
+        district: district,
         icon: L.divIcon({
           className:"meeting-dot",
           html:'<div style="background:'+byDistrict[district].color+'"></div>',
