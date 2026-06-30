@@ -1,5 +1,5 @@
 async function fetchAllCmsEvents(cmsToken) {
-  const pageSize = 100;
+  const pageSize = 1000;
   let page = 1;
   let allEvents = [];
 
