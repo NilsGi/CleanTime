@@ -62,6 +62,7 @@ window.importEvents = async function () {
 
     const rows = events.map(event => ({
       source: "nasverige",
+      event_type: "Event",
       external_id: String(event.id),
       external_slug: event.slug || null,
 
