@@ -1,0 +1,249 @@
+<html lang="sv"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NA Sverige Kalender - test</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #657083;
+      --border: #dfe5ee;
+      --accent: #165dff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 28px 18px 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { margin: 0; color: var(--muted); }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 18px 40px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 18px 0;
+    }
+    input, select, button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: white;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .status {
+      margin: 14px 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(23, 32, 51, 0.06);
+    }
+    .date {
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .meta, .desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .desc { margin-top: 10px; }
+    a { color: var(--accent); }
+    .empty, .error {
+      padding: 16px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .error { color: #a40000; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NA Sverige Kalender</h1>
+    <p>Testvy som hämtar event via <code>/event</code> från <code>/functions/event.js</code>.</p>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Sök titel, plats eller text...">
+      <select id="sourceFilter">
+        <option value="all">Alla event</option>
+        <option value="online">Online</option>
+        <option value="physical">Fysiska</option>
+      </select>
+      <button id="reloadBtn">Hämta event</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <section id="events" class="grid"><div class="error">Kunde inte hämta event: Load failed</div></section>
+  </main>
+
+  <script>
+    let allEvents = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function getAttributes(item) {
+      // Strapi v4 kan returnera { id, attributes }, men ibland ligger fälten direkt på objektet.
+      return item?.attributes || item || {};
+    }
+
+    function pick(obj, keys, fallback = "") {
+      for (const key of keys) {
+        const value = obj?.[key];
+        if (value !== undefined && value !== null && value !== "") return value;
+      }
+      return fallback;
+    }
+
+    function formatDate(value) {
+      if (!value) return "Datum saknas";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat("sv-SE", {
+        weekday: "short",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    function stripHtml(value) {
+      if (!value) return "";
+      const div = document.createElement("div");
+      div.innerHTML = String(value);
+      return div.textContent || div.innerText || "";
+    }
+
+    function isOnlineEvent(attrs) {
+      const text = JSON.stringify(attrs).toLowerCase();
+      return text.includes("online") || text.includes("zoom") || text.includes("digital");
+    }
+
+    function normalizeEvent(item) {
+      const attrs = getAttributes(item);
+
+      const title = pick(attrs, ["title", "name", "heading", "rubrik"], "Namnlöst event");
+      const start = pick(attrs, ["startDate", "start_date", "date", "datum", "start"], null);
+      const end = pick(attrs, ["endDate", "end_date", "end", "slut"], null);
+      const location = pick(attrs, ["location", "place", "venue", "address", "plats", "stad"], "");
+      const description = pick(attrs, ["description", "body", "content", "text", "beskrivning"], "");
+      const url = pick(attrs, ["url", "link", "externalUrl"], "");
+
+      return {
+        id: item?.id || attrs?.id || crypto.randomUUID(),
+        raw: attrs,
+        title,
+        start,
+        end,
+        location: typeof location === "object" ? JSON.stringify(location) : location,
+        description: stripHtml(typeof description === "object" ? JSON.stringify(description) : description),
+        url,
+        online: isOnlineEvent(attrs)
+      };
+    }
+
+    function render() {
+      const query = $("search").value.trim().toLowerCase();
+      const filter = $("sourceFilter").value;
+      const container = $("events");
+
+      let events = allEvents;
+
+      if (filter === "online") events = events.filter(e => e.online);
+      if (filter === "physical") events = events.filter(e => !e.online);
+
+      if (query) {
+        events = events.filter(e => [e.title, e.location, e.description]
+          .join(" ")
+          .toLowerCase()
+          .includes(query));
+      }
+
+      if (!events.length) {
+        container.innerHTML = `<div class="empty">Inga event hittades.</div>`;
+        return;
+      }
+
+      container.innerHTML = events.map(event => `
+        <article class="card">
+          <div class="date">${formatDate(event.start)}</div>
+          <div class="title">${event.title}</div>
+          ${event.location ? `<div class="meta">📍 ${event.location}</div>` : ""}
+          ${event.end ? `<div class="meta">Slutar: ${formatDate(event.end)}</div>` : ""}
+          ${event.description ? `<div class="desc">${event.description.slice(0, 220)}${event.description.length > 220 ? "..." : ""}</div>` : ""}
+          ${event.url ? `<p class="desc"><a href="${event.url}" target="_blank" rel="noopener">Läs mer</a></p>` : ""}
+        </article>
+      `).join("");
+    }
+
+    async function loadEvents() {
+      const status = $("status");
+      const container = $("events");
+      status.textContent = "Hämtar event...";
+      container.innerHTML = "";
+
+      try {
+        const response = await fetch("/event?pageSize=100");
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || `Fel ${response.status}`);
+        }
+
+        allEvents = (data.events || []).map(normalizeEvent);
+        status.textContent = `Hämtade ${allEvents.length} event från ${data.source}.`;
+        render();
+      } catch (error) {
+        status.textContent = "";
+        container.innerHTML = `<div class="error">Kunde inte hämta event: ${error.message}</div>`;
+      }
+    }
+
+    $("reloadBtn").addEventListener("click", loadEvents);
+    $("search").addEventListener("input", render);
+    $("sourceFilter").addEventListener("change", render);
+
+    loadEvents();
+  </script>
+
+
+</body></html>
