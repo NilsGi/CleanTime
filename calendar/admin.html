@@ -131,7 +131,7 @@ button {
 
   <pre id="log"></pre>
 
-  <h2>Kommande manuella händelser</h2>
+  <h2>Manuella händelser</h2>
   <div id="manualEvents">Laddar...</div>
 </main>
 
@@ -216,13 +216,12 @@ window.saveEvent = async function () {
 
 async function loadManualEvents() {
   const container = document.getElementById("manualEvents");
-  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("calendar_events")
     .select("*")
     .eq("source", "manual")
-    .gte("start_datetime", now)
+    .eq("is_hidden", false)
     .order("start_datetime", { ascending: true });
 
   if (error) {
@@ -233,7 +232,7 @@ async function loadManualEvents() {
   manualEvents = data || [];
 
   if (!manualEvents.length) {
-    container.innerHTML = "Inga kommande manuella händelser.";
+    container.innerHTML = "Inga manuella händelser.";
     return;
   }
 
