@@ -8,9 +8,9 @@ export async function onRequest(context) {
     }, { status: 500 });
   }
 
-  const url =
-    "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=10&sort=startDate:asc";
-
+const url =
+  "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=10";
+  
   try {
     const response = await fetch(url, {
       headers: {
