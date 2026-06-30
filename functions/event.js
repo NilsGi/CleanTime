@@ -2,19 +2,20 @@ export async function onRequest(context) {
   const token = context.env.NASVERIGE_CMS_TOKEN;
 
   if (!token) {
-    return Response.json({
-      success: false,
-      error: "NASVERIGE_CMS_TOKEN saknas i Cloudflare."
-    }, { status: 500 });
+    return Response.json(
+      {
+        success: false,
+        error: "NASVERIGE_CMS_TOKEN saknas i Cloudflare."
+      },
+      { status: 500 }
+    );
   }
 
-  const url = new URL("https://cms.nasverige.org/api/events");
-  url.searchParams.set("populate", "*");
-  url.searchParams.set("pagination[page]", "1");
-  url.searchParams.set("pagination[pageSize]", "10");
+  const url =
+    "https://cms.nasverige.org/api/events?populate=*&pagination[pageSize]=100&sort=startDate:asc";
 
   try {
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json"
@@ -23,25 +24,40 @@ export async function onRequest(context) {
 
     const text = await response.text();
 
-    return new Response(
-      JSON.stringify({
-        success: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        requestedUrl: url.toString(),
-        rawText: text
-      }, null, 2),
-      {
-        headers: {
-          "Content-Type": "application/json"
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify(
+          {
+            success: false,
+            status: response.status,
+            statusText: response.statusText,
+            response: text
+          },
+          null,
+          2
+        ),
+        {
+          status: response.status,
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
+      );
+    }
+
+    return new Response(text, {
+      headers: {
+        "Content-Type": "application/json"
       }
-    );
+    });
 
   } catch (error) {
-    return Response.json({
-      success: false,
-      error: error.message
-    }, { status: 500 });
+    return Response.json(
+      {
+        success: false,
+        error: error.message
+      },
+      { status: 500 }
+    );
   }
 }
