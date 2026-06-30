@@ -1,38 +1,36 @@
-async function fetchAllCmsEvents(cmsToken) {
-  const pageSize = 1000;
-  let page = 1;
-  let allEvents = [];
+const pageSize = 100;
+let page = 1;
+let allEvents = [];
 
-  while (true) {
-    const url =
-      "https://cms.nasverige.org/api/events" +
-      "?populate=*" +
-      `&pagination[page]=${page}` +
-      `&pagination[pageSize]=${pageSize}`;
+while (true) {
+  const url =
+    "https://cms.nasverige.org/api/events" +
+    "?populate=*" +
+    `&pagination[page]=${page}` +
+    `&pagination[pageSize]=${pageSize}`;
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${cmsToken}`,
-        Accept: "application/json"
-      }
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(JSON.stringify(json));
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json"
     }
+  });
 
-    allEvents = allEvents.concat(json.data || []);
+  const json = await response.json();
 
-    const pagination = json.meta?.pagination;
+  allEvents = allEvents.concat(json.data || []);
 
-    if (!pagination || page >= pagination.pageCount) {
-      break;
-    }
+  const pagination = json.meta?.pagination;
 
-    page++;
+  if (!pagination || page >= pagination.pageCount) {
+    break;
   }
 
-  return allEvents;
+  page++;
 }
+
+return Response.json({
+  success: true,
+  count: allEvents.length,
+  events: allEvents
+});
