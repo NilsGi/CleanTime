@@ -282,7 +282,7 @@ async function init() {
   }
 
   allEvents = data || [];
-  status.textContent = `${allEvents.length} kommande händelser`;
+  status.textContent = `${allEvents.length} händelser hämtade`;
   render();
 }
 
@@ -311,30 +311,21 @@ window.setView = function(view) {
 function getFilteredEvents() {
   const search = document.getElementById("search").value.toLowerCase();
   const type = document.getElementById("typeFilter").value;
-  const now = new Date();
 
-  return allEvents
-    .filter(e => {
-      // Visa kommande och pågående event.
-      // Flerdagarsevent ska synas tills slutdatumet passerat.
-      const relevantDate = e.end_datetime || e.start_datetime;
-      if (!relevantDate) return false;
-      return new Date(relevantDate) >= now;
-    })
-    .filter(e => {
-      const text = [
-        e.title,
-        e.organizer,
-        e.address,
-        e.excerpt,
-        e.description
-      ].join(" ").toLowerCase();
+  return allEvents.filter(e => {
+    const text = [
+      e.title,
+      e.organizer,
+      e.address,
+      e.excerpt,
+      e.description
+    ].join(" ").toLowerCase();
 
-      if (search && !text.includes(search)) return false;
-      if (type && e.event_type !== type) return false;
+    if (search && !text.includes(search)) return false;
+    if (type && e.event_type !== type) return false;
 
-      return true;
-    });
+    return true;
+  });
 }
 
 function render() {
