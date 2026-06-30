@@ -35,7 +35,15 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 .accordion-district{border:1px solid #ddd;border-radius:10px;margin:8px 0;background:#fafafa;overflow:hidden}
 .accordion-district summary{cursor:pointer;padding:10px;font-weight:700;background:#eee}
 .accordion-content{padding:8px}
-.group-row{display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:8px;border-bottom:1px solid #ddd;padding:7px 0;font-size:13px}
+.group-row{
+  display:grid;
+  grid-template-columns:1fr 90px 90px 90px;
+  gap:8px;
+  border-bottom:1px solid #ddd;
+  padding:8px 0;
+  font-size:13px;
+  align-items:start;
+}
 .group-row.header{font-weight:700;background:#f6f6f6}
 .group-count{font-weight:700;text-align:right}
 .missing-coords{background:#fff7e6;border:1px solid #e5b95c;border-radius:10px;padding:10px;margin:10px 0}
@@ -55,7 +63,10 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 #statsPanel aside{max-height:calc(100vh - 114px)}
 #statsFull{background:#fff;padding:18px 22px;overflow:auto;max-height:calc(100vh - 114px)}
 #statsFull .stats-table{font-size:14px}
-#statsFull .group-row{font-size:14px;grid-template-columns:1.5fr 1fr 90px 90px 90px}
+#statsFull .group-row{
+  font-size:14px;
+  grid-template-columns:1fr 90px 90px 90px;
+}
 
 
 .meeting-count-marker div{
@@ -190,10 +201,9 @@ select[multiple]{
   }
 
   #statsFull .group-row{
-    grid-template-columns:1fr auto auto auto;
-    align-items:start;
-    gap:6px;
-  }
+  font-size:14px;
+  grid-template-columns:1fr 90px 90px 90px;
+}
 
   #statsFull .group-row > div:first-child{
     grid-column:1 / -1;
@@ -228,7 +238,7 @@ select[multiple]{
 
 
 @media(max-width:900px){
-  #statsFull .desktop-city{
+  #statsFull .desktop-city-unused{
     display:none;
   }
 }
@@ -297,6 +307,30 @@ button.secondary:hover{background:#cfd9ff}
   .header-logo{height:40px}
   header h1{font-size:22px!important}
   .back-link{padding:8px 10px;font-size:14px}
+}
+
+
+.group-name{
+  font-weight:700;
+}
+.group-city{
+  display:block;
+  color:#666;
+  font-weight:400;
+  margin-top:2px;
+  font-size:13px;
+}
+.group-row.header{
+  grid-template-columns:1fr 90px 90px 90px;
+}
+@media(max-width:900px){
+  #statsFull .group-row{
+    grid-template-columns:1fr auto auto auto;
+    gap:6px;
+  }
+  #statsFull .group-row.header{
+    display:none;
+  }
 }
 
 </style>
@@ -1194,8 +1228,10 @@ function renderStats(meetings){
     const meetingSum = groups.reduce((sum,g)=>sum+g.meetings,0);
     const rows = groups.map(g => `
       <div class="group-row">
-        <div>${esc(g.group)}<span class="mobile-city">${esc(g.city)}</span></div>
-        <div class="desktop-city">${esc(g.city)}</div>
+        <div>
+          <span class="group-name">${esc(g.group)}</span>
+          <span class="group-city">${esc(g.city)}</span>
+        </div>
         <div class="group-count">${g.meetings} möten</div>
         <div>${g.physical} fysiska</div>
         <div>${g.online} online</div>
@@ -1206,7 +1242,7 @@ function renderStats(meetings){
       <details class="accordion-district">
         <summary>${esc(district)} – ${groups.length} grupper/orter, ${meetingSum} möten</summary>
         <div class="accordion-content">
-          <div class="group-row header"><div>Gruppnamn</div><div>Ort</div><div>Antal</div><div>Fysiska</div><div>Online</div></div>
+          <div class="group-row header"><div>Grupp / ort</div><div>Möten</div><div>Fysiska</div><div>Online</div></div>
           ${rows}
         </div>
       </details>`;
