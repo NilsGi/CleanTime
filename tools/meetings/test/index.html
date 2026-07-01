@@ -1925,10 +1925,10 @@ async function exportFolderPdf(){
   doc.setFontSize(20);
   doc.text("0771-13 80 00", x + (panelW - margin*2)/2, y, { align:"center" });
   y += 10;
-  setBlack();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(14);
-  doc.text(exportMonthYear, x + (panelW - margin*2)/2, y + 10, { align:"center" });
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(19);
+  doc.text(exportMonthYear, x + (panelW - margin*2)/2, y + 11, { align:"center" });
 
   setBlue();
   doc.setFont("helvetica", "bold");
@@ -1986,7 +1986,7 @@ async function exportFolderPdf(){
   doc.text("MÖTESLISTA", innerMargin, 8);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.2);
-  doc.text("www.nasverige.org – " + exportMonthYear, innerMargin + 28, 8);
+  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
 
   setBlack();
   doc.setFont("helvetica", "normal");
