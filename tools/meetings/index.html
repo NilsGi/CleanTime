@@ -1439,7 +1439,7 @@ function renderStats(meetings){
 
     return `
       <details class="accordion-district">
-        <summary>${esc(district)} – ${groups.length} grupper/orter, ${meetingSum} möten</summary>
+        <summary>${esc(district)} – ${groups.length} grupper, ${meetingSum} möten</summary>
         <div class="accordion-content">
           <div class="group-row header"><div>Grupp / ort</div><div>Möten</div><div>Fysiska</div><div>Online</div></div>
           ${rows}
@@ -1472,7 +1472,7 @@ function renderStats(meetings){
       <tbody>${districtRows}</tbody>
     </table>
     <h3>Grupper per distrikt</h3>
-    <p class="muted">Statistik grupperas på distrikt + ort/meetingCity + gruppnamn.</p>
+    <p class="muted">Statistik grupperas på distrikt + ort + gruppnamn.</p>
     ${groupAccordion}
   `;
 }
