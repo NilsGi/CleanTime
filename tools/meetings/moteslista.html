@@ -1535,7 +1535,7 @@ function renderAll(syncFromMap = false){
 
   $("summary").innerHTML =
     "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " unika möten i listan.<br>" +
-    mapGroups.length + " grupper / " + mapMeetingCount + " unika möten finns på kartan efter filter." +
+    mapGroups.length + " kartpunkter / " + mapMeetingCount + " fysiska möten visas på kartan efter filter." +
     distanceText;
 
   renderMarkers(mapGroups);
@@ -1814,11 +1814,16 @@ function buildStats(meetings){
   const districtSummary = {};
   const groupSummary = {};
   const uniqueGroupsAll = new Set();
+  const selectedCities = selectedValues("cityFilter");
 
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
     const cities = getCities(m);
-    const cityList = cities.length ? cities : ["Okänd ort"];
+    const cityList = selectedCities.length
+      ? cities.filter(city => selectedCities.includes(city))
+      : (cities.length ? cities : ["Okänd ort"]);
+
+    if (!cityList.length) return;
 
     cityList.forEach(city => {
       const cityKey = normalizeText(city);
