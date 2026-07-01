@@ -863,7 +863,7 @@ header,
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
     <label>Sök grupp/ort</label>
-    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="applyStatsFiltersToMain()">
+    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="renderAll(false)">
 
 
     <div class="filter-grid">
@@ -891,7 +891,7 @@ header,
     <div class="filter-grid">
       <div>
         <label>Visning</label>
-        <select id="typeFilterStats" onchange="applyStatsFiltersToMain()">
+        <select id="typeFilterStats" onchange="renderAll(false)">
           <option value="">Alla möten i listan</option>
           <option value="physical">Endast fysiska möten</option>
           <option value="online">Endast online i listan</option>
@@ -1993,8 +1993,8 @@ function showTab(tab){
   });
 
   if (tab === "stats") {
+    copyMainFiltersToStats();
     renderAll(false);
-    syncFilterMirror();
   }
 
   setTimeout(() => {
@@ -2005,6 +2005,28 @@ function showTab(tab){
     }
   }, 100);
 }
+
+function copyMainFiltersToStats(){
+  [
+    ["search","searchStats"],
+    ["cityFilter","cityFilterStats"],
+    ["districtFilter","districtFilterStats"],
+    ["dayFilter","dayFilterStats"],
+    ["meetingTypeFilter","meetingTypeFilterStats"],
+    ["typeFilter","typeFilterStats"]
+  ].forEach(([mainId, statsId]) => {
+    const main = $(mainId);
+    const stats = $(statsId);
+    if (!main || !stats) return;
+
+    if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter") || main.multiple || stats.multiple) {
+      setSelectedValues(statsId, selectedValues(mainId));
+    } else {
+      stats.value = main.value;
+    }
+  });
+}
+
 function syncFilter(mainId, value){
   const main = $(mainId);
   if (main) main.value = value;
@@ -2017,31 +2039,6 @@ function syncMultiFilter(mainId, sourceEl){
     ? [...sourceEl.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value).filter(Boolean)
     : [...sourceEl.selectedOptions].map(o => o.value).filter(Boolean);
   setSelectedValues(mainId, values);
-  renderAll(false);
-  syncFilterMirror();
-}
-
-function applyStatsFiltersToMain(){
-  const textPairs = [
-    ["searchStats", "search"],
-    ["typeFilterStats", "typeFilter"]
-  ];
-
-  textPairs.forEach(([statsId, mainId]) => {
-    const stats = $(statsId);
-    const main = $(mainId);
-    if (stats && main) main.value = stats.value;
-  });
-
-  [
-    ["cityFilterStats", "cityFilter"],
-    ["districtFilterStats", "districtFilter"],
-    ["dayFilterStats", "dayFilter"],
-    ["meetingTypeFilterStats", "meetingTypeFilter"]
-  ].forEach(([statsId, mainId]) => {
-    setSelectedValues(mainId, selectedValues(statsId));
-  });
-
   renderAll(false);
   syncFilterMirror();
 }
@@ -2580,14 +2577,29 @@ async function exportFolderPdf(){
 
 
 /* Dynamiska beroende filter: Ort, Distrikt, Veckodag och Mötestyp */
+function statsPanelIsActive(){
+  return !!$("statsPanel")?.classList.contains("active");
+}
+
+function filterControlId(baseId){
+  return statsPanelIsActive() ? baseId + "Stats" : baseId;
+}
+
 function getActiveFilterState(){
+  const searchId = filterControlId("search");
+  const cityId = filterControlId("cityFilter");
+  const districtId = filterControlId("districtFilter");
+  const dayId = filterControlId("dayFilter");
+  const meetingTypeId = filterControlId("meetingTypeFilter");
+  const typeId = filterControlId("typeFilter");
+
   return {
-    q: ($("search")?.value || "").trim().toLowerCase(),
-    cities: selectedValues("cityFilter"),
-    districts: selectedValues("districtFilter"),
-    days: selectedValues("dayFilter"),
-    meetingTypes: selectedValues("meetingTypeFilter"),
-    type: $("typeFilter")?.value || "",
+    q: ($(searchId)?.value || "").trim().toLowerCase(),
+    cities: selectedValues(cityId),
+    districts: selectedValues(districtId),
+    days: selectedValues(dayId),
+    meetingTypes: selectedValues(meetingTypeId),
+    type: $(typeId)?.value || "",
     maxDistance: Number($("distanceFilter")?.value || 0)
   };
 }
@@ -2648,8 +2660,7 @@ function fillDynamicSelect(id, items){
   const el = $(id);
   if (!el) return;
 
-  const sourceId = id.endsWith("Stats") ? id.slice(0, -"Stats".length) : id;
-  const previous = selectedValues(sourceId);
+  const previous = selectedValues(id);
   const itemMap = new Map(items.map(item => [item.value, item]));
 
   // Behåll redan ikryssade värden även om de just nu hamnar utanför kartan.
@@ -2684,10 +2695,6 @@ function fillDynamicSelect(id, items){
       checkbox.value = item.value;
       checkbox.checked = previous.includes(item.value);
       checkbox.addEventListener("change", () => {
-        if (id.endsWith("Stats")) {
-          applyStatsFiltersToMain();
-          return;
-        }
         renderAll(false);
         syncFilterMirror();
       });
@@ -2776,11 +2783,17 @@ function syncFilterMirror(){
     if (!main || !stats) return;
 
     if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter")) {
-      setSelectedValues(statsId, selectedValues(mainId));
+      if (!statsPanelIsActive()) {
+        setSelectedValues(statsId, selectedValues(mainId));
+      }
     } else if (main.multiple || stats.multiple) {
-      setSelectedValues(statsId, selectedValues(mainId));
+      if (!statsPanelIsActive()) {
+        setSelectedValues(statsId, selectedValues(mainId));
+      }
     } else {
-      stats.value = main.value;
+      if (!statsPanelIsActive()) {
+        stats.value = main.value;
+      }
     }
   });
 }
