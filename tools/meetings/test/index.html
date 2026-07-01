@@ -1789,6 +1789,14 @@ function formatMeetingTimeForPdf(m){
   return start && end ? start + "–" + end : (start || end || "");
 }
 
+function formatExportMonthYear(date = new Date()){
+  const months = [
+    "Januari","Februari","Mars","April","Maj","Juni",
+    "Juli","Augusti","September","Oktober","November","December"
+  ];
+  return months[date.getMonth()] + " " + date.getFullYear();
+}
+
 async function exportFolderPdf(){
   if (!allMeetings.length) {
     setStatus('<span class="bad">Inga möten hämtade ännu.</span>');
@@ -1816,6 +1824,7 @@ async function exportFolderPdf(){
   const panelW = pageWidth / 3;
   const margin = 8;
   const exportDate = new Date().toISOString().slice(0,10);
+  const exportMonthYear = formatExportMonthYear(new Date());
   const siteUrl = "https://www.nasverige.org";
   const qrDataUrl = await makeQrDataUrl(siteUrl);
   const logo = await loadImageAsDataUrl("/assets/NA_logo_blue.png");
@@ -1915,41 +1924,21 @@ async function exportFolderPdf(){
   y += 9;
   doc.setFontSize(20);
   doc.text("0771-13 80 00", x + (panelW - margin*2)/2, y, { align:"center" });
-  y += 12;
-  setBlack();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Exportdatum: " + exportDate, x + 18, y);
   y += 10;
-  setBlue();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("VALDA FILTER", x + 18, y);
-  y += 5;
   setBlack();
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.2);
-  getFilterLabelText().forEach(([label, value]) => {
-    const labelText = label + ": ";
-    doc.setFont("helvetica", "bold");
-    doc.text(labelText, x + 18, y);
-    doc.setFont("helvetica", "normal");
-    const rows = doc.splitTextToSize(value, panelW - margin*2 - 40);
-    rows.forEach((row, idx) => {
-      doc.text(row, x + 18 + (idx === 0 ? doc.getTextWidth(labelText) : 0), y);
-      if (idx < rows.length - 1) y += 4;
-    });
-    y += 4.6;
-  });
-  y += 2;
+  doc.setFontSize(14);
+  doc.text(exportMonthYear, x + (panelW - margin*2)/2, y + 10, { align:"center" });
+
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("www.nasverige.org", x + 18, y);
+  doc.setFontSize(17);
+  doc.text("www.nasverige.org", x + (panelW - margin*2)/2, pageHeight - 28, { align:"center" });
+
   setBlack();
   doc.setFont("helvetica", "italic");
   doc.setFontSize(7.5);
-  doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + 18, pageHeight - 12);
+  doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + (panelW - margin*2)/2, pageHeight - 12, { align:"center" });
 
   // Sida 2: insida. A4 stående med 3 kolumner för att få plats med upp till 80 möten.
   // Sidan skrivs "åt andra hållet" jämfört med utsidan.
@@ -1965,7 +1954,7 @@ async function exportFolderPdf(){
   const gap = 3.5;
   const innerMargin = 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
-  const topY = 13;
+  const topY = 18;
   const bottomY = innerPageHeight - 12;
   let col = 0;
   x = innerMargin;
@@ -1997,7 +1986,21 @@ async function exportFolderPdf(){
   doc.text("MÖTESLISTA", innerMargin, 8);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.2);
-  doc.text("Genererad från www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
+  doc.text("www.nasverige.org – " + exportMonthYear, innerMargin + 28, 8);
+
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.8);
+  const filterHeaderText = getFilterLabelText()
+    .map(([label, value]) => label + ": " + value)
+    .join("  ·  ");
+  const filterHeaderRows = doc.splitTextToSize("Valda filter: " + filterHeaderText, innerPageWidth - innerMargin*2);
+  let filterY = 11.4;
+  filterHeaderRows.slice(0,2).forEach(row => {
+    doc.text(row, innerMargin, filterY);
+    filterY += 2.5;
+  });
+  y = Math.max(y, filterY + 1);
 
   if (!sortedMeetings.length) {
     setBlack();
