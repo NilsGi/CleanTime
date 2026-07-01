@@ -2005,28 +2005,6 @@ function showTab(tab){
     }
   }, 100);
 }
-function syncFilterMirror(){
-  const pairs = [
-    ["search","searchStats"],
-    ["districtFilter","districtFilterStats"],
-    ["dayFilter","dayFilterStats"],
-    ["meetingTypeFilter","meetingTypeFilterStats"],
-    ["typeFilter","typeFilterStats"]
-  ];
-
-  pairs.forEach(([mainId, statsId]) => {
-    const main = $(mainId);
-    const stats = $(statsId);
-    if (!main || !stats) return;
-
-    if (main.multiple || stats.multiple) {
-      setSelectedValues(statsId, selectedValues(mainId));
-    } else {
-      stats.value = main.value;
-    }
-  });
-}
-
 function syncFilter(mainId, value){
   const main = $(mainId);
   if (main) main.value = value;
@@ -2645,7 +2623,8 @@ function fillDynamicSelect(id, items){
   const el = $(id);
   if (!el) return;
 
-  const previous = selectedValues(id);
+  const sourceId = id.endsWith("Stats") ? id.slice(0, -"Stats".length) : id;
+  const previous = selectedValues(sourceId);
   const itemMap = new Map(items.map(item => [item.value, item]));
 
   // Behåll redan ikryssade värden även om de just nu hamnar utanför kartan.
@@ -2680,6 +2659,9 @@ function fillDynamicSelect(id, items){
       checkbox.value = item.value;
       checkbox.checked = previous.includes(item.value);
       checkbox.addEventListener("change", () => {
+        if (id.endsWith("Stats")) {
+          setSelectedValues(sourceId, selectedValues(id));
+        }
         renderAll(false);
         syncFilterMirror();
       });
@@ -2717,9 +2699,13 @@ function updateDynamicFilters(applyMapView = false){
   const meetingTypeMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
 
   fillDynamicSelect("cityFilter", countValues(cityMeetings, getCities));
+  fillDynamicSelect("cityFilterStats", countValues(cityMeetings, getCities));
   fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
+  fillDynamicSelect("districtFilterStats", countValues(districtMeetings, m => m.meetingDistrict?.district));
   fillDynamicSelect("dayFilter", countDays(dayMeetings));
+  fillDynamicSelect("dayFilterStats", countDays(dayMeetings));
   fillDynamicSelect("meetingTypeFilter", countValues(meetingTypeMeetings, getTypes));
+  fillDynamicSelect("meetingTypeFilterStats", countValues(meetingTypeMeetings, getTypes));
 }
 
 function populateFiltersFromSmartProxy(json){
@@ -2764,18 +2750,8 @@ function syncFilterMirror(){
     if (!main || !stats) return;
 
     if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter")) {
-      stats.innerHTML = main.innerHTML;
-      [...stats.querySelectorAll('input[type="checkbox"]')].forEach(input => {
-        input.addEventListener("change", () => {
-          const values = selectedValues(statsId);
-          setSelectedValues(mainId, values);
-          renderAll(false);
-          syncFilterMirror();
-        });
-      });
       setSelectedValues(statsId, selectedValues(mainId));
     } else if (main.multiple || stats.multiple) {
-      stats.innerHTML = main.innerHTML;
       setSelectedValues(statsId, selectedValues(mainId));
     } else {
       stats.value = main.value;
