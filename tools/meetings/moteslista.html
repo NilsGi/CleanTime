@@ -2495,7 +2495,6 @@ async function exportFolderPdf(){
     const types = getTypes(m).filter(Boolean);
     const typeText = types
       .filter(t => t !== "Virtuellt möte")
-      .slice(0,2)
       .join(", ");
     const typeShort = isOnline(m) ? "Online" : typeText;
 
@@ -2508,11 +2507,14 @@ async function exportFolderPdf(){
       rowsForAddress.push(...wrappedRows.slice(0, 2));
     });
 
+    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, colW - 16) : [];
+
     const needed =
       (day !== currentDay ? 4.8 : 0) +
       2.55 +
       (titleRows.length - 1) * 2.25 +
       rowsForAddress.length * 2.15 +
+      rowsForType.length * 1.9 +
       0.65;
 
     if (y + needed > bottomY) {
@@ -2550,10 +2552,12 @@ async function exportFolderPdf(){
     if (typeShort) {
       doc.setFontSize(4.85);
       doc.setTextColor(90,90,90);
-      doc.text(typeShort, x + 16, y);
+      rowsForType.forEach(row => {
+        doc.text(row, x + 16, y);
+        y += 1.9;
+      });
       setBlack();
       doc.setFontSize(5.0);
-      y += 1.9;
     }
 
     y += 0.65;
