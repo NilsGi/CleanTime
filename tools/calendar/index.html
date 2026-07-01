@@ -430,6 +430,37 @@ summary {
   font-weight: 750;
 }
 
+.day-event.is-multiday {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-color: rgba(16, 27, 143, .28);
+}
+
+.day-event.is-start {
+  border-radius: 8px 3px 3px 8px;
+}
+
+.day-event.is-middle {
+  border-radius: 3px;
+}
+
+.day-event.is-end {
+  border-radius: 3px 8px 8px 3px;
+}
+
+.day-event .event-flow {
+  flex: 0 0 auto;
+  font-weight: 950;
+  opacity: .85;
+}
+
+.day-event .event-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .day-event:hover {
   background: var(--na-blue);
   color: #fff;
@@ -776,16 +807,45 @@ function renderMonth(events) {
     html += `
       <div class="day${todayClass}">
         <div class="day-number">${dayNumber}</div>
-        ${dayEvents.map(e => `
-          <div class="day-event" onclick="showEvent('${e.id}')" title="${escapeAttr(e.title)}">
-            ${time(e.start_datetime)} ${escapeHtml(e.title)}
-          </div>
-        `).join("")}
+        ${dayEvents.map(e => monthEventPill(e, date)).join("")}
       </div>
     `;
   }
 
   calendar.innerHTML = html;
+}
+
+function monthEventPill(event, date) {
+  const placement = getEventDayPlacement(event, date);
+  const className = [
+    "day-event",
+    placement.isMultiDay ? "is-multiday" : "",
+    placement.isMultiDay ? `is-${placement.position}` : ""
+  ].filter(Boolean).join(" ");
+
+  const startArrow = placement.showBackArrow
+    ? `<span class="event-flow" aria-hidden="true">&larr;</span>`
+    : "";
+  const endArrow = placement.showForwardArrow
+    ? `<span class="event-flow" aria-hidden="true">&rarr;</span>`
+    : "";
+  const displayTime = placement.showStartTime
+    ? `${time(event.start_datetime)} `
+    : placement.showEndTime
+      ? `${time(event.end_datetime)} `
+      : "";
+
+  const label = placement.isMultiDay
+    ? `${placement.dayLabel}. ${event.title}`
+    : event.title;
+
+  return `
+    <div class="${className}" onclick="showEvent('${event.id}')" title="${escapeAttr(label)}">
+      ${startArrow}
+      <span class="event-title">${displayTime}${escapeHtml(event.title)}</span>
+      ${endArrow}
+    </div>
+  `;
 }
 
 function eventCard(e) {
@@ -916,6 +976,49 @@ function eventOccursOnDate(event, date) {
   dayEnd.setHours(23, 59, 59, 999);
 
   return start <= dayEnd && end >= dayStart;
+}
+
+function getEventDayPlacement(event, date) {
+  const start = new Date(event.start_datetime);
+  const end = event.end_datetime
+    ? new Date(event.end_datetime)
+    : new Date(event.start_datetime);
+
+  const isStartDay = sameDay(start, date);
+  const isEndDay = sameDay(end, date);
+  const isMultiDay = !sameDay(start, end);
+
+  let position = "single";
+  if (isMultiDay && isStartDay) position = "start";
+  else if (isMultiDay && isEndDay) position = "end";
+  else if (isMultiDay) position = "middle";
+
+  return {
+    position,
+    isMultiDay,
+    showBackArrow: isMultiDay && !isStartDay,
+    showForwardArrow: isMultiDay && !isEndDay,
+    showStartTime: !isMultiDay || isStartDay,
+    showEndTime: isMultiDay && isEndDay,
+    dayLabel: getEventDayLabel(start, end, date)
+  };
+}
+
+function getEventDayLabel(start, end, date) {
+  const startDay = stripTime(start);
+  const endDay = stripTime(end);
+  const currentDay = stripTime(date);
+
+  const dayIndex = Math.round((currentDay - startDay) / 86400000) + 1;
+  const totalDays = Math.round((endDay - startDay) / 86400000) + 1;
+
+  return `Dag ${dayIndex} av ${totalDays}`;
+}
+
+function stripTime(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function isPastEvent(event, now = new Date()) {
