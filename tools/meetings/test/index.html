@@ -1938,24 +1938,31 @@ async function exportFolderPdf(){
   doc.setFontSize(7.5);
   doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + 18, pageHeight - 12);
 
-  // Sida 2: insida, samma A4 liggande men mötena skrivs i stående kolumner.
-  doc.addPage("a4", "landscape");
+  // Sida 2: insida. A4 stående med 3 kolumner för att få plats med upp till 80 möten.
+  // Sidan skrivs "åt andra hållet" jämfört med utsidan.
+  doc.addPage("a4", "portrait");
+
+  const innerPageWidth = doc.internal.pageSize.getWidth();
+  const innerPageHeight = doc.internal.pageSize.getHeight();
+
   doc.setFillColor(255,255,255);
-  doc.rect(0,0,pageWidth,pageHeight,"F");
+  doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
+
   const cols = 3;
-  const gap = 5;
-  const colW = (pageWidth - margin*2 - gap*(cols-1)) / cols;
-  const topY = 14;
-  const bottomY = pageHeight - 13;
+  const gap = 3.5;
+  const innerMargin = 6;
+  const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
+  const topY = 13;
+  const bottomY = innerPageHeight - 12;
   let col = 0;
-  x = margin;
+  x = innerMargin;
   y = topY;
   currentDay = "";
 
   function nextColumn(){
     col++;
     if (col >= cols) return false;
-    x = margin + col * (colW + gap);
+    x = innerMargin + col * (colW + gap);
     y = topY;
     currentDay = "";
     return true;
@@ -1965,7 +1972,7 @@ async function exportFolderPdf(){
     doc.setDrawColor(190, 205, 235);
     doc.setLineWidth(0.25);
     for (let i=1; i<cols; i++) {
-      const lx = margin + i*colW + (i-0.5)*gap;
+      const lx = innerMargin + i*colW + (i-0.5)*gap;
       doc.line(lx, topY-4, lx, bottomY+2);
     }
   }
@@ -1973,15 +1980,15 @@ async function exportFolderPdf(){
   addColumnGuides();
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("MÖTESLISTA", margin, 8);
+  doc.setFontSize(11);
+  doc.text("MÖTESLISTA", innerMargin, 8);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text("Alla tider är lokala. Genererad från www.nasverige.org – Exportdatum: " + exportDate, margin + 36, 8);
+  doc.setFontSize(6.2);
+  doc.text("Genererad från www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
 
   if (!sortedMeetings.length) {
     setBlack();
-    doc.setFontSize(11);
+    doc.setFontSize(9);
     doc.text("Inga möten matchar aktuellt filter.", x, y);
   }
 
@@ -1991,9 +1998,24 @@ async function exportFolderPdf(){
     const time = formatMeetingTimeForPdf(m);
     const title = String(m.title || "Okänt möte");
     const types = getTypes(m).filter(Boolean);
-    const typeShort = isOnline(m) ? "Online" : "";
-    let rowsForAddress = address ? doc.splitTextToSize(address, colW - 22) : [];
-    const needed = (day !== currentDay ? 8 : 0) + 5 + Math.max(4, rowsForAddress.length * 3.4) + 2;
+    const typeText = types
+      .filter(t => t !== "Virtuellt möte")
+      .slice(0,2)
+      .join(", ");
+    const typeShort = isOnline(m) ? "Online" : typeText;
+
+    let titleRows = doc.splitTextToSize(title + (typeShort ? " (" + typeShort + ")" : ""), colW - 17);
+    titleRows = titleRows.slice(0,2);
+
+    let rowsForAddress = address ? doc.splitTextToSize(address, colW - 17) : [];
+    rowsForAddress = rowsForAddress.slice(0,2);
+
+    const needed =
+      (day !== currentDay ? 5.8 : 0) +
+      3.1 +
+      (titleRows.length - 1) * 2.7 +
+      rowsForAddress.length * 2.55 +
+      1.5;
 
     if (y + needed > bottomY) {
       if (!nextColumn()) return;
@@ -2003,48 +2025,41 @@ async function exportFolderPdf(){
       currentDay = day;
       setBlue();
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(8.2);
       doc.text(day, x, y);
-      y += 6;
+      y += 4.6;
     }
 
     setBlack();
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.8);
+    doc.setFontSize(5.9);
     doc.text(time, x, y);
-    const titleRows = doc.splitTextToSize(title + (typeShort ? " (" + typeShort + ")" : ""), colW - 24);
-    doc.text(titleRows[0], x + 22, y);
-    y += 3.4;
+    doc.text(titleRows[0] || "", x + 17, y);
+    y += 2.7;
+
     for (let i=1; i<titleRows.length; i++) {
-      doc.text(titleRows[i], x + 22, y);
-      y += 3.4;
+      doc.text(titleRows[i], x + 17, y);
+      y += 2.7;
     }
+
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.1);
+    doc.setFontSize(5.4);
     rowsForAddress.forEach(row => {
-      doc.text(row, x + 22, y);
-      y += 3.4;
+      doc.text(row, x + 17, y);
+      y += 2.55;
     });
-    if (types.length) {
-      const filteredTypes = types.filter(t => t !== "Virtuellt möte").slice(0,2).join(", ");
-      if (filteredTypes) {
-        doc.setTextColor(90,90,90);
-        const typeRows = doc.splitTextToSize(filteredTypes, colW - 22);
-        typeRows.slice(0,1).forEach(row => { doc.text(row, x + 22, y); y += 3.2; });
-        setBlack();
-      }
-    }
-    y += 2.2;
+
+    y += 1.5;
   });
 
   doc.setDrawColor(...blue);
   doc.setLineWidth(0.3);
-  doc.line(margin, pageHeight - 9, pageWidth - margin, pageHeight - 9);
+  doc.line(innerMargin, innerPageHeight - 9, innerPageWidth - innerMargin, innerPageHeight - 9);
   setBlue();
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.text("Utskrift: dubbelsidig, vänd på kortsida. Vik i tre delar med framsidan till höger.", margin, pageHeight - 5);
-  doc.text(String(sortedMeetings.length) + " möten i valt urval", pageWidth - margin, pageHeight - 5, { align:"right" });
+  doc.setFontSize(6.5);
+  doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
+  doc.text(String(sortedMeetings.length) + " möten i valt urval", innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
 
   doc.save("na-sverige-folder-" + exportDate + ".pdf");
   setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
