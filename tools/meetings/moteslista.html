@@ -1176,9 +1176,21 @@ function normalizeText(value){
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 function meetingPrimaryKey(m){
-  if (m.documentId) return "documentId:" + String(m.documentId);
-  if (m.id !== undefined && m.id !== null) return "id:" + String(m.id);
-  return [m.title,m.days,m.startTime,m.endTime,m.address,m.zip].map(normalizeText).join("|");
+  const lat = hasCoords(m) ? Number(m.latitude).toFixed(6) : "";
+  const lng = hasCoords(m) ? Number(m.longitude).toFixed(6) : "";
+
+  return [
+    displayGroupName(m.title),
+    cleanDay(m.days),
+    String(m.startTime || "").slice(0,5),
+    String(m.endTime || "").slice(0,5),
+    m.location,
+    m.address,
+    m.zip,
+    m.meetingDistrict?.district,
+    lat,
+    lng
+  ].map(normalizeText).join("|");
 }
 function uniqueMeetingsById(meetings){
   const seen = new Set();
@@ -1466,14 +1478,7 @@ function groupMeetingsForMap(meetings){
 }
 
 function meetingUniqueKey(m){
-  return m.id || m.documentId || [
-    m.title,
-    m.days,
-    m.startTime,
-    m.endTime,
-    m.address,
-    m.zip
-  ].map(value => String(value || "").trim()).join("|");
+  return meetingPrimaryKey(m);
 }
 
 function uniqueMeetingCount(meetings){
@@ -1829,31 +1834,62 @@ function buildStats(meetings){
       const cityKey = normalizeText(city);
       const groupKey = normalizeGroupName(m.title);
       const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
+      const meetingKey = meetingUniqueKey(m);
 
       if (!districtSummary[district]) {
-        districtSummary[district] = {district, meetings:0, physical:0, online:0, groups:new Set()};
+        districtSummary[district] = {
+          district,
+          meetingKeys:new Set(),
+          physicalKeys:new Set(),
+          onlineKeys:new Set(),
+          groups:new Set()
+        };
       }
 
-      districtSummary[district].meetings++;
-      if (isOnline(m)) districtSummary[district].online++; else districtSummary[district].physical++;
+      districtSummary[district].meetingKeys.add(meetingKey);
+      if (isOnline(m)) districtSummary[district].onlineKeys.add(meetingKey);
+      else districtSummary[district].physicalKeys.add(meetingKey);
       districtSummary[district].groups.add(cityKey + "|||" + groupKey);
       uniqueGroupsAll.add(combinedKey);
 
       if (!groupSummary[combinedKey]) {
-        groupSummary[combinedKey] = {district, city, group:displayGroupName(m.title), meetings:0, physical:0, online:0, items:[]};
+        groupSummary[combinedKey] = {
+          district,
+          city,
+          group:displayGroupName(m.title),
+          meetingKeys:new Set(),
+          physicalKeys:new Set(),
+          onlineKeys:new Set(),
+          items:[]
+        };
       }
 
-      groupSummary[combinedKey].meetings++;
-      groupSummary[combinedKey].items.push(m);
-      if (isOnline(m)) groupSummary[combinedKey].online++; else groupSummary[combinedKey].physical++;
+      groupSummary[combinedKey].meetingKeys.add(meetingKey);
+      if (!groupSummary[combinedKey].items.some(item => meetingUniqueKey(item) === meetingKey)) {
+        groupSummary[combinedKey].items.push(m);
+      }
+      if (isOnline(m)) groupSummary[combinedKey].onlineKeys.add(meetingKey);
+      else groupSummary[combinedKey].physicalKeys.add(meetingKey);
     });
   });
 
   const districts = Object.values(districtSummary).map(d => ({
-    district:d.district, meetings:d.meetings, groups:d.groups.size, physical:d.physical, online:d.online
+    district:d.district,
+    meetings:d.meetingKeys.size,
+    groups:d.groups.size,
+    physical:d.physicalKeys.size,
+    online:d.onlineKeys.size
   })).sort((a,b)=>b.meetings-a.meetings || a.district.localeCompare(b.district,"sv"));
 
-  const groups = Object.values(groupSummary).sort((a,b)=>
+  const groups = Object.values(groupSummary).map(g => ({
+    district:g.district,
+    city:g.city,
+    group:g.group,
+    meetings:g.meetingKeys.size,
+    physical:g.physicalKeys.size,
+    online:g.onlineKeys.size,
+    items:g.items
+  })).sort((a,b)=>
     a.district.localeCompare(b.district,"sv") ||
     a.city.localeCompare(b.city,"sv") ||
     b.meetings-a.meetings ||
@@ -1861,11 +1897,11 @@ function buildStats(meetings){
   );
 
   return {
-    totalMeetings: meetings.length,
+    totalMeetings: uniqueMeetingCount(meetings),
     totalGroups: uniqueGroupsAll.size,
     totalDistricts: districts.length,
-    physical: meetings.filter(m=>!isOnline(m)).length,
-    online: meetings.filter(isOnline).length,
+    physical: uniqueMeetingCount(meetings.filter(m=>!isOnline(m))),
+    online: uniqueMeetingCount(meetings.filter(isOnline)),
     districts, groups
   };
 }
