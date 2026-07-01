@@ -1176,20 +1176,12 @@ function normalizeText(value){
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 function meetingPrimaryKey(m){
-  const lat = hasCoords(m) ? Number(m.latitude).toFixed(6) : "";
-  const lng = hasCoords(m) ? Number(m.longitude).toFixed(6) : "";
+  const cityText = getCities(m).join(", ");
 
   return [
     displayGroupName(m.title),
-    cleanDay(m.days),
-    String(m.startTime || "").slice(0,5),
-    String(m.endTime || "").slice(0,5),
-    m.location,
-    m.address,
-    m.zip,
-    m.meetingDistrict?.district,
-    lat,
-    lng
+    cityText,
+    m.meetingDistrict?.district
   ].map(normalizeText).join("|");
 }
 function uniqueMeetingsById(meetings){
@@ -1382,11 +1374,9 @@ function groupMeetingsForDisplay(meetings){
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
     const cities = getCities(m);
-    const cityList = selectedCities.length
-      ? cities.filter(city => selectedCities.includes(city))
-      : (cities.length ? cities : ["Okänd ort"]);
+    const cityList = cities.length ? [cities.join(", ")] : ["Okänd ort"];
 
-    if (!cityList.length) return;
+    if (selectedCities.length && !cities.some(city => selectedCities.includes(city))) return;
 
     cityList.forEach(city => {
       const cityKey = normalizeText(city);
@@ -1539,8 +1529,8 @@ function renderAll(syncFromMap = false){
       : "";
 
   $("summary").innerHTML =
-    "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " unika möten i listan.<br>" +
-    mapGroups.length + " kartpunkter / " + mapMeetingCount + " fysiska möten visas på kartan efter filter." +
+    "Visar " + visibleMeetingCount + " summeringar i listan baserat på gruppnamn, city och distrikt.<br>" +
+    mapGroups.length + " kartpunkter / " + mapMeetingCount + " summeringar visas på kartan efter filter." +
     distanceText;
 
   renderMarkers(mapGroups);
@@ -1824,11 +1814,9 @@ function buildStats(meetings){
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
     const cities = getCities(m);
-    const cityList = selectedCities.length
-      ? cities.filter(city => selectedCities.includes(city))
-      : (cities.length ? cities : ["Okänd ort"]);
+    const cityList = cities.length ? [cities.join(", ")] : ["Okänd ort"];
 
-    if (!cityList.length) return;
+    if (selectedCities.length && !cities.some(city => selectedCities.includes(city))) return;
 
     cityList.forEach(city => {
       const cityKey = normalizeText(city);
