@@ -37,6 +37,73 @@ body {
   color: var(--text);
 }
 
+body.auth-locked {
+  min-height: 100vh;
+  background: var(--na-blue);
+}
+
+body.auth-locked > header,
+body.auth-locked > main {
+  display: none;
+}
+
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 18% 15%, rgba(255,255,255,.14), transparent 30%),
+    linear-gradient(135deg, var(--na-blue-dark), var(--na-blue));
+}
+
+.auth-card {
+  width: min(100%, 430px);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28);
+  padding: 28px;
+}
+
+.auth-logo {
+  display: block;
+  width: 118px;
+  height: auto;
+  margin: 0 0 22px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--na-blue);
+}
+
+.auth-card h1 {
+  margin: 0 0 8px;
+  color: var(--na-blue);
+  font-size: 1.65rem;
+  line-height: 1.16;
+}
+
+.auth-card p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.auth-card button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.auth-error {
+  min-height: 22px;
+  margin-top: 8px;
+  color: var(--danger-text);
+  font-weight: 800;
+}
+
+body.is-authenticated .auth-screen {
+  display: none;
+}
+
 header {
   background: var(--na-blue);
   color: #fff;
@@ -359,7 +426,21 @@ button[type="button"]:focus-visible {
 </style>
 </head>
 
-<body>
+<body class="auth-locked">
+<section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+  <form class="auth-card" id="authForm">
+    <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="auth-logo">
+    <h1 id="authTitle">Skapa kalenderpost</h1>
+    <p>Ange lösenord för att komma åt kalenderadministrationen.</p>
+
+    <label for="adminPassword">Lösenord</label>
+    <input id="adminPassword" type="password" autocomplete="current-password" required>
+    <div class="auth-error" id="authError" aria-live="polite"></div>
+
+    <button type="submit">Logga in</button>
+  </form>
+</section>
+
 <header>
   <div class="header-inner">
     <a href="/tools" aria-label="Till startsidan">
@@ -459,9 +540,40 @@ const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const log = document.getElementById("log");
+const encodedAdminPassword = "ZXZlbnQ=";
+const authForm = document.getElementById("authForm");
+const authPassword = document.getElementById("adminPassword");
+const authError = document.getElementById("authError");
+const authSessionKey = "naCalendarAdminUnlocked";
 
 let editingId = null;
 let manualEvents = [];
+
+function unlockAdmin() {
+  document.body.classList.remove("auth-locked");
+  document.body.classList.add("is-authenticated");
+  loadManualEvents();
+}
+
+if (sessionStorage.getItem(authSessionKey) === "true") {
+  unlockAdmin();
+} else {
+  authPassword.focus();
+}
+
+authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  if (authPassword.value === atob(encodedAdminPassword)) {
+    sessionStorage.setItem(authSessionKey, "true");
+    authError.textContent = "";
+    unlockAdmin();
+    return;
+  }
+
+  authError.textContent = "Fel lösenord.";
+  authPassword.select();
+});
 
 window.saveEvent = async function () {
   const title = val("title");
@@ -825,9 +937,7 @@ function escapeHtml(str) {
   }[m]));
 }
 
-loadManualEvents();
 </script>
 
 </body>
 </html>
-
