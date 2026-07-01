@@ -644,7 +644,9 @@ window.importFromNasverige = async function () {
     log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
     log.textContent += "Sparar till Supabase...\n";
 
-    const rows = events.map(event => ({
+    const rows = events
+      .filter(event => event.slug)
+      .map(event => ({
       source: "nasverige",
       event_type: "event",
 
@@ -671,10 +673,16 @@ window.importFromNasverige = async function () {
       is_hidden: false
     }));
 
+    const skippedWithoutSlug = events.length - rows.length;
+    if (skippedWithoutSlug > 0) {
+      log.textContent +=
+        `Hoppar över ${skippedWithoutSlug} event utan slug, eftersom slug används som importnyckel.\n`;
+    }
+
     const { data, error } = await supabase
       .from("calendar_events")
       .upsert(rows, {
-        onConflict: "source,external_id"
+        onConflict: "source,external_slug"
       })
       .select();
 
@@ -822,5 +830,4 @@ loadManualEvents();
 
 </body>
 </html>
-
 
