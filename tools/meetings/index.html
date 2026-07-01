@@ -495,6 +495,24 @@ header,
   }
 }
 
+/* Fixar ljusa skarvar mellan Leaflets kartplattor i Chrome/Edge */
+.leaflet-container{
+  background:#dbe7ef;
+}
+
+.leaflet-container img.leaflet-tile{
+  max-width:none!important;
+  border:0!important;
+  outline:1px solid transparent;
+  box-shadow:0 0 0 1px transparent;
+  backface-visibility:hidden;
+  transform:translateZ(0);
+}
+
+.leaflet-tile-container{
+  will-change:transform;
+}
+
 </style>
 </head>
 
