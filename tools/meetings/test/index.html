@@ -961,7 +961,12 @@ function compareGroupsByDayTime(a,b){
 }
 function normalizeGroupName(name){ return String(name || "Okänd grupp").trim().replace(/\s+/g, " ").toLowerCase(); }
 function displayGroupName(name){ return String(name || "Okänd grupp").trim().replace(/\s+/g, " "); }
-function getCity(m){ return (m.meetingCity||[]).map(c=>c.city).join(", "); }
+function getCities(m){
+  const raw = (m.meetingCity || []).map(c => c.city).filter(Boolean);
+  const cities = raw.flatMap(city => String(city).split(",")).map(city => city.trim()).filter(Boolean);
+  return [...new Set(cities)].sort((a,b)=>a.localeCompare(b,"sv"));
+}
+function getCity(m){ return getCities(m).join(", "); }
 function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
 function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
 function hasCoords(m){ return m.latitude !== null && m.longitude !== null && !isNaN(Number(m.latitude)) && !isNaN(Number(m.longitude)); }
@@ -1069,30 +1074,34 @@ function groupMeetingsForDisplay(meetings){
 
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
-    const city = getCity(m) || "Okänd ort";
-    const cityKey = normalizeText(city);
-    const groupKey = normalizeGroupName(m.title);
-    const key = district + "|||" + cityKey + "|||" + groupKey;
+    const cities = getCities(m);
+    const cityList = cities.length ? cities : ["Okänd ort"];
 
-    if (!groups[key]) {
-      groups[key] = {
-        key, district, city,
-        title: displayGroupName(m.title),
-        meetings: [],
-        latitude: null,
-        longitude: null,
-        isOnlineOnly: true,
-        distance: null
-      };
-    }
+    cityList.forEach(city => {
+      const cityKey = normalizeText(city);
+      const groupKey = normalizeGroupName(m.title);
+      const key = district + "|||" + cityKey + "|||" + groupKey;
 
-    groups[key].meetings.push(m);
-    if (!isOnline(m)) groups[key].isOnlineOnly = false;
+      if (!groups[key]) {
+        groups[key] = {
+          key, district, city,
+          title: displayGroupName(m.title),
+          meetings: [],
+          latitude: null,
+          longitude: null,
+          isOnlineOnly: true,
+          distance: null
+        };
+      }
 
-    if (groups[key].latitude === null && hasCoords(m)) {
-      groups[key].latitude = Number(m.latitude);
-      groups[key].longitude = Number(m.longitude);
-    }
+      groups[key].meetings.push(m);
+      if (!isOnline(m)) groups[key].isOnlineOnly = false;
+
+      if (groups[key].latitude === null && hasCoords(m)) {
+        groups[key].latitude = Number(m.latitude);
+        groups[key].longitude = Number(m.longitude);
+      }
+    });
   });
 
   const result = Object.values(groups).map(g => {
@@ -1347,27 +1356,31 @@ function buildStats(meetings){
 
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
-    const city = getCity(m) || "Okänd ort";
-    const cityKey = normalizeText(city);
-    const groupKey = normalizeGroupName(m.title);
-    const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
+    const cities = getCities(m);
+    const cityList = cities.length ? cities : ["Okänd ort"];
 
-    if (!districtSummary[district]) {
-      districtSummary[district] = {district, meetings:0, physical:0, online:0, groups:new Set()};
-    }
+    cityList.forEach(city => {
+      const cityKey = normalizeText(city);
+      const groupKey = normalizeGroupName(m.title);
+      const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
 
-    districtSummary[district].meetings++;
-    if (isOnline(m)) districtSummary[district].online++; else districtSummary[district].physical++;
-    districtSummary[district].groups.add(cityKey + "|||" + groupKey);
-    uniqueGroupsAll.add(combinedKey);
+      if (!districtSummary[district]) {
+        districtSummary[district] = {district, meetings:0, physical:0, online:0, groups:new Set()};
+      }
 
-    if (!groupSummary[combinedKey]) {
-      groupSummary[combinedKey] = {district, city, group:displayGroupName(m.title), meetings:0, physical:0, online:0, items:[]};
-    }
+      districtSummary[district].meetings++;
+      if (isOnline(m)) districtSummary[district].online++; else districtSummary[district].physical++;
+      districtSummary[district].groups.add(cityKey + "|||" + groupKey);
+      uniqueGroupsAll.add(combinedKey);
 
-    groupSummary[combinedKey].meetings++;
-    groupSummary[combinedKey].items.push(m);
-    if (isOnline(m)) groupSummary[combinedKey].online++; else groupSummary[combinedKey].physical++;
+      if (!groupSummary[combinedKey]) {
+        groupSummary[combinedKey] = {district, city, group:displayGroupName(m.title), meetings:0, physical:0, online:0, items:[]};
+      }
+
+      groupSummary[combinedKey].meetings++;
+      groupSummary[combinedKey].items.push(m);
+      if (isOnline(m)) groupSummary[combinedKey].online++; else groupSummary[combinedKey].physical++;
+    });
   });
 
   const districts = Object.values(districtSummary).map(d => ({
@@ -1390,7 +1403,6 @@ function buildStats(meetings){
     districts, groups
   };
 }
-
 function renderMissingCoords(meetings){
   const missing = meetings.filter(m => !isOnline(m) && !hasCoords(m));
   if (!missing.length) return '<div class="missing-coords"><b>Fysiska möten utan koordinater:</b> 0</div>';
@@ -2107,7 +2119,7 @@ function getActiveFilterState(){
 
 function meetingMatchesState(m, state, ignore = new Set()){
   if (!ignore.has("search") && state.q && !meetingText(m).includes(state.q)) return false;
-  if (!ignore.has("city") && state.cities.length && !state.cities.includes(getCity(m))) return false;
+  if (!ignore.has("city") && state.cities.length && !state.cities.some(city => getCities(m).includes(city))) return false;
   if (!ignore.has("district") && state.districts.length && !state.districts.includes(m.meetingDistrict?.district)) return false;
   if (!ignore.has("day") && state.days.length && !state.days.includes(m.days)) return false;
   if (!ignore.has("meetingType") && state.meetingTypes.length && !state.meetingTypes.some(t => getTypes(m).includes(t))) return false;
@@ -2174,7 +2186,7 @@ function updateDynamicFilters(){
   const dayMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["day"])));
   const meetingTypeMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
 
-  fillDynamicSelect("cityFilter", countValues(cityMeetings, getCity));
+  fillDynamicSelect("cityFilter", countValues(cityMeetings, getCities));
   fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
   fillDynamicSelect("dayFilter", countDays(dayMeetings));
   fillDynamicSelect("meetingTypeFilter", countValues(meetingTypeMeetings, getTypes));
