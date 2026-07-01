@@ -247,6 +247,54 @@ select[multiple]{
   }
 }
 
+.map-cluster-sheet-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.22);
+  z-index:3000;
+  display:none;
+}
+.map-cluster-sheet-backdrop.open{
+  display:block;
+}
+.map-cluster-sheet{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  max-height:72vh;
+  background:#fff;
+  border-radius:14px 14px 0 0;
+  box-shadow:0 -10px 28px rgba(0,0,0,.22);
+  overflow:hidden;
+}
+.map-cluster-sheet-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border-bottom:1px solid #ddd;
+  font-weight:800;
+}
+.map-cluster-sheet-close{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  margin:0;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:none;
+}
+.map-cluster-sheet-body{
+  max-height:calc(72vh - 59px);
+  overflow:auto;
+  padding:12px 14px 16px;
+  -webkit-overflow-scrolling:touch;
+}
+
 
 .meeting-time-main{
   margin:4px 0;
@@ -919,7 +967,7 @@ function initMap(){
     return false;
   }
 
-  map = L.map("map", { attributionControl: true }).setView([62.0, 15.0], 5);
+  map = L.map("map", { attributionControl: true, keyboard: false }).setView([62.0, 15.0], 5);
   map.attributionControl.setPrefix(false);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -953,9 +1001,11 @@ function initMap(){
     }).addTo(map);
 
     markersLayer.on("clusterclick", function(event){
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
       if (event.originalEvent) {
-        L.DomEvent.preventDefault(event.originalEvent);
-        L.DomEvent.stopPropagation(event.originalEvent);
+        L.DomEvent.stop(event.originalEvent);
       }
 
       const childGroups = event.layer.getAllChildMarkers()
@@ -965,16 +1015,27 @@ function initMap(){
 
       if (!childGroups.length) return;
 
+      if (window.innerWidth <= 900) {
+        showMobileClusterSheet(childGroups);
+        requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+        setTimeout(() => window.scrollTo(scrollX, scrollY), 80);
+        return;
+      }
+
+      suppressMapMoveRender = true;
       L.popup({
         maxWidth: window.innerWidth <= 900 ? 330 : 420,
         maxHeight: window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.5) : 440,
-        autoPan: true,
+        autoPan: false,
         keepInView: true,
         closeButton: true
       })
         .setLatLng(event.layer.getLatLng())
         .setContent(clusterPopupHtml(childGroups))
         .openOn(map);
+      setTimeout(() => {
+        suppressMapMoveRender = false;
+      }, 150);
     });
   } else {
     markersLayer = L.layerGroup().addTo(map);
@@ -1482,6 +1543,46 @@ function clusterPopupHtml(groups){
       <div class="cluster-popup-list">${groupHtml}</div>
     </div>
   `;
+}
+
+function showMobileClusterSheet(groups){
+  let backdrop = $("mapClusterSheetBackdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "mapClusterSheetBackdrop";
+    backdrop.className = "map-cluster-sheet-backdrop";
+    backdrop.innerHTML = `
+      <div class="map-cluster-sheet" role="dialog" aria-modal="true" aria-labelledby="mapClusterSheetTitle">
+        <div class="map-cluster-sheet-header">
+          <div id="mapClusterSheetTitle"></div>
+          <button type="button" class="map-cluster-sheet-close" aria-label="Stäng">×</button>
+        </div>
+        <div class="map-cluster-sheet-body"></div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    backdrop.addEventListener("click", event => {
+      if (event.target === backdrop) closeMobileClusterSheet();
+    });
+
+    const closeButton = backdrop.querySelector(".map-cluster-sheet-close");
+    if (closeButton) closeButton.addEventListener("click", closeMobileClusterSheet);
+  }
+
+  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
+  const title = backdrop.querySelector("#mapClusterSheetTitle");
+  const body = backdrop.querySelector(".map-cluster-sheet-body");
+
+  if (title) title.textContent = totalMeetings + " möte" + (totalMeetings === 1 ? "" : "n") + " här";
+  if (body) body.innerHTML = clusterPopupHtml(groups).replace(/<div class="cluster-popup-title">[\s\S]*?<\/div>/, "");
+
+  backdrop.classList.add("open");
+}
+
+function closeMobileClusterSheet(){
+  const backdrop = $("mapClusterSheetBackdrop");
+  if (backdrop) backdrop.classList.remove("open");
 }
 
 function groupPopupHtml(g){
