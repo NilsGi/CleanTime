@@ -1419,6 +1419,52 @@ function groupMeetingsForDisplay(meetings){
 function groupHasCoords(g){ return g.latitude !== null && g.longitude !== null && !isNaN(g.latitude) && !isNaN(g.longitude); }
 function groupMatchesMap(g){ return !g.isOnlineOnly && groupHasCoords(g); }
 
+function groupMeetingsForMap(meetings){
+  const groups = {};
+
+  meetings
+    .filter(m => !isOnline(m) && hasCoords(m))
+    .forEach(m => {
+      const district = m.meetingDistrict?.district || "Okänt distrikt";
+      const lat = Number(m.latitude);
+      const lng = Number(m.longitude);
+      const coordKey = lat.toFixed(6) + "," + lng.toFixed(6);
+      const groupKey = normalizeGroupName(m.title);
+      const key = district + "|||" + coordKey + "|||" + groupKey;
+
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          district,
+          city: getCity(m) || "Okänd ort",
+          title: displayGroupName(m.title),
+          meetings: [],
+          latitude: lat,
+          longitude: lng,
+          isOnlineOnly: false,
+          distance: null
+        };
+      }
+
+      if (!groups[key].meetings.some(existing => meetingUniqueKey(existing) === meetingUniqueKey(m))) {
+        groups[key].meetings.push(m);
+      }
+    });
+
+  const result = Object.values(groups).map(g => {
+    g.meetings.sort(compareMeetingsByDayTime);
+    if (userPosition && groupHasCoords(g)) {
+      g.distance = haversine(userPosition.lat, userPosition.lng, g.latitude, g.longitude);
+    }
+    return g;
+  });
+
+  if (userPosition) result.sort((a,b)=>(a.distance ?? Infinity) - (b.distance ?? Infinity));
+  else result.sort(compareGroupsByDayTime);
+
+  return result;
+}
+
 function meetingUniqueKey(m){
   return m.id || m.documentId || [
     m.title,
@@ -1457,7 +1503,7 @@ function renderAll(syncFromMap = false){
 
   const meetingList = filteredMeetings(syncFromMap);
   const groupList = groupMeetingsForDisplay(meetingList);
-  const mapGroups = groupList.filter(groupMatchesMap);
+  const mapGroups = groupMeetingsForMap(meetingList);
   const searchActive = hasActiveTextSearch();
 
   // Om användaren ändrar filter/sökning ska kartan följa resultatet.
