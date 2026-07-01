@@ -571,8 +571,8 @@ header,
   <div>
     <label>Visning</label>
     <select id="typeFilter" onchange="renderAll()">
-      <option value="physical">Fysiska möten på karta</option>
-      <option value="">Alla i listan</option>
+      <option value="">Alla möten i listan</option>
+      <option value="physical">Endast fysiska möten</option>
       <option value="online">Endast online i listan</option>
     </select>
   </div>
@@ -649,8 +649,8 @@ header,
       <div>
         <label>Visning</label>
         <select id="typeFilterStats" onchange="syncFilter('typeFilter', this.value)">
-          <option value="physical">Fysiska möten på karta</option>
-          <option value="">Alla i listan</option>
+          <option value="">Alla möten i listan</option>
+          <option value="physical">Endast fysiska möten</option>
           <option value="online">Endast online i listan</option>
         </select>
       </div>
@@ -1429,7 +1429,7 @@ function renderStats(meetings){
 
     return `
       <details class="accordion-district">
-        <summary>${esc(district)} – ${groups.length} grupper, ${meetingSum} möten</summary>
+        <summary>${esc(district)} – ${groups.length} grupper/orter, ${meetingSum} möten</summary>
         <div class="accordion-content">
           <div class="group-row header"><div>Grupp / ort</div><div>Möten</div><div>Fysiska</div><div>Online</div></div>
           ${rows}
@@ -1462,7 +1462,7 @@ function renderStats(meetings){
       <tbody>${districtRows}</tbody>
     </table>
     <h3>Grupper per distrikt</h3>
-    <p class="muted">Statistik grupperas på distrikt + ort + gruppnamn.</p>
+    <p class="muted">Statistik grupperas på distrikt + ort/meetingCity + gruppnamn.</p>
     ${groupAccordion}
   `;
 }
@@ -1695,7 +1695,7 @@ function clearAllFilters(){
   if (distance) distance.value = "";
 
   const type = $("typeFilter");
-  if (type) type.value = "physical";
+  if (type) type.value = "";
 
   userPosition = null;
   if (userMarker && map) {
