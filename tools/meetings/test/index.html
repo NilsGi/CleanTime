@@ -156,6 +156,39 @@ select[multiple]{
   margin-top:-6px;
   margin-bottom:8px;
 }
+.checkbox-filter{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid #bbb;
+  border-radius:8px;
+  margin:5px 0 10px;
+  padding:7px;
+  max-height:155px;
+  overflow:auto;
+  background:#fff;
+}
+.checkbox-filter label{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:6px 5px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:14px;
+}
+.checkbox-filter label:hover{
+  background:#f3f6ff;
+}
+.checkbox-filter input{
+  width:auto;
+  margin:2px 0 0;
+  flex:0 0 auto;
+}
+.checkbox-filter-empty{
+  padding:6px 5px;
+  color:#666;
+  font-size:13px;
+}
 .map-sync-box{
   background:#f3f6ff;
   border:1px solid #c7d7ff;
@@ -553,22 +586,22 @@ header,
 <div class="filter-grid">
   <div>
     <label>Ort</label>
-    <select id="cityFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
+    <div id="cityFilter" class="checkbox-filter"></div><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
   </div>
   <div>
     <label>Distrikt</label>
-    <select id="districtFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
+    <div id="districtFilter" class="checkbox-filter"></div><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
   </div>
 </div>
 
 <div class="filter-grid">
   <div>
     <label>Veckodag</label>
-    <select id="dayFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
+    <div id="dayFilter" class="checkbox-filter"></div><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
   </div>
   <div>
     <label>Mötestyp</label>
-    <select id="meetingTypeFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+    <div id="meetingTypeFilter" class="checkbox-filter"></div><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
   </div>
 </div>
 
@@ -630,22 +663,22 @@ header,
     <div class="filter-grid">
       <div>
         <label>Ort</label>
-        <select id="cityFilterStats" multiple="" onchange="syncMultiFilter('cityFilter', this)"></select><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
+        <div id="cityFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
       </div>
       <div>
         <label>Distrikt</label>
-        <select id="districtFilterStats" multiple="" onchange="syncMultiFilter('districtFilter', this)"></select><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
+        <div id="districtFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
       </div>
     </div>
 
     <div class="filter-grid">
       <div>
         <label>Veckodag</label>
-        <select id="dayFilterStats" multiple="" onchange="syncMultiFilter('dayFilter', this)"></select><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
+        <div id="dayFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
       </div>
       <div>
         <label>Mötestyp</label>
-        <select id="meetingTypeFilterStats" multiple="" onchange="syncMultiFilter('meetingTypeFilter', this)"></select><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+        <div id="meetingTypeFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
       </div>
     </div>
 
@@ -694,6 +727,13 @@ function setStatus(html){
 function selectedValues(id){
   const el = $(id);
   if (!el) return [];
+
+  if (el.classList && el.classList.contains("checkbox-filter")) {
+    return [...el.querySelectorAll('input[type="checkbox"]:checked')]
+      .map(input => input.value)
+      .filter(Boolean);
+  }
+
   if (!el.multiple) return el.value ? [el.value] : [];
   return [...el.selectedOptions].map(o => o.value).filter(Boolean);
 }
@@ -702,6 +742,14 @@ function setSelectedValues(id, values){
   const el = $(id);
   if (!el) return;
   const set = new Set(values || []);
+
+  if (el.classList && el.classList.contains("checkbox-filter")) {
+    [...el.querySelectorAll('input[type="checkbox"]')].forEach(input => {
+      input.checked = set.has(input.value);
+    });
+    return;
+  }
+
   [...el.options].forEach(opt => {
     opt.selected = set.has(opt.value);
   });
@@ -1590,7 +1638,9 @@ function syncFilter(mainId, value){
 }
 
 function syncMultiFilter(mainId, sourceEl){
-  const values = [...sourceEl.selectedOptions].map(o => o.value).filter(Boolean);
+  const values = sourceEl.classList?.contains("checkbox-filter")
+    ? [...sourceEl.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value).filter(Boolean)
+    : [...sourceEl.selectedOptions].map(o => o.value).filter(Boolean);
   setSelectedValues(mainId, values);
   renderAll(false);
   syncFilterMirror();
@@ -2166,6 +2216,38 @@ function fillDynamicSelect(id, items){
   const previous = selectedValues(id);
   el.innerHTML = "";
 
+  if (el.classList && el.classList.contains("checkbox-filter")) {
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "checkbox-filter-empty";
+      empty.textContent = "Inga val finns för aktuellt urval.";
+      el.appendChild(empty);
+    }
+
+    items.forEach(item => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      const span = document.createElement("span");
+
+      checkbox.type = "checkbox";
+      checkbox.value = item.value;
+      checkbox.checked = previous.includes(item.value);
+      checkbox.addEventListener("change", () => {
+        renderAll(false);
+        syncFilterMirror();
+      });
+
+      span.textContent = item.label || item.value;
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      el.appendChild(label);
+    });
+
+    const allowed = new Set(items.map(item => item.value));
+    setSelectedValues(id, previous.filter(value => allowed.has(value)));
+    return;
+  }
+
   items.forEach(item => {
     const opt = document.createElement("option");
     opt.value = item.value;
@@ -2233,7 +2315,18 @@ function syncFilterMirror(){
     const stats = $(statsId);
     if (!main || !stats) return;
 
-    if (main.multiple || stats.multiple) {
+    if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter")) {
+      stats.innerHTML = main.innerHTML;
+      [...stats.querySelectorAll('input[type="checkbox"]')].forEach(input => {
+        input.addEventListener("change", () => {
+          const values = selectedValues(statsId);
+          setSelectedValues(mainId, values);
+          renderAll(false);
+          syncFilterMirror();
+        });
+      });
+      setSelectedValues(statsId, selectedValues(mainId));
+    } else if (main.multiple || stats.multiple) {
       stats.innerHTML = main.innerHTML;
       setSelectedValues(statsId, selectedValues(mainId));
     } else {
