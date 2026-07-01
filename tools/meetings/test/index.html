@@ -1708,15 +1708,12 @@ function getFilterLabelText(){
   const view = selectedLabels("typeFilter");
   const search = $("search")?.value?.trim();
   const distance = $("distanceFilter")?.value;
-  const mapLimited = listFollowsMap ? "Ja" : "Nej";
-
   rows.push(["Distrikt", districts.length ? districts.join(", ") : "Alla"]);
   rows.push(["Dagar", days.length ? days.join(", ") : "Alla"]);
   rows.push(["Mötestyp", meetingTypes.length ? meetingTypes.join(", ") : "Alla"]);
   rows.push(["Visning", view.length ? view.join(", ") : "Alla möten i listan"]);
   if (search) rows.push(["Sökning", search]);
   if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
-  rows.push(["Karta begränsar listan", mapLimited]);
   return rows;
 }
 
@@ -1831,7 +1828,7 @@ async function exportFolderPdf(){
   let y = 16;
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.text("Vad är Anonyma Narkomaners program?", x, y);
   y += 8;
   setBlack();
@@ -1864,16 +1861,14 @@ async function exportFolderPdf(){
   y = 22;
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.text("Här är telefonnummer till dina nya vänner:", x, y);
   y += 12;
   doc.setFontSize(10);
   doc.setDrawColor(150,150,150);
   doc.setLineWidth(0.25);
   for (let i=1; i<=15; i++) {
-    setBlue();
-    doc.text(String(i) + ".", x, y);
-    doc.line(x + 10, y + 0.5, panelW*2 - margin, y + 0.5);
+    doc.line(x, y + 0.5, panelW*2 - margin, y + 0.5);
     y += 10;
   }
 
@@ -1897,9 +1892,7 @@ async function exportFolderPdf(){
   doc.setFontSize(25);
   doc.text("MÖTESLISTA", x + (panelW - margin*2)/2, y, { align:"center" });
   y += 10;
-  doc.setFontSize(18);
-  doc.text("SVERIGE", x + (panelW - margin*2)/2, y, { align:"center" });
-  y += 12;
+  y += 4;
   doc.setFontSize(13);
   doc.text("Anonyma Narkomaner", x + (panelW - margin*2)/2, y, { align:"center" });
   y += 4;
