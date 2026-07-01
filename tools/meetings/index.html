@@ -863,7 +863,7 @@ header,
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
     <label>Sök grupp/ort</label>
-    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="syncFilter('search', this.value)">
+    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="applyStatsFiltersToMain()">
 
 
     <div class="filter-grid">
@@ -891,7 +891,7 @@ header,
     <div class="filter-grid">
       <div>
         <label>Visning</label>
-        <select id="typeFilterStats" onchange="syncFilter('typeFilter', this.value)">
+        <select id="typeFilterStats" onchange="applyStatsFiltersToMain()">
           <option value="">Alla möten i listan</option>
           <option value="physical">Endast fysiska möten</option>
           <option value="online">Endast online i listan</option>
@@ -2021,6 +2021,31 @@ function syncMultiFilter(mainId, sourceEl){
   syncFilterMirror();
 }
 
+function applyStatsFiltersToMain(){
+  const textPairs = [
+    ["searchStats", "search"],
+    ["typeFilterStats", "typeFilter"]
+  ];
+
+  textPairs.forEach(([statsId, mainId]) => {
+    const stats = $(statsId);
+    const main = $(mainId);
+    if (stats && main) main.value = stats.value;
+  });
+
+  [
+    ["cityFilterStats", "cityFilter"],
+    ["districtFilterStats", "districtFilter"],
+    ["dayFilterStats", "dayFilter"],
+    ["meetingTypeFilterStats", "meetingTypeFilter"]
+  ].forEach(([statsId, mainId]) => {
+    setSelectedValues(mainId, selectedValues(statsId));
+  });
+
+  renderAll(false);
+  syncFilterMirror();
+}
+
 
 
 function getCurrentFilteredGroupsForExport(){
@@ -2660,7 +2685,8 @@ function fillDynamicSelect(id, items){
       checkbox.checked = previous.includes(item.value);
       checkbox.addEventListener("change", () => {
         if (id.endsWith("Stats")) {
-          setSelectedValues(sourceId, selectedValues(id));
+          applyStatsFiltersToMain();
+          return;
         }
         renderAll(false);
         syncFilterMirror();
