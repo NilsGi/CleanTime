@@ -739,7 +739,7 @@ function initMap(){
 
   map.on("moveend zoomend", () => {
     if (!suppressMapMoveRender && listFollowsMap) {
-      renderAll(false);
+      renderAll(true);
     }
   });
 
@@ -1119,7 +1119,21 @@ function renderAll(syncFromMap = false){
   const mapGroups = groupList.filter(groupMatchesMap);
   const searchActive = hasActiveTextSearch();
 
-  const visibleGroupList = listFollowsMap && map && !searchActive
+  // Om användaren ändrar filter/sökning ska kartan följa resultatet.
+  // Om renderingen kommer från att kartan panorerats/zoomats ska vi däremot inte flytta kartan igen.
+  const shouldFitMapToFilters =
+    !syncFromMap &&
+    map &&
+    mapGroups.length &&
+    !suppressMapMoveRender;
+
+  if (shouldFitMapToFilters) {
+    fitGroupsOnMap(mapGroups);
+  }
+
+  // Direkt efter filterval visar vi hela filterresultatet.
+  // När användaren flyttar kartan begränsas listan till kartans synliga område.
+  const visibleGroupList = listFollowsMap && map && !searchActive && syncFromMap
     ? groupList.filter(isGroupInMapView)
     : groupList;
 
@@ -1137,10 +1151,6 @@ function renderAll(syncFromMap = false){
     distanceText;
 
   renderMarkers(mapGroups);
-
-  if (searchActive) {
-    fitGroupsOnMap(mapGroups);
-  }
 
   renderStats(meetingList);
   renderList(visibleGroupList.slice(0,150));
@@ -1178,6 +1188,9 @@ function fitGroupsOnMap(groups){
 
   setTimeout(() => {
     suppressMapMoveRender = false;
+    if (listFollowsMap) {
+      renderAll(true);
+    }
   }, 250);
 }
 
@@ -1499,7 +1512,7 @@ function fitVisible(){
     map.fitBounds(groups.map(g=>[g.latitude,g.longitude]), {padding:[30,30]});
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(false);
+      renderAll(true);
     }, 250);
   }
 }
@@ -2142,14 +2155,14 @@ function fitDistanceFilteredMeetings(){
     });
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(false);
+      renderAll(true);
     }, 250);
   } else if (points.length === 1) {
     suppressMapMoveRender = true;
     map.setView(points[0], 13);
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(false);
+      renderAll(true);
     }, 250);
   }
 }
