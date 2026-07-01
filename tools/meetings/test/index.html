@@ -1277,7 +1277,7 @@ function groupMatchesMap(g){ return !g.isOnlineOnly && groupHasCoords(g); }
 function renderAll(syncFromMap = false){
   if (!markersLayer) return;
 
-  const meetingList = filteredMeetings();
+  const meetingList = filteredMeetings(syncFromMap);
   const groupList = groupMeetingsForDisplay(meetingList);
   const mapGroups = groupList.filter(groupMatchesMap);
   const searchActive = hasActiveTextSearch();
@@ -2315,22 +2315,47 @@ function countDays(meetings){
     .map(([value,count]) => ({ value, label: cleanDay(value) + " (" + count + ")" }));
 }
 
+function meetingMatchesCurrentMapView(m){
+  if (!listFollowsMap || !map || hasActiveTextSearch()) return true;
+
+  // Listan behåller online-möten och möten utan koordinater även när kartan styr urvalet.
+  // Därför gör filtren samma sak.
+  if (isOnline(m) || !hasCoords(m)) return true;
+
+  return map.getBounds().contains([Number(m.latitude), Number(m.longitude)]);
+}
+
 function fillDynamicSelect(id, items){
   const el = $(id);
   if (!el) return;
 
   const previous = selectedValues(id);
+  const itemMap = new Map(items.map(item => [item.value, item]));
+
+  // Behåll redan ikryssade värden även om de just nu hamnar utanför kartan.
+  // De visas då som (0) så användaren själv kan kryssa ur dem.
+  previous.forEach(value => {
+    if (value && !itemMap.has(value)) {
+      itemMap.set(value, { value, label: value + " (0)" });
+    }
+  });
+
+  const finalItems = [...itemMap.values()].sort((a,b) => {
+    if (id.toLowerCase().includes("day")) return dayOrder(a.value) - dayOrder(b.value);
+    return String(a.value).localeCompare(String(b.value), "sv");
+  });
+
   el.innerHTML = "";
 
   if (el.classList && el.classList.contains("checkbox-filter")) {
-    if (!items.length) {
+    if (!finalItems.length) {
       const empty = document.createElement("div");
       empty.className = "checkbox-filter-empty";
       empty.textContent = "Inga val finns för aktuellt urval.";
       el.appendChild(empty);
     }
 
-    items.forEach(item => {
+    finalItems.forEach(item => {
       const label = document.createElement("label");
       const checkbox = document.createElement("input");
       const span = document.createElement("span");
@@ -2349,30 +2374,31 @@ function fillDynamicSelect(id, items){
       el.appendChild(label);
     });
 
-    const allowed = new Set(items.map(item => item.value));
-    setSelectedValues(id, previous.filter(value => allowed.has(value)));
+    setSelectedValues(id, previous);
     return;
   }
 
-  items.forEach(item => {
+  finalItems.forEach(item => {
     const opt = document.createElement("option");
     opt.value = item.value;
     opt.textContent = item.label || item.value;
     el.appendChild(opt);
   });
 
-  const allowed = new Set(items.map(item => item.value));
-  setSelectedValues(id, previous.filter(value => allowed.has(value)));
+  setSelectedValues(id, previous);
 }
 
-function updateDynamicFilters(){
+function updateDynamicFilters(applyMapView = false){
   if (!allMeetings.length) return;
   const state = getActiveFilterState();
+  const baseMeetings = applyMapView
+    ? allMeetings.filter(meetingMatchesCurrentMapView)
+    : allMeetings;
 
-  const cityMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["city"])));
-  const districtMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["district"])));
-  const dayMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["day"])));
-  const meetingTypeMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
+  const cityMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["city"])));
+  const districtMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["district"])));
+  const dayMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["day"])));
+  const meetingTypeMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
 
   fillDynamicSelect("cityFilter", countValues(cityMeetings, getCities));
   fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
@@ -2390,8 +2416,8 @@ function populateFilters(){
   syncFilterMirror();
 }
 
-function filteredMeetings(){
-  updateDynamicFilters();
+function filteredMeetings(applyMapViewToFilters = false){
+  updateDynamicFilters(applyMapViewToFilters);
   const state = getActiveFilterState();
 
   let list = allMeetings.filter(m => meetingMatchesState(m, state));
@@ -2445,6 +2471,14 @@ function getFilterLabelText(){
   function selectedLabels(id){
     const el = $(id);
     if (!el) return [];
+    if (el.classList && el.classList.contains("checkbox-filter")) {
+      return [...el.querySelectorAll('input[type="checkbox"]:checked')]
+        .map(input => {
+          const label = input.closest("label")?.textContent || input.value;
+          return label.trim().replace(/\s*\(\d+\)$/, "");
+        })
+        .filter(Boolean);
+    }
     if (el.multiple) return [...el.selectedOptions].map(o => o.textContent.trim().replace(/\s*\(\d+\)$/, "")).filter(Boolean);
     return el.value ? [(el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : el.value)] : [];
   }
