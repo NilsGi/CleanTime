@@ -211,6 +211,42 @@ select[multiple]{
   font-size:13px;
 }
 
+.cluster-popup{
+  min-width:260px;
+  max-width:360px;
+}
+.cluster-popup-title{
+  font-weight:800;
+  margin-bottom:6px;
+}
+.cluster-popup-list{
+  max-height:340px;
+  overflow:auto;
+}
+.cluster-popup-group{
+  border-top:1px solid #ddd;
+  padding-top:7px;
+  margin-top:7px;
+}
+.cluster-popup-group:first-child{
+  border-top:0;
+  padding-top:0;
+  margin-top:0;
+}
+.cluster-popup-group-title{
+  font-weight:800;
+}
+
+@media(max-width:900px){
+  .cluster-popup{
+    min-width:240px;
+    max-width:78vw;
+  }
+  .cluster-popup-list{
+    max-height:46vh;
+  }
+}
+
 
 .meeting-time-main{
   margin:4px 0;
@@ -900,6 +936,7 @@ function initMap(){
   if (typeof L.markerClusterGroup === "function") {
     markersLayer = L.markerClusterGroup({
       showCoverageOnHover:false,
+      zoomToBoundsOnClick:false,
       spiderfyOnMaxZoom:true,
       disableClusteringAtZoom:14,
       maxClusterRadius:45,
@@ -914,6 +951,31 @@ function initMap(){
         });
       }
     }).addTo(map);
+
+    markersLayer.on("clusterclick", function(event){
+      if (event.originalEvent) {
+        L.DomEvent.preventDefault(event.originalEvent);
+        L.DomEvent.stopPropagation(event.originalEvent);
+      }
+
+      const childGroups = event.layer.getAllChildMarkers()
+        .map(marker => marker.meetingGroup)
+        .filter(Boolean)
+        .sort(compareGroupsByDayTime);
+
+      if (!childGroups.length) return;
+
+      L.popup({
+        maxWidth: window.innerWidth <= 900 ? 330 : 420,
+        maxHeight: window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.5) : 440,
+        autoPan: true,
+        keepInView: true,
+        closeButton: true
+      })
+        .setLatLng(event.layer.getLatLng())
+        .setContent(clusterPopupHtml(childGroups))
+        .openOn(map);
+    });
   } else {
     markersLayer = L.layerGroup().addTo(map);
   }
@@ -1373,12 +1435,53 @@ function renderMarkers(groups){
     }).bindPopup(groupPopupHtml(g));
 
     marker.meetingCount = g.meetings.length;
+    marker.meetingGroup = g;
 
     marker.addTo(markersLayer);
     bounds.push([g.latitude,g.longitude]);
   });
 
   // Kartan zoomas inte automatiskt här, annars kan listan inte följa användarens aktuella kartvy.
+}
+
+function clusterPopupHtml(groups){
+  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
+  const groupHtml = groups.map(g => {
+    const meetingsHtml = [...g.meetings]
+      .sort(compareMeetingsByDayTime)
+      .map(m => {
+        const addressRows = [m.location, [m.address, m.zip].filter(Boolean).join(", ")]
+          .filter(Boolean)
+          .map(esc);
+        const address = addressRows.join("<br>");
+        const mapLink = m.linkMap ? ' · <a href="'+esc(m.linkMap)+'" target="_blank">Karta</a>' : "";
+
+        return `
+          <div class="meeting-time">
+            ${esc(cleanDay(m.days))} ${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}
+            ${isOnline(m) ? " · Online" : " · Fysiskt"}
+            ${address ? "<br>" + address : ""}
+            ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
+            ${mapLink}
+          </div>
+        `;
+      }).join("");
+
+    return `
+      <div class="cluster-popup-group">
+        <div class="cluster-popup-group-title">${esc(g.title)}</div>
+        <div class="muted">${esc(g.city)} · ${esc(g.district)}</div>
+        ${meetingsHtml}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="cluster-popup">
+      <div class="cluster-popup-title">${totalMeetings} möte${totalMeetings === 1 ? "" : "n"} här</div>
+      <div class="cluster-popup-list">${groupHtml}</div>
+    </div>
+  `;
 }
 
 function groupPopupHtml(g){
@@ -1780,6 +1883,7 @@ function exportFilteredToPdf(){
   const groups = getCurrentFilteredGroupsForExport();
   const sortedMeetings = groups
     .flatMap(g => g.meetings)
+    .filter(m => !isOnline(m))
     .sort(compareMeetingsByDayTime);
   const meetingCount = sortedMeetings.length;
 
@@ -1815,11 +1919,11 @@ function exportFilteredToPdf(){
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Filtrerat urval: " + groups.length + " grupper / " + meetingCount + " möten", margin, y);
+  doc.text("Filtrerat urval: " + groups.length + " grupper / " + meetingCount + " fysiska möten", margin, y);
   y += 8;
 
-  if (!groups.length) {
-    line("Inga möten matchar aktuellt filter.", 11);
+  if (!sortedMeetings.length) {
+    line("Inga fysiska möten matchar aktuellt filter.", 11);
   }
 
   let currentDay = "";
@@ -1987,7 +2091,10 @@ async function exportFolderPdf(){
   }
 
   const groups = getCurrentFilteredGroupsForExport();
-  const sortedMeetings = groups.flatMap(g => g.meetings).sort(compareMeetingsByDayTime);
+  const sortedMeetings = groups
+    .flatMap(g => g.meetings)
+    .filter(m => !isOnline(m))
+    .sort(compareMeetingsByDayTime);
 
   if (sortedMeetings.length > 80) {
     alert("Folderexporten stödjer max 80 möten. Begränsa urvalet och försök igen.");
@@ -2183,7 +2290,7 @@ async function exportFolderPdf(){
   if (!sortedMeetings.length) {
     setBlack();
     doc.setFontSize(9);
-    doc.text("Inga möten matchar aktuellt filter.", x, y);
+    doc.text("Inga fysiska möten matchar aktuellt filter.", x, y);
   }
 
   sortedMeetings.forEach(m => {
