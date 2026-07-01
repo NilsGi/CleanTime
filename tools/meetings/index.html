@@ -614,6 +614,8 @@ header,
     <button onclick="fetchAllMeetings()">Uppdatera möten</button>
     <button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
 
+    <div id="statusStats" class="muted"></div>
+
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
     <label>Sök grupp/ort</label>
@@ -680,7 +682,12 @@ window.addEventListener("error", e => {
 
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function setStatus(html){$("status").innerHTML=html}
+function setStatus(html){
+  const status = $("status");
+  const statusStats = $("statusStats");
+  if (status) status.innerHTML = html;
+  if (statusStats) statusStats.innerHTML = html;
+}
 
 function selectedValues(id){
   const el = $(id);
@@ -791,6 +798,7 @@ async function fetchAllMeetings(){
   $("list").innerHTML = "";
   if ($("listMobile")) $("listMobile").innerHTML = "";
   $("summary").textContent = "";
+  if ($("stats")) $("stats").innerHTML = '<p class="muted">Hämtar möten...</p>';
 
   setStatus("Hämtar möten...");
 
@@ -806,7 +814,9 @@ async function fetchAllMeetings(){
 
     populateFiltersFromSmartProxy(json);
     renderAll(false);
-    fitVisible();
+    if ($("meetingsPanel")?.classList.contains("active")) {
+      fitVisible();
+    }
 
     const meta = json.meta || {};
     setStatus(
