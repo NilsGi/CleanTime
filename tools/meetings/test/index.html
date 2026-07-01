@@ -1819,8 +1819,6 @@ async function exportFolderPdf(){
   // Sida 1: utsida. Vänster = info, mitten = baksida, höger = framsida.
   doc.setFillColor(255,255,255);
   doc.rect(0,0,pageWidth,pageHeight,"F");
-  doc.setFillColor(...lightBlue);
-  doc.rect(0,0,panelW,pageHeight,"F");
   panelBorder();
 
   // Vänster panel
@@ -1944,7 +1942,7 @@ async function exportFolderPdf(){
   doc.addPage("a4", "landscape");
   doc.setFillColor(255,255,255);
   doc.rect(0,0,pageWidth,pageHeight,"F");
-  const cols = sortedMeetings.length <= 36 ? 2 : 3;
+  const cols = 3;
   const gap = 5;
   const colW = (pageWidth - margin*2 - gap*(cols-1)) / cols;
   const topY = 14;
