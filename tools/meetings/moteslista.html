@@ -1003,11 +1003,8 @@ function initMap(){
       disableClusteringAtZoom:14,
       maxClusterRadius:45,
       iconCreateFunction: function(cluster){
-        const totalMeetings = uniquePhysicalMeetingCountForGroups(
-          cluster.getAllChildMarkers()
-            .map(marker => marker.meetingGroup)
-            .filter(Boolean)
-        );
+        const totalMeetings = cluster.getAllChildMarkers()
+          .reduce((sum, m) => sum + (m.meetingCount || 1), 0);
 
         return L.divIcon({
           html: '<div><span>' + totalMeetings + '</span></div>',
@@ -1176,13 +1173,9 @@ function normalizeText(value){
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 function meetingPrimaryKey(m){
-  const cityText = getCities(m).join(", ");
-
-  return [
-    displayGroupName(m.title),
-    cityText,
-    m.meetingDistrict?.district
-  ].map(normalizeText).join("|");
+  if (m.documentId) return "documentId:" + String(m.documentId);
+  if (m.id !== undefined && m.id !== null) return "id:" + String(m.id);
+  return [m.title,m.days,m.startTime,m.endTime,m.address,m.zip].map(normalizeText).join("|");
 }
 function uniqueMeetingsById(meetings){
   const seen = new Set();
@@ -1498,7 +1491,7 @@ function renderAll(syncFromMap = false){
 
   const meetingList = filteredMeetings(syncFromMap);
   const groupList = groupMeetingsForDisplay(meetingList);
-  const mapGroups = groupMeetingsForMap(meetingList);
+  const mapGroups = groupList.filter(groupMatchesMap);
   const searchActive = hasActiveTextSearch();
 
   // Om användaren ändrar filter/sökning ska kartan följa resultatet.
@@ -1519,8 +1512,7 @@ function renderAll(syncFromMap = false){
     ? groupList.filter(isGroupInMapView)
     : groupList;
 
-  const visibleMeetingCount = uniqueMeetingCountForGroups(visibleGroupList);
-  const mapMeetingCount = uniquePhysicalMeetingCountForGroups(mapGroups);
+  const visibleMeetingCount = visibleGroupList.reduce((sum, g) => sum + g.meetings.length, 0);
 
   const distanceText = userPosition && $("distanceFilter").value
     ? "<br><b>Avstånd:</b> visar grupper inom " + $("distanceFilter").value + " km från din position."
@@ -1529,8 +1521,8 @@ function renderAll(syncFromMap = false){
       : "";
 
   $("summary").innerHTML =
-    "Visar " + visibleMeetingCount + " summeringar i listan baserat på gruppnamn, city och distrikt.<br>" +
-    mapGroups.length + " kartpunkter / " + mapMeetingCount + " summeringar visas på kartan efter filter." +
+    "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " möten i listan.<br>" +
+    mapGroups.length + " grupper finns på kartan efter filter." +
     distanceText;
 
   renderMarkers(mapGroups);
@@ -1583,17 +1575,16 @@ function renderMarkers(groups){
   const bounds = [];
 
   groups.forEach(g => {
-    const markerMeetingCount = uniqueMeetingCount(g.meetings.filter(m => !isOnline(m) && hasCoords(m)));
     const marker = L.marker([g.latitude, g.longitude], {
       icon: L.divIcon({
         className: 'meeting-count-marker',
-        html: '<div>' + markerMeetingCount + '</div>',
+        html: '<div>' + g.meetings.length + '</div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
     }).bindPopup(groupPopupHtml(g));
 
-    marker.meetingCount = markerMeetingCount;
+    marker.meetingCount = g.meetings.length;
     marker.meetingGroup = g;
 
     marker.addTo(markersLayer);
@@ -1604,7 +1595,7 @@ function renderMarkers(groups){
 }
 
 function clusterPopupHtml(groups){
-  const totalMeetings = uniquePhysicalMeetingCountForGroups(groups);
+  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
   const groupHtml = groups.map(g => {
     const meetingsHtml = [...g.meetings]
       .sort(compareMeetingsByDayTime)
@@ -1668,7 +1659,7 @@ function showMobileClusterSheet(groups){
     if (closeButton) closeButton.addEventListener("click", closeMobileClusterSheet);
   }
 
-  const totalMeetings = uniquePhysicalMeetingCountForGroups(groups);
+  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
   const title = backdrop.querySelector("#mapClusterSheetTitle");
   const body = backdrop.querySelector(".map-cluster-sheet-body");
 
@@ -1809,99 +1800,49 @@ function buildStats(meetings){
   const districtSummary = {};
   const groupSummary = {};
   const uniqueGroupsAll = new Set();
-  const selectedCities = selectedValues("cityFilter");
 
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
-    const cities = getCities(m);
-    const cityList = cities.length ? [cities.join(", ")] : ["Okänd ort"];
+    const city = getCity(m) || "Okänd ort";
+    const cityKey = normalizeText(city);
+    const groupKey = normalizeGroupName(m.title);
+    const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
 
-    if (selectedCities.length && !cities.some(city => selectedCities.includes(city))) return;
+    if (!districtSummary[district]) {
+      districtSummary[district] = {district, meetings:0, physical:0, online:0, groups:new Set()};
+    }
 
-    cityList.forEach(city => {
-      const cityKey = normalizeText(city);
-      const groupKey = normalizeGroupName(m.title);
-      const combinedKey = district + "|||" + cityKey + "|||" + groupKey;
-      const meetingKey = meetingUniqueKey(m);
+    districtSummary[district].meetings++;
+    if (isOnline(m)) districtSummary[district].online++; else districtSummary[district].physical++;
+    districtSummary[district].groups.add(cityKey + "|||" + groupKey);
+    uniqueGroupsAll.add(combinedKey);
 
-      if (!districtSummary[district]) {
-        districtSummary[district] = {
-          district,
-          meetingKeys:new Set(),
-          physicalKeys:new Set(),
-          onlineKeys:new Set(),
-          groups:new Set()
-        };
-      }
+    if (!groupSummary[combinedKey]) {
+      groupSummary[combinedKey] = {district, city, group:displayGroupName(m.title), meetings:0, physical:0, online:0, items:[]};
+    }
 
-      districtSummary[district].meetingKeys.add(meetingKey);
-      if (isOnline(m)) districtSummary[district].onlineKeys.add(meetingKey);
-      else districtSummary[district].physicalKeys.add(meetingKey);
-      districtSummary[district].groups.add(cityKey + "|||" + groupKey);
-      uniqueGroupsAll.add(combinedKey);
-
-      if (!groupSummary[combinedKey]) {
-        groupSummary[combinedKey] = {
-          district,
-          city,
-          group:displayGroupName(m.title),
-          meetingKeys:new Set(),
-          physicalKeys:new Set(),
-          onlineKeys:new Set(),
-          items:[]
-        };
-      }
-
-      groupSummary[combinedKey].meetingKeys.add(meetingKey);
-      if (!groupSummary[combinedKey].items.some(item => meetingUniqueKey(item) === meetingKey)) {
-        groupSummary[combinedKey].items.push(m);
-      }
-      if (isOnline(m)) groupSummary[combinedKey].onlineKeys.add(meetingKey);
-      else groupSummary[combinedKey].physicalKeys.add(meetingKey);
-    });
+    groupSummary[combinedKey].meetings++;
+    groupSummary[combinedKey].items.push(m);
+    if (isOnline(m)) groupSummary[combinedKey].online++; else groupSummary[combinedKey].physical++;
   });
 
   const districts = Object.values(districtSummary).map(d => ({
-    district:d.district,
-    meetings:d.meetingKeys.size,
-    groups:d.groups.size,
-    physical:d.physicalKeys.size,
-    online:d.onlineKeys.size
+    district:d.district, meetings:d.meetings, groups:d.groups.size, physical:d.physical, online:d.online
   })).sort((a,b)=>b.meetings-a.meetings || a.district.localeCompare(b.district,"sv"));
 
-  const groups = Object.values(groupSummary).map(g => ({
-    district:g.district,
-    city:g.city,
-    group:g.group,
-    meetings:g.meetingKeys.size,
-    physical:g.physicalKeys.size,
-    online:g.onlineKeys.size,
-    items:g.items
-  })).sort((a,b)=>
+  const groups = Object.values(groupSummary).sort((a,b)=>
     a.district.localeCompare(b.district,"sv") ||
     a.city.localeCompare(b.city,"sv") ||
     b.meetings-a.meetings ||
     a.group.localeCompare(b.group,"sv")
   );
 
-  const totalSummaryKeys = new Set(groups.map(g => [g.district, normalizeText(g.city), normalizeGroupName(g.group)].join("|||")));
-  const physicalSummaryKeys = new Set(
-    groups
-      .filter(g => g.physical > 0)
-      .map(g => [g.district, normalizeText(g.city), normalizeGroupName(g.group)].join("|||"))
-  );
-  const onlineSummaryKeys = new Set(
-    groups
-      .filter(g => g.online > 0)
-      .map(g => [g.district, normalizeText(g.city), normalizeGroupName(g.group)].join("|||"))
-  );
-
   return {
-    totalMeetings: totalSummaryKeys.size,
-    totalGroups: totalSummaryKeys.size,
+    totalMeetings: meetings.length,
+    totalGroups: uniqueGroupsAll.size,
     totalDistricts: districts.length,
-    physical: physicalSummaryKeys.size,
-    online: onlineSummaryKeys.size,
+    physical: meetings.filter(m=>!isOnline(m)).length,
+    online: meetings.filter(isOnline).length,
     districts, groups
   };
 }
