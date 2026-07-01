@@ -236,6 +236,27 @@ html,body{
   }
 }
 
+/* Fixar ljusa skarvar mellan Leaflets kartplattor i Chrome/Edge */
+.leaflet-container{
+  background:#dbe7ef;
+}
+
+.leaflet-container img.leaflet-tile{
+  width:256.5px!important;
+  height:256.5px!important;
+  max-width:none!important;
+  border:0!important;
+  outline:1px solid transparent;
+  box-shadow:0 0 0 1px transparent;
+  margin:-0.25px;
+  backface-visibility:hidden;
+  transform:translateZ(0);
+}
+
+.leaflet-tile-container{
+  will-change:transform;
+}
+
 </style>
 </head>
 
@@ -301,11 +322,20 @@ function initMap(){
     return false;
   }
 
-  map = L.map("map").setView([62,15],5);
+  map = L.map("map", {
+    zoomSnap:1,
+    zoomDelta:1,
+    zoomAnimation:false,
+    fadeAnimation:false,
+    markerZoomAnimation:false
+  }).setView([62,15],5);
   map.attributionControl.setPrefix(false);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
     maxZoom:19,
+    keepBuffer:4,
+    updateWhenZooming:false,
+    updateWhenIdle:true,
     attribution:"© OpenStreetMap"
   }).addTo(map);
 
