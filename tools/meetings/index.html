@@ -385,7 +385,12 @@ header,
 #statsPanel.active{
   height:calc(100vh - var(--top-height, 76px));
   min-height:0!important;
+  grid-template-columns:430px minmax(0,1fr)!important;
   overflow:hidden;
+}
+
+#statsPanel > aside{
+  width:auto;
 }
 
 #statsPanel > aside,
@@ -394,6 +399,10 @@ header,
   max-height:none!important;
   overflow-y:auto;
   box-sizing:border-box;
+}
+
+#statsFull{
+  min-width:0;
 }
 
 /* Mobil: filter -> karta -> lista */
