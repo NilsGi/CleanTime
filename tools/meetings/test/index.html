@@ -246,16 +246,14 @@ select[multiple]{
 
 
 /* Dolda äldre extra sökfält om de finns kvar i någon cachead mall */
-#groupFilter,#cityFilter,#groupFilterStats,#cityFilterStats{
+#groupFilter,#groupFilterStats{
   display:none;
 }
 
 
 /* Dölj gamla rubriker på statistikfliken */
 #statsTab label[for="groupFilterStats"],
-#statsTab label[for="cityFilterStats"],
-#groupFilterStats,
-#cityFilterStats{
+#groupFilterStats{
   display:none !important;
 }
 
@@ -535,9 +533,7 @@ header,
     </div>
 
     <div class="header-actions">
-      <button id="meetingsTabBtn" class="tab-button header-tab active" onclick="showTab('meetings')">Möten</button>
-      <button id="statsTabBtn" class="tab-button header-tab" onclick="showTab('stats')">Statistik</button>
-      <a class="back-link" href="/tools">Tillbaka</a>
+      <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
     </div>
   </div>
 </header>
@@ -556,20 +552,27 @@ header,
 
 <div class="filter-grid">
   <div>
-    <label>Distrikt</label>
-    <select id="districtFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Håll Ctrl/Cmd för flera val.</div>
+    <label>Ort</label>
+    <select id="cityFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
   </div>
   <div>
-    <label>Dag</label>
-    <select id="dayFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Välj en eller flera dagar.</div>
+    <label>Distrikt</label>
+    <select id="districtFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
   </div>
 </div>
 
 <div class="filter-grid">
   <div>
-    <label>Mötestyp</label>
-    <select id="meetingTypeFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Välj en eller flera mötestyper.</div>
+    <label>Veckodag</label>
+    <select id="dayFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
   </div>
+  <div>
+    <label>Mötestyp</label>
+    <select id="meetingTypeFilter" multiple="" onchange="renderAll()"></select><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+  </div>
+</div>
+
+<div class="filter-grid">
   <div>
     <label>Visning</label>
     <select id="typeFilter" onchange="renderAll()">
@@ -623,33 +626,30 @@ header,
     <label>Sök grupp/ort</label>
     <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="syncFilter('search', this.value)">
 
-    <div class="filter-grid">
-      <div>
-        
-        <input id="groupFilterStats" placeholder="T.ex. Huddinge NA" oninput="syncFilter('groupFilter', this.value)">
-      </div>
-      <div>
-        
-        <input id="cityFilterStats" placeholder="T.ex. Stockholm" oninput="syncFilter('cityFilter', this.value)">
-      </div>
-    </div>
 
     <div class="filter-grid">
+      <div>
+        <label>Ort</label>
+        <select id="cityFilterStats" multiple="" onchange="syncMultiFilter('cityFilter', this)"></select><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
+      </div>
       <div>
         <label>Distrikt</label>
-        <select id="districtFilterStats" multiple="" onchange="syncMultiFilter('districtFilter', this)"></select><div class="filter-hint">Håll Ctrl/Cmd för flera val.</div>
-      </div>
-      <div>
-        <label>Dag</label>
-        <select id="dayFilterStats" multiple="" onchange="syncMultiFilter('dayFilter', this)"></select><div class="filter-hint">Välj en eller flera dagar.</div>
+        <select id="districtFilterStats" multiple="" onchange="syncMultiFilter('districtFilter', this)"></select><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
       </div>
     </div>
 
     <div class="filter-grid">
       <div>
-        <label>Mötestyp</label>
-        <select id="meetingTypeFilterStats" multiple="" onchange="syncMultiFilter('meetingTypeFilter', this)"></select><div class="filter-hint">Välj en eller flera mötestyper.</div>
+        <label>Veckodag</label>
+        <select id="dayFilterStats" multiple="" onchange="syncMultiFilter('dayFilter', this)"></select><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
       </div>
+      <div>
+        <label>Mötestyp</label>
+        <select id="meetingTypeFilterStats" multiple="" onchange="syncMultiFilter('meetingTypeFilter', this)"></select><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+      </div>
+    </div>
+
+    <div class="filter-grid">
       <div>
         <label>Visning</label>
         <select id="typeFilterStats" onchange="syncFilter('typeFilter', this.value)">
@@ -2091,13 +2091,178 @@ async function exportFolderPdf(){
 }
 
 
+
+/* Dynamiska beroende filter: Ort, Distrikt, Veckodag och Mötestyp */
+function getActiveFilterState(){
+  return {
+    q: ($("search")?.value || "").trim().toLowerCase(),
+    cities: selectedValues("cityFilter"),
+    districts: selectedValues("districtFilter"),
+    days: selectedValues("dayFilter"),
+    meetingTypes: selectedValues("meetingTypeFilter"),
+    type: $("typeFilter")?.value || "",
+    maxDistance: Number($("distanceFilter")?.value || 0)
+  };
+}
+
+function meetingMatchesState(m, state, ignore = new Set()){
+  if (!ignore.has("search") && state.q && !meetingText(m).includes(state.q)) return false;
+  if (!ignore.has("city") && state.cities.length && !state.cities.includes(getCity(m))) return false;
+  if (!ignore.has("district") && state.districts.length && !state.districts.includes(m.meetingDistrict?.district)) return false;
+  if (!ignore.has("day") && state.days.length && !state.days.includes(m.days)) return false;
+  if (!ignore.has("meetingType") && state.meetingTypes.length && !state.meetingTypes.some(t => getTypes(m).includes(t))) return false;
+  if (!ignore.has("type")) {
+    if (state.type === "online" && !isOnline(m)) return false;
+    if (state.type === "physical" && isOnline(m)) return false;
+  }
+  if (!ignore.has("distance") && state.maxDistance && userPosition) {
+    const d = distanceToMeeting(m);
+    if (d === null || d > state.maxDistance) return false;
+  }
+  return true;
+}
+
+function countValues(meetings, valueGetter){
+  const counts = new Map();
+  meetings.forEach(m => {
+    const values = valueGetter(m);
+    (Array.isArray(values) ? values : [values]).forEach(value => {
+      if (!value) return;
+      counts.set(value, (counts.get(value) || 0) + 1);
+    });
+  });
+  return [...counts.entries()]
+    .sort((a,b) => String(a[0]).localeCompare(String(b[0]), "sv"))
+    .map(([value,count]) => ({ value, label: value + " (" + count + ")" }));
+}
+
+function countDays(meetings){
+  const counts = new Map();
+  meetings.forEach(m => {
+    if (!m.days) return;
+    counts.set(m.days, (counts.get(m.days) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .sort((a,b) => dayOrder(a[0]) - dayOrder(b[0]))
+    .map(([value,count]) => ({ value, label: cleanDay(value) + " (" + count + ")" }));
+}
+
+function fillDynamicSelect(id, items){
+  const el = $(id);
+  if (!el) return;
+
+  const previous = selectedValues(id);
+  el.innerHTML = "";
+
+  items.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = item.value;
+    opt.textContent = item.label || item.value;
+    el.appendChild(opt);
+  });
+
+  const allowed = new Set(items.map(item => item.value));
+  setSelectedValues(id, previous.filter(value => allowed.has(value)));
+}
+
+function updateDynamicFilters(){
+  if (!allMeetings.length) return;
+  const state = getActiveFilterState();
+
+  const cityMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["city"])));
+  const districtMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["district"])));
+  const dayMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["day"])));
+  const meetingTypeMeetings = allMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
+
+  fillDynamicSelect("cityFilter", countValues(cityMeetings, getCity));
+  fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
+  fillDynamicSelect("dayFilter", countDays(dayMeetings));
+  fillDynamicSelect("meetingTypeFilter", countValues(meetingTypeMeetings, getTypes));
+}
+
+function populateFiltersFromSmartProxy(json){
+  updateDynamicFilters();
+  syncFilterMirror();
+}
+
+function populateFilters(){
+  updateDynamicFilters();
+  syncFilterMirror();
+}
+
+function filteredMeetings(){
+  updateDynamicFilters();
+  const state = getActiveFilterState();
+
+  let list = allMeetings.filter(m => meetingMatchesState(m, state));
+
+  if (userPosition) {
+    list = list.map(m => ({...m, _distance: distanceToMeeting(m)}))
+      .sort((a,b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
+  } else {
+    list.sort(compareMeetingsByDayTime);
+  }
+
+  return list;
+}
+
+function syncFilterMirror(){
+  const pairs = [
+    ["search","searchStats"],
+    ["cityFilter","cityFilterStats"],
+    ["districtFilter","districtFilterStats"],
+    ["dayFilter","dayFilterStats"],
+    ["meetingTypeFilter","meetingTypeFilterStats"],
+    ["typeFilter","typeFilterStats"]
+  ];
+
+  pairs.forEach(([mainId, statsId]) => {
+    const main = $(mainId);
+    const stats = $(statsId);
+    if (!main || !stats) return;
+
+    if (main.multiple || stats.multiple) {
+      stats.innerHTML = main.innerHTML;
+      setSelectedValues(statsId, selectedValues(mainId));
+    } else {
+      stats.value = main.value;
+    }
+  });
+}
+
+function getFilterLabelText(){
+  function selectedLabels(id){
+    const el = $(id);
+    if (!el) return [];
+    if (el.multiple) return [...el.selectedOptions].map(o => o.textContent.trim().replace(/\s*\(\d+\)$/, "")).filter(Boolean);
+    return el.value ? [(el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : el.value)] : [];
+  }
+
+  const rows = [];
+  const cities = selectedLabels("cityFilter");
+  const districts = selectedLabels("districtFilter");
+  const days = selectedLabels("dayFilter").map(cleanDay);
+  const meetingTypes = selectedLabels("meetingTypeFilter");
+  const view = selectedLabels("typeFilter");
+  const search = $("search")?.value?.trim();
+  const distance = $("distanceFilter")?.value;
+  rows.push(["Ort", cities.length ? cities.join(", ") : "Alla"]);
+  rows.push(["Distrikt", districts.length ? districts.join(", ") : "Alla"]);
+  rows.push(["Dagar", days.length ? days.join(", ") : "Alla"]);
+  rows.push(["Mötestyp", meetingTypes.length ? meetingTypes.join(", ") : "Alla"]);
+  rows.push(["Visning", view.length ? view.join(", ") : "Alla möten i listan"]);
+  if (search) rows.push(["Sökning", search]);
+  if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
+  return rows;
+}
+
 function clearAllFilters(){
   ["search"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
   });
 
-  ["districtFilter","dayFilter","meetingTypeFilter"].forEach(id => {
+  ["cityFilter","districtFilter","dayFilter","meetingTypeFilter"].forEach(id => {
     setSelectedValues(id, []);
   });
 
