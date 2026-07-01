@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f5f5f5;color:#111}
@@ -545,6 +546,7 @@ header,
 <aside>
 <button onclick="fetchAllMeetings()">Uppdatera möten</button>
 <button class="secondary" onclick="exportFilteredToPdf()">Exportera PDF</button>
+<button class="secondary" onclick="exportFolderPdf()">Vikbar folder PDF</button>
 <button class="secondary" onclick="clearAllFilters()">Rensa alla filter</button>
 
 <div id="status" class="muted"><span class="bad">Fel:</span> Load failed</div>
@@ -1688,6 +1690,388 @@ function exportFilteredToPdf(){
   const date = new Date().toISOString().slice(0,10);
   doc.save("na-sverige-moten-" + date + ".pdf");
   setStatus('<span class="ok">PDF skapad.</span>');
+}
+
+
+function getFilterLabelText(){
+  function selectedLabels(id){
+    const el = $(id);
+    if (!el) return [];
+    if (el.multiple) return [...el.selectedOptions].map(o => o.textContent.trim()).filter(Boolean);
+    return el.value ? [(el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : el.value)] : [];
+  }
+
+  const rows = [];
+  const districts = selectedLabels("districtFilter");
+  const days = selectedLabels("dayFilter").map(cleanDay);
+  const meetingTypes = selectedLabels("meetingTypeFilter");
+  const view = selectedLabels("typeFilter");
+  const search = $("search")?.value?.trim();
+  const distance = $("distanceFilter")?.value;
+  rows.push(["Distrikt", districts.length ? districts.join(", ") : "Alla"]);
+  rows.push(["Dagar", days.length ? days.join(", ") : "Alla"]);
+  rows.push(["Mötestyp", meetingTypes.length ? meetingTypes.join(", ") : "Alla"]);
+  rows.push(["Visning", view.length ? view.join(", ") : "Alla möten i listan"]);
+  if (search) rows.push(["Sökning", search]);
+  if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
+  return rows;
+}
+
+function loadImageAsDataUrl(src){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve({ dataUrl: canvas.toDataURL("image/png"), width: canvas.width, height: canvas.height });
+      } catch (e) {
+        console.warn("Kunde inte läsa bild till PDF", e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function makeQrDataUrl(text){
+  if (window.QRCode && typeof window.QRCode.toDataURL === "function") {
+    return await window.QRCode.toDataURL(text, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 512,
+      color: { dark: "#0a1981", light: "#ffffff" }
+    });
+  }
+
+  // Enkel fallback via QR-server om biblioteket inte hunnit ladda.
+  return "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(text);
+}
+
+function drawWrappedText(doc, text, x, y, maxWidth, lineHeight, options = {}){
+  const rows = doc.splitTextToSize(String(text || ""), maxWidth);
+  rows.forEach(row => {
+    doc.text(row, x, y, options);
+    y += lineHeight;
+  });
+  return y;
+}
+
+function meetingExportAddress(m){
+  if (isOnline(m)) {
+    const url = m.onlineMeeting?.url || "Online";
+    return url;
+  }
+  return [m.location, m.address].filter(Boolean).join(", ");
+}
+
+function formatMeetingTimeForPdf(m){
+  const start = (m.startTime || "").slice(0,5);
+  const end = (m.endTime || "").slice(0,5);
+  return start && end ? start + "–" + end : (start || end || "");
+}
+
+async function exportFolderPdf(){
+  if (!allMeetings.length) {
+    setStatus('<span class="bad">Inga möten hämtade ännu.</span>');
+    return;
+  }
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    setStatus('<span class="bad">PDF-biblioteket kunde inte laddas.</span>');
+    return;
+  }
+
+  const groups = getCurrentFilteredGroupsForExport();
+  const sortedMeetings = groups.flatMap(g => g.meetings).sort(compareMeetingsByDayTime);
+
+  if (sortedMeetings.length > 80) {
+    alert("Folderexporten stödjer max 80 möten. Begränsa urvalet och försök igen.");
+    return;
+  }
+
+  const doc = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const blue = [10, 25, 129];
+  const lightBlue = [241, 245, 255];
+  const panelW = pageWidth / 3;
+  const margin = 8;
+  const exportDate = new Date().toISOString().slice(0,10);
+  const siteUrl = "https://www.nasverige.org";
+  const qrDataUrl = await makeQrDataUrl(siteUrl);
+  const logo = await loadImageAsDataUrl("/assets/NA_logo_blue.png");
+
+  function setBlue(){ doc.setTextColor(...blue); }
+  function setBlack(){ doc.setTextColor(20,20,20); }
+  function panelBorder(){
+    doc.setDrawColor(185, 196, 220);
+    doc.setLineWidth(0.25);
+    doc.line(panelW, 0, panelW, pageHeight);
+    doc.line(panelW*2, 0, panelW*2, pageHeight);
+  }
+
+  // Sida 1: utsida. Vänster = info, mitten = baksida, höger = framsida.
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,pageWidth,pageHeight,"F");
+  panelBorder();
+
+  // Vänster panel
+  let x = margin;
+  let y = 16;
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Vad är Anonyma Narkomaners program?", x, y);
+  y += 8;
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.2);
+  const programText = "Anonyma Narkomaner är ett program för tillfrisknande från beroendesjukdomen. Det här programmet är för vilken beroende som helst som vill sluta använda droger.\n\nI Anonyma Narkomaner tror vi att vi kan hjälpa varandra att förbli drogfria genom att använda enkla riktlinjer. NA:s tolv steg och tolv traditioner är våra riktlinjer: de innehåller de principer som vi baserar vårt tillfrisknande på.\n\nEftersom vi tror att beroende bäst kan hjälpa andra beroende, har Anonyma Narkomaner inga professionella behandlare eller terapeuter. Medlemskap är kostnadsfritt. NA-möten – där beroende delar med sig av sin erfarenhet, styrka och hopp – hålls vanligen regelbundet. Detta är ett av våra sätt att stödja varandra i tillfrisknandet.";
+  y = drawWrappedText(doc, programText, x, y, panelW - margin*2, 4.5);
+  y += 2;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.text("(Från IP #17 - För dem som är på behandling)", x, y);
+  y += 8;
+  doc.setDrawColor(...blue);
+  doc.setLineWidth(0.4);
+  doc.line(x, y, panelW - margin, y);
+  y += 5;
+  try { doc.addImage(qrDataUrl, "PNG", x, y, 26, 26); } catch(e) {}
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  setBlack();
+  doc.text("För den senaste mötesinformationen,", x + 34, y + 7);
+  doc.text("skanna QR-koden eller besök:", x + 34, y + 12);
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("www.nasverige.org", x + 34, y + 20);
+
+  // Mitten panel
+  x = panelW + margin;
+  y = 22;
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Här är telefonnummer till dina nya vänner:", x, y);
+  y += 12;
+  doc.setFontSize(10);
+  doc.setDrawColor(150,150,150);
+  doc.setLineWidth(0.25);
+  for (let i=1; i<=15; i++) {
+    doc.line(x, y + 0.5, panelW*2 - margin, y + 0.5);
+    y += 10;
+  }
+
+  // Höger panel = framsida
+  x = panelW*2 + margin;
+  y = 14;
+  if (logo) {
+    const logoW = 38;
+    const logoH = logoW * logo.height / logo.width;
+    doc.addImage(logo.dataUrl, "PNG", x + (panelW - margin*2 - logoW)/2, y, logoW, logoH);
+    y += logoH + 10;
+  } else {
+    setBlue();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(34);
+    doc.text("NA", x + 30, y + 20);
+    y += 38;
+  }
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(25);
+  doc.text("MÖTESLISTA", x + (panelW - margin*2)/2, y, { align:"center" });
+  y += 10;
+  y += 4;
+  doc.setFontSize(13);
+  doc.text("Anonyma Narkomaner", x + (panelW - margin*2)/2, y, { align:"center" });
+  y += 4;
+  doc.setDrawColor(...blue);
+  doc.line(x + 12, y, x + panelW - margin*2 - 12, y);
+  y += 11;
+  doc.setFontSize(12);
+  doc.text("Hjälptelefon", x + (panelW - margin*2)/2, y, { align:"center" });
+  y += 9;
+  doc.setFontSize(20);
+  doc.text("0771-13 80 00", x + (panelW - margin*2)/2, y, { align:"center" });
+  y += 12;
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Exportdatum: " + exportDate, x + 18, y);
+  y += 10;
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("VALDA FILTER", x + 18, y);
+  y += 5;
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.2);
+  getFilterLabelText().forEach(([label, value]) => {
+    const labelText = label + ": ";
+    doc.setFont("helvetica", "bold");
+    doc.text(labelText, x + 18, y);
+    doc.setFont("helvetica", "normal");
+    const rows = doc.splitTextToSize(value, panelW - margin*2 - 40);
+    rows.forEach((row, idx) => {
+      doc.text(row, x + 18 + (idx === 0 ? doc.getTextWidth(labelText) : 0), y);
+      if (idx < rows.length - 1) y += 4;
+    });
+    y += 4.6;
+  });
+  y += 2;
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("www.nasverige.org", x + 18, y);
+  setBlack();
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + 18, pageHeight - 12);
+
+  // Sida 2: insida. A4 stående med 3 kolumner för att få plats med upp till 80 möten.
+  // Sidan skrivs "åt andra hållet" jämfört med utsidan.
+  doc.addPage("a4", "portrait");
+
+  const innerPageWidth = doc.internal.pageSize.getWidth();
+  const innerPageHeight = doc.internal.pageSize.getHeight();
+
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
+
+  const cols = 3;
+  const gap = 3.5;
+  const innerMargin = 6;
+  const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
+  const topY = 13;
+  const bottomY = innerPageHeight - 12;
+  let col = 0;
+  x = innerMargin;
+  y = topY;
+  currentDay = "";
+
+  function nextColumn(){
+    col++;
+    if (col >= cols) return false;
+    x = innerMargin + col * (colW + gap);
+    y = topY;
+    currentDay = "";
+    return true;
+  }
+
+  function addColumnGuides(){
+    doc.setDrawColor(190, 205, 235);
+    doc.setLineWidth(0.25);
+    for (let i=1; i<cols; i++) {
+      const lx = innerMargin + i*colW + (i-0.5)*gap;
+      doc.line(lx, topY-4, lx, bottomY+2);
+    }
+  }
+
+  addColumnGuides();
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("MÖTESLISTA", innerMargin, 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.2);
+  doc.text("Genererad från www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
+
+  if (!sortedMeetings.length) {
+    setBlack();
+    doc.setFontSize(9);
+    doc.text("Inga möten matchar aktuellt filter.", x, y);
+  }
+
+  sortedMeetings.forEach(m => {
+    const day = cleanDay(m.days).toUpperCase();
+    const address = meetingExportAddress(m);
+    const time = formatMeetingTimeForPdf(m);
+    const title = String(m.title || "Okänt möte");
+    const types = getTypes(m).filter(Boolean);
+    const typeText = types
+      .filter(t => t !== "Virtuellt möte")
+      .slice(0,2)
+      .join(", ");
+    const typeShort = isOnline(m) ? "Online" : typeText;
+
+    let titleRows = doc.splitTextToSize(title, colW - 17);
+    titleRows = titleRows.slice(0,2);
+
+    let rowsForAddress = address ? doc.splitTextToSize(address, colW - 17) : [];
+    rowsForAddress = rowsForAddress.slice(0,2);
+
+    const needed =
+      (day !== currentDay ? 5.8 : 0) +
+      3.1 +
+      (titleRows.length - 1) * 2.7 +
+      rowsForAddress.length * 2.55 +
+      1.5;
+
+    if (y + needed > bottomY) {
+      if (!nextColumn()) return;
+    }
+
+    if (day !== currentDay) {
+      currentDay = day;
+      setBlue();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.2);
+      doc.text(day, x, y);
+      y += 4.6;
+    }
+
+    setBlack();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(5.9);
+    doc.text(time, x, y);
+    doc.text(titleRows[0] || "", x + 17, y);
+    y += 2.7;
+
+    for (let i=1; i<titleRows.length; i++) {
+      doc.text(titleRows[i], x + 17, y);
+      y += 2.7;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.4);
+    rowsForAddress.forEach(row => {
+      doc.text(row, x + 17, y);
+      y += 2.55;
+    });
+
+    if (typeShort) {
+      doc.setFontSize(5.2);
+      doc.setTextColor(90,90,90);
+      doc.text(typeShort, x + 17, y);
+      setBlack();
+      doc.setFontSize(5.4);
+      y += 2.4;
+    }
+
+    y += 1.5;
+  });
+
+  doc.setDrawColor(...blue);
+  doc.setLineWidth(0.3);
+  doc.line(innerMargin, innerPageHeight - 9, innerPageWidth - innerMargin, innerPageHeight - 9);
+  setBlue();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
+  doc.text(String(sortedMeetings.length) + " möten i valt urval", innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
+
+  doc.save("na-sverige-folder-" + exportDate + ".pdf");
+  setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
 }
 
 
