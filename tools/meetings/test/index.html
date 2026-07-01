@@ -1853,12 +1853,13 @@ function exportFilteredToPdf(){
     }
 
     const locationText = String(m.location || "").trim();
-    const addressText = String(m.address || "").trim();
-    const zipText = String(m.zip || "").trim();
+    const addressText = [m.address, m.zip]
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+      .join(", ");
     const meta = [getCity(m), m.meetingDistrict?.district].filter(Boolean).join(" · ");
     if (locationText) line(locationText, 9);
     if (addressText) line(addressText, 9);
-    if (zipText) line(zipText, 9);
     if (m.station) line("Närmaste hållplats: " + m.station, 9);
     if (meta) line(meta, 9);
     if (m.information) {
@@ -1952,9 +1953,12 @@ function meetingExportAddress(m){
     const url = m.onlineMeeting?.url || "Online";
     return [url];
   }
-  return [m.location, m.address, m.zip]
+  const locationText = String(m.location || "").trim();
+  const addressText = [m.address, m.zip]
     .map(value => String(value || "").trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .join(", ");
+  return [locationText, addressText].filter(Boolean);
 }
 
 function formatMeetingTimeForPdf(m){
@@ -2198,10 +2202,9 @@ async function exportFolderPdf(){
     titleRows = titleRows.slice(0,2);
 
     let rowsForAddress = [];
-    addressParts.forEach((part, index) => {
+    addressParts.forEach(part => {
       const wrappedRows = doc.splitTextToSize(part, colW - 17);
-      const isZipRow = !isOnline(m) && index === addressParts.length - 1 && part === String(m.zip || "").trim();
-      rowsForAddress.push(...wrappedRows.slice(0, isZipRow ? 1 : 2));
+      rowsForAddress.push(...wrappedRows.slice(0, 2));
     });
 
     const needed =
