@@ -513,15 +513,10 @@ header,
 #statsPanel.active{
   height:calc(100vh - var(--top-height, 76px));
   min-height:0!important;
-  grid-template-columns:430px minmax(0,1fr)!important;
+  grid-template-columns:minmax(0,1fr)!important;
   overflow:hidden;
 }
 
-#statsPanel > aside{
-  width:auto;
-}
-
-#statsPanel > aside,
 #statsFull{
   height:100%;
   max-height:none!important;
@@ -852,55 +847,9 @@ header,
 </main>
 
 <main id="statsPanel" class="tab-panel">
-  <aside>
-    <div class="top-buttons two-buttons">
-      <button onclick="fetchAllMeetings()">Uppdatera möten</button>
-      <button class="secondary" onclick="clearAllFilters()">Rensa filter</button>
-    </div>
-
-    <div id="statusStats" class="muted"></div>
-
-    <div class="muted">Statistiken följer samma filter som möteslistan.</div>
-
-    <label>Sök grupp/ort</label>
-    <input id="searchStats" placeholder="Sök möte, ort, adress, station, info..." oninput="renderAll(false)">
-
-
-    <div class="filter-grid">
-      <div>
-        <label>Ort</label>
-        <div id="cityFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
-      </div>
-      <div>
-        <label>Distrikt</label>
-        <div id="districtFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
-      </div>
-    </div>
-
-    <div class="filter-grid">
-      <div>
-        <label>Veckodag</label>
-        <div id="dayFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
-      </div>
-      <div>
-        <label>Mötestyp</label>
-        <div id="meetingTypeFilterStats" class="checkbox-filter"></div><div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
-      </div>
-    </div>
-
-    <div class="filter-grid">
-      <div>
-        <label>Visning</label>
-        <select id="typeFilterStats" onchange="renderAll(false)">
-          <option value="">Alla möten i listan</option>
-          <option value="physical">Endast fysiska möten</option>
-          <option value="online">Endast online i listan</option>
-        </select>
-      </div>
-    </div>
-  </aside>
-
   <section id="statsFull">
+    <p class="muted">Statistiken följer valda filter på Möten-fliken.</p>
+    <div id="statusStats" class="muted"></div>
     <div id="stats"></div>
   </section>
 </main>
@@ -1156,13 +1105,10 @@ function fillSelectFromValues(id, values, labelFn){
 function populateFiltersFromSmartProxy(json){
   if (json.filters) {
     fillSelectFromValues("dayFilter", json.filters.days || []);
-    fillSelectFromValues("dayFilterStats", json.filters.days || []);
 
     fillSelectFromValues("districtFilter", json.filters.districts || []);
-    fillSelectFromValues("districtFilterStats", json.filters.districts || []);
 
     fillSelectFromValues("meetingTypeFilter", json.filters.meetingTypes || []);
-    fillSelectFromValues("meetingTypeFilterStats", json.filters.meetingTypes || []);
 
     syncFilterMirror();
     return;
@@ -1319,13 +1265,10 @@ function populateFilters(){
   const types = [...new Set(allMeetings.flatMap(m=>getTypes(m)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sv"));
 
   fillSelect("dayFilter", days, "Alla dagar", cleanDay);
-  fillSelect("dayFilterStats", days, "Alla dagar", cleanDay);
 
   fillSelect("districtFilter", districts, "Alla distrikt");
-  fillSelect("districtFilterStats", districts, "Alla distrikt");
 
   fillSelect("meetingTypeFilter", types, "Alla mötestyper");
-  fillSelect("meetingTypeFilterStats", types, "Alla mötestyper");
 
   syncFilterMirror();
 }
@@ -1993,7 +1936,6 @@ function showTab(tab){
   });
 
   if (tab === "stats") {
-    copyMainFiltersToStats();
     renderAll(false);
   }
 
@@ -2004,27 +1946,6 @@ function showTab(tab){
       fitVisible();
     }
   }, 100);
-}
-
-function copyMainFiltersToStats(){
-  [
-    ["search","searchStats"],
-    ["cityFilter","cityFilterStats"],
-    ["districtFilter","districtFilterStats"],
-    ["dayFilter","dayFilterStats"],
-    ["meetingTypeFilter","meetingTypeFilterStats"],
-    ["typeFilter","typeFilterStats"]
-  ].forEach(([mainId, statsId]) => {
-    const main = $(mainId);
-    const stats = $(statsId);
-    if (!main || !stats) return;
-
-    if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter") || main.multiple || stats.multiple) {
-      setSelectedValues(statsId, selectedValues(mainId));
-    } else {
-      stats.value = main.value;
-    }
-  });
 }
 
 function syncFilter(mainId, value){
@@ -2576,30 +2497,14 @@ async function exportFolderPdf(){
 
 
 
-/* Dynamiska beroende filter: Ort, Distrikt, Veckodag och Mötestyp */
-function statsPanelIsActive(){
-  return !!$("statsPanel")?.classList.contains("active");
-}
-
-function filterControlId(baseId){
-  return statsPanelIsActive() ? baseId + "Stats" : baseId;
-}
-
 function getActiveFilterState(){
-  const searchId = filterControlId("search");
-  const cityId = filterControlId("cityFilter");
-  const districtId = filterControlId("districtFilter");
-  const dayId = filterControlId("dayFilter");
-  const meetingTypeId = filterControlId("meetingTypeFilter");
-  const typeId = filterControlId("typeFilter");
-
   return {
-    q: ($(searchId)?.value || "").trim().toLowerCase(),
-    cities: selectedValues(cityId),
-    districts: selectedValues(districtId),
-    days: selectedValues(dayId),
-    meetingTypes: selectedValues(meetingTypeId),
-    type: $(typeId)?.value || "",
+    q: ($("search")?.value || "").trim().toLowerCase(),
+    cities: selectedValues("cityFilter"),
+    districts: selectedValues("districtFilter"),
+    days: selectedValues("dayFilter"),
+    meetingTypes: selectedValues("meetingTypeFilter"),
+    type: $("typeFilter")?.value || "",
     maxDistance: Number($("distanceFilter")?.value || 0)
   };
 }
@@ -2732,13 +2637,9 @@ function updateDynamicFilters(applyMapView = false){
   const meetingTypeMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
 
   fillDynamicSelect("cityFilter", countValues(cityMeetings, getCities));
-  fillDynamicSelect("cityFilterStats", countValues(cityMeetings, getCities));
   fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
-  fillDynamicSelect("districtFilterStats", countValues(districtMeetings, m => m.meetingDistrict?.district));
   fillDynamicSelect("dayFilter", countDays(dayMeetings));
-  fillDynamicSelect("dayFilterStats", countDays(dayMeetings));
   fillDynamicSelect("meetingTypeFilter", countValues(meetingTypeMeetings, getTypes));
-  fillDynamicSelect("meetingTypeFilterStats", countValues(meetingTypeMeetings, getTypes));
 }
 
 function populateFiltersFromSmartProxy(json){
@@ -2768,34 +2669,7 @@ function filteredMeetings(applyMapViewToFilters = false){
 }
 
 function syncFilterMirror(){
-  const pairs = [
-    ["search","searchStats"],
-    ["cityFilter","cityFilterStats"],
-    ["districtFilter","districtFilterStats"],
-    ["dayFilter","dayFilterStats"],
-    ["meetingTypeFilter","meetingTypeFilterStats"],
-    ["typeFilter","typeFilterStats"]
-  ];
-
-  pairs.forEach(([mainId, statsId]) => {
-    const main = $(mainId);
-    const stats = $(statsId);
-    if (!main || !stats) return;
-
-    if (main.classList?.contains("checkbox-filter") || stats.classList?.contains("checkbox-filter")) {
-      if (!statsPanelIsActive()) {
-        setSelectedValues(statsId, selectedValues(mainId));
-      }
-    } else if (main.multiple || stats.multiple) {
-      if (!statsPanelIsActive()) {
-        setSelectedValues(statsId, selectedValues(mainId));
-      }
-    } else {
-      if (!statsPanelIsActive()) {
-        stats.value = main.value;
-      }
-    }
-  });
+  // Statistikfliken har inga egna filter. Den följer huvudfiltren på Möten-fliken.
 }
 
 function getFilterLabelText(){
