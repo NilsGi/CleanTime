@@ -1003,8 +1003,11 @@ function initMap(){
       disableClusteringAtZoom:14,
       maxClusterRadius:45,
       iconCreateFunction: function(cluster){
-        const totalMeetings = cluster.getAllChildMarkers()
-          .reduce((sum, m) => sum + (m.meetingCount || 1), 0);
+        const totalMeetings = uniquePhysicalMeetingCountForGroups(
+          cluster.getAllChildMarkers()
+            .map(marker => marker.meetingGroup)
+            .filter(Boolean)
+        );
 
         return L.divIcon({
           html: '<div><span>' + totalMeetings + '</span></div>',
@@ -1362,11 +1365,16 @@ function filteredMeetings(){
 
 function groupMeetingsForDisplay(meetings){
   const groups = {};
+  const selectedCities = selectedValues("cityFilter");
 
   meetings.forEach(m => {
     const district = m.meetingDistrict?.district || "Okänt distrikt";
     const cities = getCities(m);
-    const cityList = cities.length ? cities : ["Okänd ort"];
+    const cityList = selectedCities.length
+      ? cities.filter(city => selectedCities.includes(city))
+      : (cities.length ? cities : ["Okänd ort"]);
+
+    if (!cityList.length) return;
 
     cityList.forEach(city => {
       const cityKey = normalizeText(city);
@@ -1411,6 +1419,39 @@ function groupMeetingsForDisplay(meetings){
 function groupHasCoords(g){ return g.latitude !== null && g.longitude !== null && !isNaN(g.latitude) && !isNaN(g.longitude); }
 function groupMatchesMap(g){ return !g.isOnlineOnly && groupHasCoords(g); }
 
+function meetingUniqueKey(m){
+  return m.id || m.documentId || [
+    m.title,
+    m.days,
+    m.startTime,
+    m.endTime,
+    m.address,
+    m.zip
+  ].map(value => String(value || "").trim()).join("|");
+}
+
+function uniqueMeetingCount(meetings){
+  return new Set((meetings || []).map(meetingUniqueKey)).size;
+}
+
+function uniqueMeetingCountForGroups(groups){
+  const keys = new Set();
+  (groups || []).forEach(g => {
+    (g.meetings || []).forEach(m => keys.add(meetingUniqueKey(m)));
+  });
+  return keys.size;
+}
+
+function uniquePhysicalMeetingCountForGroups(groups){
+  const keys = new Set();
+  (groups || []).forEach(g => {
+    (g.meetings || [])
+      .filter(m => !isOnline(m) && hasCoords(m))
+      .forEach(m => keys.add(meetingUniqueKey(m)));
+  });
+  return keys.size;
+}
+
 function renderAll(syncFromMap = false){
   if (!markersLayer) return;
 
@@ -1437,7 +1478,8 @@ function renderAll(syncFromMap = false){
     ? groupList.filter(isGroupInMapView)
     : groupList;
 
-  const visibleMeetingCount = visibleGroupList.reduce((sum, g) => sum + g.meetings.length, 0);
+  const visibleMeetingCount = uniqueMeetingCountForGroups(visibleGroupList);
+  const mapMeetingCount = uniquePhysicalMeetingCountForGroups(mapGroups);
 
   const distanceText = userPosition && $("distanceFilter").value
     ? "<br><b>Avstånd:</b> visar grupper inom " + $("distanceFilter").value + " km från din position."
@@ -1446,8 +1488,8 @@ function renderAll(syncFromMap = false){
       : "";
 
   $("summary").innerHTML =
-    "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " möten i listan.<br>" +
-    mapGroups.length + " grupper finns på kartan efter filter." +
+    "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " unika möten i listan.<br>" +
+    mapGroups.length + " grupper / " + mapMeetingCount + " unika möten finns på kartan efter filter." +
     distanceText;
 
   renderMarkers(mapGroups);
@@ -1500,16 +1542,17 @@ function renderMarkers(groups){
   const bounds = [];
 
   groups.forEach(g => {
+    const markerMeetingCount = uniqueMeetingCount(g.meetings.filter(m => !isOnline(m) && hasCoords(m)));
     const marker = L.marker([g.latitude, g.longitude], {
       icon: L.divIcon({
         className: 'meeting-count-marker',
-        html: '<div>' + g.meetings.length + '</div>',
+        html: '<div>' + markerMeetingCount + '</div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
     }).bindPopup(groupPopupHtml(g));
 
-    marker.meetingCount = g.meetings.length;
+    marker.meetingCount = markerMeetingCount;
     marker.meetingGroup = g;
 
     marker.addTo(markersLayer);
@@ -1520,7 +1563,7 @@ function renderMarkers(groups){
 }
 
 function clusterPopupHtml(groups){
-  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
+  const totalMeetings = uniquePhysicalMeetingCountForGroups(groups);
   const groupHtml = groups.map(g => {
     const meetingsHtml = [...g.meetings]
       .sort(compareMeetingsByDayTime)
@@ -1584,7 +1627,7 @@ function showMobileClusterSheet(groups){
     if (closeButton) closeButton.addEventListener("click", closeMobileClusterSheet);
   }
 
-  const totalMeetings = groups.reduce((sum, g) => sum + g.meetings.length, 0);
+  const totalMeetings = uniquePhysicalMeetingCountForGroups(groups);
   const title = backdrop.querySelector("#mapClusterSheetTitle");
   const body = backdrop.querySelector(".map-cluster-sheet-body");
 
@@ -1990,14 +2033,7 @@ function getFilteredPhysicalMeetingsForExport(){
   return filteredMeetings()
     .filter(m => !isOnline(m))
     .filter(m => {
-      const key = m.id || m.documentId || [
-        m.title,
-        m.days,
-        m.startTime,
-        m.endTime,
-        m.address,
-        m.zip
-      ].map(value => String(value || "").trim()).join("|");
+      const key = meetingUniqueKey(m);
 
       if (seen.has(key)) return false;
       seen.add(key);
@@ -2435,21 +2471,21 @@ async function exportFolderPdf(){
       .join(", ");
     const typeShort = isOnline(m) ? "Online" : typeText;
 
-    let titleRows = doc.splitTextToSize(title, colW - 17);
+    let titleRows = doc.splitTextToSize(title, colW - 16);
     titleRows = titleRows.slice(0,2);
 
     let rowsForAddress = [];
     addressParts.forEach(part => {
-      const wrappedRows = doc.splitTextToSize(part, colW - 17);
+      const wrappedRows = doc.splitTextToSize(part, colW - 16);
       rowsForAddress.push(...wrappedRows.slice(0, 2));
     });
 
     const needed =
-      (day !== currentDay ? 5.0 : 0) +
-      2.75 +
-      (titleRows.length - 1) * 2.45 +
-      rowsForAddress.length * 2.3 +
-      0.9;
+      (day !== currentDay ? 4.8 : 0) +
+      2.55 +
+      (titleRows.length - 1) * 2.25 +
+      rowsForAddress.length * 2.15 +
+      0.65;
 
     if (y + needed > bottomY) {
       if (!nextColumn()) return;
@@ -2459,40 +2495,40 @@ async function exportFolderPdf(){
       currentDay = day;
       setBlue();
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8.2);
+      doc.setFontSize(7.8);
       doc.text(day, x, y);
-      y += 4.0;
+      y += 3.8;
     }
 
     setBlack();
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.9);
+    doc.setFontSize(5.45);
     doc.text(time, x, y);
-    doc.text(titleRows[0] || "", x + 17, y);
-    y += 2.45;
+    doc.text(titleRows[0] || "", x + 16, y);
+    y += 2.25;
 
     for (let i=1; i<titleRows.length; i++) {
-      doc.text(titleRows[i], x + 17, y);
-      y += 2.45;
+      doc.text(titleRows[i], x + 16, y);
+      y += 2.25;
     }
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.4);
+    doc.setFontSize(5.0);
     rowsForAddress.forEach(row => {
-      doc.text(row, x + 17, y);
-      y += 2.3;
+      doc.text(row, x + 16, y);
+      y += 2.15;
     });
 
     if (typeShort) {
-      doc.setFontSize(5.2);
+      doc.setFontSize(4.85);
       doc.setTextColor(90,90,90);
-      doc.text(typeShort, x + 17, y);
+      doc.text(typeShort, x + 16, y);
       setBlack();
-      doc.setFontSize(5.4);
-      y += 2.1;
+      doc.setFontSize(5.0);
+      y += 1.9;
     }
 
-    y += 0.9;
+    y += 0.65;
   });
 
   doc.setDrawColor(...blue);
