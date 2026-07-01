@@ -1984,6 +1984,28 @@ function getCurrentFilteredGroupsForExport(){
   return visibleGroupList.sort(compareGroupsByDayTime);
 }
 
+function getFilteredPhysicalMeetingsForExport(){
+  const seen = new Set();
+
+  return filteredMeetings()
+    .filter(m => !isOnline(m))
+    .filter(m => {
+      const key = m.id || m.documentId || [
+        m.title,
+        m.days,
+        m.startTime,
+        m.endTime,
+        m.address,
+        m.zip
+      ].map(value => String(value || "").trim()).join("|");
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort(compareMeetingsByDayTime);
+}
+
 function exportFilteredToPdf(){
   if (!allMeetings.length) {
     setStatus('<span class="bad">Inga möten hämtade ännu.</span>');
@@ -1995,11 +2017,8 @@ function exportFilteredToPdf(){
     return;
   }
 
-  const groups = getCurrentFilteredGroupsForExport();
-  const sortedMeetings = groups
-    .flatMap(g => g.meetings)
-    .filter(m => !isOnline(m))
-    .sort(compareMeetingsByDayTime);
+  const sortedMeetings = getFilteredPhysicalMeetingsForExport();
+  const groups = groupMeetingsForDisplay(sortedMeetings);
   const meetingCount = sortedMeetings.length;
 
   const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
@@ -2205,14 +2224,10 @@ async function exportFolderPdf(){
     return;
   }
 
-  const groups = getCurrentFilteredGroupsForExport();
-  const sortedMeetings = groups
-    .flatMap(g => g.meetings)
-    .filter(m => !isOnline(m))
-    .sort(compareMeetingsByDayTime);
+  const sortedMeetings = getFilteredPhysicalMeetingsForExport();
 
   if (sortedMeetings.length > 80) {
-    alert("Folderexporten stödjer max 80 möten. Begränsa urvalet och försök igen.");
+    alert("Folderexporten stödjer max 80 fysiska möten i valda filter. Begränsa urvalet och försök igen.");
     return;
   }
 
@@ -2354,7 +2369,7 @@ async function exportFolderPdf(){
   const gap = 3.5;
   const innerMargin = 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
-  const topY = 18;
+  const topY = 17;
   const bottomY = innerPageHeight - 12;
   let col = 0;
   x = innerMargin;
@@ -2398,7 +2413,7 @@ async function exportFolderPdf(){
   let filterY = 11.4;
   filterHeaderRows.slice(0,2).forEach(row => {
     doc.text(row, innerMargin, filterY);
-    filterY += 2.5;
+    filterY += 2.35;
   });
   y = Math.max(y, filterY + 1);
 
@@ -2430,11 +2445,11 @@ async function exportFolderPdf(){
     });
 
     const needed =
-      (day !== currentDay ? 5.8 : 0) +
-      3.1 +
-      (titleRows.length - 1) * 2.7 +
-      rowsForAddress.length * 2.55 +
-      1.5;
+      (day !== currentDay ? 5.0 : 0) +
+      2.75 +
+      (titleRows.length - 1) * 2.45 +
+      rowsForAddress.length * 2.3 +
+      0.9;
 
     if (y + needed > bottomY) {
       if (!nextColumn()) return;
@@ -2446,7 +2461,7 @@ async function exportFolderPdf(){
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.2);
       doc.text(day, x, y);
-      y += 4.6;
+      y += 4.0;
     }
 
     setBlack();
@@ -2454,18 +2469,18 @@ async function exportFolderPdf(){
     doc.setFontSize(5.9);
     doc.text(time, x, y);
     doc.text(titleRows[0] || "", x + 17, y);
-    y += 2.7;
+    y += 2.45;
 
     for (let i=1; i<titleRows.length; i++) {
       doc.text(titleRows[i], x + 17, y);
-      y += 2.7;
+      y += 2.45;
     }
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.4);
     rowsForAddress.forEach(row => {
       doc.text(row, x + 17, y);
-      y += 2.55;
+      y += 2.3;
     });
 
     if (typeShort) {
@@ -2474,10 +2489,10 @@ async function exportFolderPdf(){
       doc.text(typeShort, x + 17, y);
       setBlack();
       doc.setFontSize(5.4);
-      y += 2.4;
+      y += 2.1;
     }
 
-    y += 1.5;
+    y += 0.9;
   });
 
   doc.setDrawColor(...blue);
