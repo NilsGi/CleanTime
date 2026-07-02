@@ -1,0 +1,38 @@
+<html lang="sv"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test: PDF-folder dynamiska kolumner</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:24px;background:#f5f5f5;color:#111}button,input{padding:10px;border-radius:8px;border:1px solid #bbb}button{background:#0a1981;color:white;font-weight:700;cursor:pointer}.page{margin-top:20px;background:white;border:1px solid #ddd;border-radius:12px;padding:16px;max-width:1100px}.folder-list{column-gap:18px}.folder-list.cols-1{columns:1}.folder-list.cols-2{columns:2}.folder-list.cols-3{columns:3}.meeting{break-inside:avoid;border-bottom:1px solid #ddd;padding:6px 0}.meeting h3{margin:0 0 3px;font-size:1em}.meeting p{margin:2px 0}.meta{color:#555;font-size:.9em}
+</style>
+</head>
+<body>
+<h1>Test av dynamiska kolumner för PDF-folder</h1>
+<p>Ändra antal möten och tryck på testa. Samma logik kan läggas in i din exportFolderPdf().</p>
+<input id="count" type="number" value="18" min="1" max="90">
+<button onclick="render()">Testa layout</button>
+<div id="info">18 möten: 1 kolumn(er), 12.5 pt</div>
+<div class="page"><div id="list" class="folder-list cols-1" style="font-size: 12.5pt; line-height: 1.12;"><div class="meeting"><h3>Möte 1</h3><p>Exempelgatan 1, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 2</h3><p>Exempelgatan 2, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 3</h3><p>Exempelgatan 3, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 4</h3><p>Exempelgatan 4, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 5</h3><p>Exempelgatan 5, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 6</h3><p>Exempelgatan 6, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 7</h3><p>Exempelgatan 7, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 8</h3><p>Exempelgatan 8, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 9</h3><p>Exempelgatan 9, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 10</h3><p>Exempelgatan 10, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 11</h3><p>Exempelgatan 11, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 12</h3><p>Exempelgatan 12, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 13</h3><p>Exempelgatan 13, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 14</h3><p>Exempelgatan 14, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 15</h3><p>Exempelgatan 15, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 16</h3><p>Exempelgatan 16, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 17</h3><p>Exempelgatan 17, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div><div class="meeting"><h3>Möte 18</h3><p>Exempelgatan 18, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div></div></div>
+<script>
+function getFolderLayout(count){
+  if(count <= 10) return { columns:1, fontSize:15, lineHeight:1.18 };
+  if(count <= 20) return { columns:1, fontSize:12.5, lineHeight:1.12 };
+  if(count <= 40) return { columns:2, fontSize:10.5, lineHeight:1.08 };
+  if(count <= 60) return { columns:3, fontSize:9.5, lineHeight:1.04 };
+  return { columns:3, fontSize:8.7, lineHeight:1.0 };
+}
+function render(){
+  const count = Number(document.getElementById('count').value || 1);
+  const layout = getFolderLayout(count);
+  const list = document.getElementById('list');
+  list.className = 'folder-list cols-' + layout.columns;
+  list.style.fontSize = layout.fontSize + 'pt';
+  list.style.lineHeight = layout.lineHeight;
+  list.innerHTML = Array.from({length:count}, (_,i)=>`<div class="meeting"><h3>Möte ${i+1}</h3><p>Exempelgatan ${i+1}, Stockholm</p><p class="meta">Måndag 18:00 · Öppet · Fysiskt</p></div>`).join('');
+  document.getElementById('info').textContent = `${count} möten: ${layout.columns} kolumn(er), ${layout.fontSize} pt`;
+}
+render();
+</script>
+
+
+</body></html>
