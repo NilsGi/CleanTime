@@ -1,4 +1,4 @@
-<html lang="sv"><head>
+<html lang="sv" style="--top-height: 47px;"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NA Sverige - Möten</title>
@@ -845,7 +845,7 @@ header,
 
 </aside>
 
-<div id="map"></div>
+<div id="map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" style="position: relative;"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="https://b.tile.openstreetmap.org/5/17/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/17/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/16/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/18/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, -57px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/5/16/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/18/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, 199px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(4437.333333px, 2285.043853px, 0px) scale(16);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control">© OpenStreetMap</div></div></div></div>
 <section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
 </main>
 
@@ -856,7 +856,7 @@ header,
       <button class="secondary" onclick="clearAllFilters()">Rensa filter</button>
     </div>
 
-    <div id="statusStats" class="muted"></div>
+    <div id="statusStats" class="muted"><span class="bad">Fel:</span> Load failed</div>
 
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
@@ -899,7 +899,7 @@ header,
   </aside>
 
   <section id="statsFull">
-    <div id="stats"></div>
+    <div id="stats"><p class="muted">Hämtar möten...</p></div>
   </section>
 </main>
 
@@ -2419,8 +2419,7 @@ async function exportFolderPdf(){
   doc.setFontSize(7.5);
   doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + (panelW - margin*2)/2, pageHeight - 12, { align:"center" });
 
-  // Sida 2: insida. A4 stående med 3 kolumner för att få plats med upp till 80 möten.
-  // Sidan skrivs "åt andra hållet" jämfört med utsidan.
+  // Sida 2: insida. Kolumner och textstorlek anpassas efter antal möten.
   doc.addPage("a4", "portrait");
 
   const innerPageWidth = doc.internal.pageSize.getWidth();
@@ -2429,11 +2428,34 @@ async function exportFolderPdf(){
   doc.setFillColor(255,255,255);
   doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
 
-  const cols = 3;
-  const gap = 3.5;
-  const innerMargin = 6;
+  function folderLayoutForMeetingCount(count){
+    if (count <= 5) {
+      return { cols:1, gap:0, titleSize:12.2, timeSize:11.2, bodySize:9.6, typeSize:8.8, daySize:14, lineHeight:4.35, addressLineHeight:3.9, typeLineHeight:3.55, itemGap:2.8, maxTitleRows:3, maxAddressRowsPerPart:3 };
+    }
+    if (count <= 10) {
+      return { cols:1, gap:0, titleSize:10.8, timeSize:10.0, bodySize:8.7, typeSize:8.0, daySize:12.5, lineHeight:3.95, addressLineHeight:3.5, typeLineHeight:3.2, itemGap:2.2, maxTitleRows:3, maxAddressRowsPerPart:3 };
+    }
+    if (count <= 20) {
+      return { cols:1, gap:0, titleSize:9.0, timeSize:8.5, bodySize:7.4, typeSize:6.9, daySize:10.7, lineHeight:3.35, addressLineHeight:3.0, typeLineHeight:2.75, itemGap:1.6, maxTitleRows:2, maxAddressRowsPerPart:2 };
+    }
+    if (count <= 30) {
+      return { cols:2, gap:5, titleSize:7.4, timeSize:7.0, bodySize:6.25, typeSize:5.85, daySize:9.2, lineHeight:2.85, addressLineHeight:2.55, typeLineHeight:2.35, itemGap:1.1, maxTitleRows:2, maxAddressRowsPerPart:2 };
+    }
+    if (count <= 40) {
+      return { cols:2, gap:5, titleSize:6.7, timeSize:6.35, bodySize:5.75, typeSize:5.35, daySize:8.4, lineHeight:2.55, addressLineHeight:2.35, typeLineHeight:2.15, itemGap:0.85, maxTitleRows:2, maxAddressRowsPerPart:2 };
+    }
+    if (count <= 60) {
+      return { cols:3, gap:3.5, titleSize:5.8, timeSize:5.55, bodySize:5.1, typeSize:4.8, daySize:8.0, lineHeight:2.35, addressLineHeight:2.15, typeLineHeight:1.95, itemGap:0.65, maxTitleRows:2, maxAddressRowsPerPart:2 };
+    }
+    return { cols:3, gap:3.5, titleSize:5.35, timeSize:5.15, bodySize:4.75, typeSize:4.45, daySize:7.4, lineHeight:2.15, addressLineHeight:1.95, typeLineHeight:1.78, itemGap:0.45, maxTitleRows:2, maxAddressRowsPerPart:1 };
+  }
+
+  const layout = folderLayoutForMeetingCount(sortedMeetings.length);
+  const cols = layout.cols;
+  const gap = layout.gap;
+  const innerMargin = cols === 1 ? 12 : 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
-  const topY = 17;
+  const topY = cols === 1 ? 24 : 17;
   const bottomY = innerPageHeight - 12;
   let col = 0;
   x = innerMargin;
@@ -2450,6 +2472,7 @@ async function exportFolderPdf(){
   }
 
   function addColumnGuides(){
+    if (cols < 2) return;
     doc.setDrawColor(190, 205, 235);
     doc.setLineWidth(0.25);
     for (let i=1; i<cols; i++) {
@@ -2461,25 +2484,25 @@ async function exportFolderPdf(){
   addColumnGuides();
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(cols === 1 ? 14 : 11);
   doc.text("MÖTESLISTA", innerMargin, 8);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.2);
-  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
+  doc.setFontSize(cols === 1 ? 7.2 : 6.2);
+  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + (cols === 1 ? 42 : 28), 8);
 
   setBlack();
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(5.8);
+  doc.setFontSize(cols === 1 ? 6.8 : 5.8);
   const filterHeaderText = getFilterLabelText()
     .map(([label, value]) => label + ": " + value)
     .join("  ·  ");
   const filterHeaderRows = doc.splitTextToSize("Valda filter: " + filterHeaderText, innerPageWidth - innerMargin*2);
-  let filterY = 11.4;
-  filterHeaderRows.slice(0,2).forEach(row => {
+  let filterY = 12;
+  filterHeaderRows.slice(0, cols === 1 ? 3 : 2).forEach(row => {
     doc.text(row, innerMargin, filterY);
-    filterY += 2.35;
+    filterY += cols === 1 ? 2.8 : 2.35;
   });
-  y = Math.max(y, filterY + 1);
+  y = Math.max(y, filterY + 2);
 
   if (!sortedMeetings.length) {
     setBlack();
@@ -2497,25 +2520,26 @@ async function exportFolderPdf(){
       .filter(t => t !== "Virtuellt möte")
       .join(", ");
     const typeShort = isOnline(m) ? "Online" : typeText;
+    const textIndent = cols === 1 ? 25 : 16;
 
-    let titleRows = doc.splitTextToSize(title, colW - 16);
-    titleRows = titleRows.slice(0,2);
+    let titleRows = doc.splitTextToSize(title, colW - textIndent);
+    titleRows = titleRows.slice(0, layout.maxTitleRows);
 
     let rowsForAddress = [];
     addressParts.forEach(part => {
-      const wrappedRows = doc.splitTextToSize(part, colW - 16);
-      rowsForAddress.push(...wrappedRows.slice(0, 2));
+      const wrappedRows = doc.splitTextToSize(part, colW - textIndent);
+      rowsForAddress.push(...wrappedRows.slice(0, layout.maxAddressRowsPerPart));
     });
 
-    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, colW - 16) : [];
+    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, colW - textIndent) : [];
 
     const needed =
-      (day !== currentDay ? 4.8 : 0) +
-      2.55 +
-      (titleRows.length - 1) * 2.25 +
-      rowsForAddress.length * 2.15 +
-      rowsForType.length * 1.9 +
-      0.65;
+      (day !== currentDay ? layout.daySize * 0.55 : 0) +
+      layout.lineHeight +
+      Math.max(0, titleRows.length - 1) * layout.lineHeight +
+      rowsForAddress.length * layout.addressLineHeight +
+      rowsForType.length * layout.typeLineHeight +
+      layout.itemGap;
 
     if (y + needed > bottomY) {
       if (!nextColumn()) return;
@@ -2525,42 +2549,43 @@ async function exportFolderPdf(){
       currentDay = day;
       setBlue();
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.8);
+      doc.setFontSize(layout.daySize);
       doc.text(day, x, y);
-      y += 3.8;
+      y += layout.daySize * 0.45;
     }
 
     setBlack();
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.45);
+    doc.setFontSize(layout.timeSize);
     doc.text(time, x, y);
-    doc.text(titleRows[0] || "", x + 16, y);
-    y += 2.25;
+    doc.setFontSize(layout.titleSize);
+    doc.text(titleRows[0] || "", x + textIndent, y);
+    y += layout.lineHeight;
 
     for (let i=1; i<titleRows.length; i++) {
-      doc.text(titleRows[i], x + 16, y);
-      y += 2.25;
+      doc.text(titleRows[i], x + textIndent, y);
+      y += layout.lineHeight;
     }
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.0);
+    doc.setFontSize(layout.bodySize);
     rowsForAddress.forEach(row => {
-      doc.text(row, x + 16, y);
-      y += 2.15;
+      doc.text(row, x + textIndent, y);
+      y += layout.addressLineHeight;
     });
 
     if (typeShort) {
-      doc.setFontSize(4.85);
+      doc.setFontSize(layout.typeSize);
       doc.setTextColor(90,90,90);
       rowsForType.forEach(row => {
-        doc.text(row, x + 16, y);
-        y += 1.9;
+        doc.text(row, x + textIndent, y);
+        y += layout.typeLineHeight;
       });
       setBlack();
-      doc.setFontSize(5.0);
+      doc.setFontSize(layout.bodySize);
     }
 
-    y += 0.65;
+    y += layout.itemGap;
   });
 
   doc.setDrawColor(...blue);
@@ -3004,6 +3029,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(updateLayoutHeight, 250);
 });
 </script>
+
 
 
 </body></html>
