@@ -1,1 +1,347 @@
-a
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NA Flyer-generator</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f5f8;
+      color: #1f2933;
+    }
+
+    header {
+      background: #004b8d;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 14px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccd3dd;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .warning {
+      background: #fff4d6;
+      border-left: 5px solid #f59e0b;
+      padding: 12px;
+      margin-top: 18px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .flyer-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .flyer {
+      width: 432px;
+      height: 540px;
+      background: linear-gradient(160deg, #004b8d, #0f766e);
+      color: white;
+      border-radius: 18px;
+      padding: 28px;
+      box-sizing: border-box;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+
+    .flyer.light {
+      background: white;
+      color: #1f2933;
+      border: 1px solid #d7dde6;
+    }
+
+    .logo {
+      background: white;
+      color: #004b8d;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .event-type {
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .flyer h1 {
+      font-size: 34px;
+      line-height: 1.05;
+      margin: 0 0 18px;
+    }
+
+    .info {
+      font-size: 17px;
+      line-height: 1.45;
+      margin-top: 18px;
+    }
+
+    .description {
+      margin-top: 22px;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    .organizer {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      bottom: 24px;
+      font-size: 14px;
+      border-top: 1px solid rgba(255,255,255,0.4);
+      padding-top: 14px;
+    }
+
+    .light .organizer {
+      border-top-color: #d7dde6;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 16px;
+      border: none;
+      border-radius: 10px;
+      background: #004b8d;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #0f766e;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>NA Flyer-generator</h1>
+  <p>Skapa godkända flyers i rätt format för NA-evenemang</p>
+</header>
+
+<main class="app">
+
+  <section class="panel">
+    <h2>Information till flyer</h2>
+
+    <label>Eventnamn *</label>
+    <input id="eventName" placeholder="Ex. Serviceworkshop i Stockholm" />
+
+    <label>Eventtyp</label>
+    <select id="eventType">
+      <option>NA-evenemang</option>
+      <option>Konvent</option>
+      <option>Workshop</option>
+      <option>Servicemöte</option>
+      <option>Speaker meeting</option>
+    </select>
+
+    <label>Arrangör / serviceenhet / grupp *</label>
+    <input id="organizer" placeholder="Ex. Stockholms Område" />
+
+    <label>Datum och tid *</label>
+    <input id="dateTime" placeholder="Ex. 12 oktober 2026, kl. 13.00–17.00" />
+
+    <label>Adress *</label>
+    <input id="address" placeholder="Ex. Exempelgatan 12, Stockholm" />
+
+    <label>Registrering / anmälan</label>
+    <input id="registration" placeholder="Ex. Ingen föranmälan krävs" />
+
+    <label>Beskrivning</label>
+    <textarea id="description" placeholder="Kort och tydlig beskrivning av evenemanget"></textarea>
+
+    <label>Kontaktinfo kopplad till NA</label>
+    <input id="contact" placeholder="Ex. info@nasverige.org" />
+
+    <label>Layout</label>
+    <select id="theme">
+      <option value="blue">Blå/grön</option>
+      <option value="light">Ljus utskriftsvänlig</option>
+    </select>
+
+    <div class="warning">
+      Obligatorisk NA-logotyp läggs alltid in automatiskt.  
+      Undvik fullständiga namn, privata telefonnummer och personliga e-postadresser.
+    </div>
+
+    <button onclick="updateFlyer()">Uppdatera flyer</button>
+    <button class="secondary" onclick="downloadPNG()">Exportera som PNG</button>
+  </section>
+
+  <section class="flyer-wrap">
+    <div id="flyer" class="flyer">
+
+      <div class="logo">
+        NA Sverige · Narcotics Anonymous · Anonyma Narkomaner ®
+      </div>
+
+      <div id="previewType" class="event-type">NA-evenemang</div>
+
+      <h1 id="previewTitle">Eventnamn</h1>
+
+      <div class="info">
+        <strong>Datum & tid:</strong><br>
+        <span id="previewDate">Datum och tid</span>
+      </div>
+
+      <div class="info">
+        <strong>Plats:</strong><br>
+        <span id="previewAddress">Adress</span>
+      </div>
+
+      <div class="info">
+        <strong>Anmälan:</strong><br>
+        <span id="previewRegistration">Information om registrering</span>
+      </div>
+
+      <div id="previewDescription" class="description">
+        Kort beskrivning av evenemanget.
+      </div>
+
+      <div class="organizer">
+        Arrangör: <span id="previewOrganizer">Serviceenhet / grupp</span><br>
+        <span id="previewContact"></span>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+  function updateFlyer() {
+    const flyer = document.getElementById("flyer");
+
+    document.getElementById("previewTitle").innerText =
+      document.getElementById("eventName").value || "Eventnamn";
+
+    document.getElementById("previewType").innerText =
+      document.getElementById("eventType").value;
+
+    document.getElementById("previewOrganizer").innerText =
+      document.getElementById("organizer").value || "Serviceenhet / grupp";
+
+    document.getElementById("previewDate").innerText =
+      document.getElementById("dateTime").value || "Datum och tid";
+
+    document.getElementById("previewAddress").innerText =
+      document.getElementById("address").value || "Adress";
+
+    document.getElementById("previewRegistration").innerText =
+      document.getElementById("registration").value || "Information om registrering";
+
+    document.getElementById("previewDescription").innerText =
+      document.getElementById("description").value || "Kort beskrivning av evenemanget.";
+
+    document.getElementById("previewContact").innerText =
+      document.getElementById("contact").value || "";
+
+    const theme = document.getElementById("theme").value;
+
+    if (theme === "light") {
+      flyer.classList.add("light");
+    } else {
+      flyer.classList.remove("light");
+    }
+
+    checkPolicy();
+  }
+
+  function checkPolicy() {
+    const allText = [
+      eventName.value,
+      organizer.value,
+      dateTime.value,
+      address.value,
+      registration.value,
+      description.value,
+      contact.value
+    ].join(" ");
+
+    const phonePattern = /(\+46|0)[0-9\s\-]{7,}/;
+    const personalEmailPattern = /@(gmail|hotmail|outlook|icloud|live)\./i;
+
+    if (phonePattern.test(allText)) {
+      alert("Varning: Flyern verkar innehålla ett telefonnummer. Privata telefonnummer bör inte användas.");
+    }
+
+    if (personalEmailPattern.test(allText)) {
+      alert("Varning: Flyern verkar innehålla en personlig e-postadress.");
+    }
+  }
+
+  function downloadPNG() {
+    const flyer = document.getElementById("flyer");
+
+    html2canvas(flyer, {
+      scale: 2,
+      backgroundColor: null
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "na-flyer.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  updateFlyer();
+</script>
+
+</body>
+</html>
