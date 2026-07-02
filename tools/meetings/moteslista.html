@@ -2521,16 +2521,15 @@ async function exportFolderPdf(){
   });
 
   const availableHeight = bottomY - firstContentY;
-  const totalEstimatedHeight = dayGroups.reduce((sum, group) => {
-    return sum + layoutStyle.dayH + group.blocks.reduce((s, b) => s + b.height, 0);
-  }, 0);
-  const targetHeight = Math.max(availableHeight * 0.72, totalEstimatedHeight / cols);
 
   const columns = Array.from({ length: cols }, () => []);
   let layoutCol = 0;
   let currentHeight = 0;
 
   function pushDayHeading(day, continued = false){
+    if (currentHeight + layoutStyle.dayH > availableHeight && layoutCol < cols - 1) {
+      moveToNextColumn();
+    }
     columns[layoutCol].push({ type: "day", day, continued });
     currentHeight += layoutStyle.dayH;
   }
@@ -2547,7 +2546,9 @@ async function exportFolderPdf(){
   dayGroups.forEach(group => {
     const groupHeight = layoutStyle.dayH + group.blocks.reduce((sum, block) => sum + block.height, 0);
 
-    if (layoutCol < cols - 1 && currentHeight > 0 && currentHeight + groupHeight > targetHeight) {
+    // Fyll aktuell kolumn så långt det går. Flytta en hel veckodag först när den inte ryms.
+    // Om veckodagen är större än en hel kolumn får den börja här och brytas inom dagen.
+    if (layoutCol < cols - 1 && currentHeight > 0 && currentHeight + groupHeight > availableHeight) {
       moveToNextColumn();
     }
 
