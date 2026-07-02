@@ -2436,7 +2436,7 @@ async function exportFolderPdf(){
       return { cols:1, gap:0, titleSize:10.8, timeSize:10.0, bodySize:8.7, typeSize:8.0, daySize:12.5, lineHeight:3.95, addressLineHeight:3.5, typeLineHeight:3.2, itemGap:2.2, maxTitleRows:3, maxAddressRowsPerPart:3 };
     }
     if (count <= 20) {
-      return { cols:1, gap:0, titleSize:9.0, timeSize:8.5, bodySize:7.4, typeSize:6.9, daySize:10.7, lineHeight:3.35, addressLineHeight:3.0, typeLineHeight:2.75, itemGap:1.6, maxTitleRows:2, maxAddressRowsPerPart:2 };
+      return { cols:1, gap:0, titleSize:8.2, timeSize:7.8, bodySize:6.8, typeSize:6.2, daySize:9.6, lineHeight:3.0, addressLineHeight:2.65, typeLineHeight:2.4, itemGap:1.1, maxTitleRows:2, maxAddressRowsPerPart:2 };
     }
     if (count <= 30) {
       return { cols:2, gap:5, titleSize:7.4, timeSize:7.0, bodySize:6.25, typeSize:5.85, daySize:9.2, lineHeight:2.85, addressLineHeight:2.55, typeLineHeight:2.35, itemGap:1.1, maxTitleRows:2, maxAddressRowsPerPart:2 };
@@ -2481,14 +2481,29 @@ async function exportFolderPdf(){
     }
   }
 
-  addColumnGuides();
-  setBlue();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(cols === 1 ? 14 : 11);
-  doc.text("MÖTESLISTA", innerMargin, 8);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(cols === 1 ? 7.2 : 6.2);
-  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + (cols === 1 ? 42 : 28), 8);
+  function drawInsideHeader(){
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
+    addColumnGuides();
+    setBlue();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(cols === 1 ? 14 : 11);
+    doc.text("MÖTESLISTA", innerMargin, 8);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(cols === 1 ? 7.2 : 6.2);
+    doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + (cols === 1 ? 42 : 28), 8);
+  }
+
+  function startNewInsidePage(){
+    doc.addPage("a4", "portrait");
+    col = 0;
+    x = innerMargin;
+    y = topY;
+    currentDay = "";
+    drawInsideHeader();
+  }
+
+  drawInsideHeader();
 
   setBlack();
   doc.setFont("helvetica", "normal");
@@ -2542,7 +2557,9 @@ async function exportFolderPdf(){
       layout.itemGap;
 
     if (y + needed > bottomY) {
-      if (!nextColumn()) return;
+      if (!nextColumn()) {
+        startNewInsidePage();
+      }
     }
 
     if (day !== currentDay) {
