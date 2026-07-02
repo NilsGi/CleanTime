@@ -1,347 +1,95 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="sv"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NA Flyer-generator</title>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f5f8;
-      color: #1f2933;
+    :root{
+      --blue:#004b8d;--dark:#07111f;--card:#fff;--muted:#6b7280;--line:#d7dde6;--warn:#f59e0b;--ok:#0f766e;
     }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef2f7;color:#172033}
+    header{background:linear-gradient(135deg,#003b73,#006a96);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    header h1{margin:0;font-size:24px} header p{margin:4px 0 0;opacity:.9}
+    .app{display:grid;grid-template-columns:420px 1fr;gap:22px;padding:22px;align-items:start}
+    .panel{background:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(15,23,42,.10)}
+    .panel h2{margin:0 0 12px;font-size:20px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-weight:700;margin-top:12px;font-size:13px;color:#263244}
+    input,textarea,select{width:100%;margin-top:5px;padding:10px 11px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;background:#fff}
+    textarea{min-height:76px;resize:vertical}.hint{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+    button{border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--blue);color:#fff;font-size:15px;width:100%;margin-top:12px}
+    button.secondary{background:#0f766e} button.ghost{background:#e7eef7;color:#16324f}
+    .checks{margin-top:14px;border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fafafa}.checks h3{font-size:15px;margin:0 0 8px}.check{font-size:13px;margin:6px 0;display:flex;gap:8px}.bad{color:#b45309}.good{color:#047857}
+    .stage{display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding-bottom:30px}.phone-note{font-size:13px;color:#526070;text-align:center;margin-bottom:10px}
+    #flyer{width:1080px;height:1350px;transform:scale(.47);transform-origin:top center;margin-bottom:-700px;position:relative;overflow:hidden;background:#fff;color:#111827;box-shadow:0 20px 60px rgba(0,0,0,.28)}
+    .flyer-inner{position:absolute;inset:0;padding:58px;display:flex;flex-direction:column}.na-logo{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:430px;min-height:82px;border-radius:12px;background:rgba(255,255,255,.90);display:flex;align-items:center;justify-content:center;text-align:center;color:#003b73;font-weight:800;border:2px solid rgba(0,75,141,.25);font-size:25px;line-height:1.15;padding:10px 18px;z-index:20}.na-logo small{display:block;font-size:18px;font-weight:600}.event-title{font-weight:950;line-height:.95;margin:0;text-transform:uppercase;letter-spacing:-1px}.theme-title{font-size:44px;font-weight:800}.pill{display:inline-block;border-radius:999px;padding:14px 28px;font-weight:900}.info-row{font-size:34px;line-height:1.25}.info-row strong{font-weight:950}.desc{white-space:pre-line}.qr{width:150px;height:150px;background:#fff;padding:8px;border-radius:8px;display:flex;align-items:center;justify-content:center}.qr:empty{display:none}
 
-    header {
-      background: #004b8d;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
+    /* Mall 1 */
+    .template-talardag{background:linear-gradient(#ffecc5 0%,#fff6dd 48%,#ffe7b5 100%)}
+    .template-talardag:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 16% 23%,#ff7a30 0 9%,transparent 10%),radial-gradient(circle at 88% 31%,#ffb43b 0 14%,transparent 15%),linear-gradient(180deg,transparent 0 67%,#0f5b86 67% 100%);opacity:.28}.template-talardag .top-card{background:linear-gradient(135deg,#004b8d,#073763);border-radius:34px;padding:48px 42px;text-align:center;color:#fff;box-shadow:0 12px 28px rgba(0,0,0,.22)}.template-talardag .event-title{font-size:92px;text-shadow:0 5px 0 rgba(0,0,0,.25)}.template-talardag .theme-title{color:#ffd166}.template-talardag .content{text-align:center;margin-top:46px}.template-talardag .date{font-size:64px;font-weight:950}.template-talardag .time{font-size:48px;font-weight:900}.template-talardag .place{font-size:32px;margin-top:34px}.template-talardag .desc{font-size:40px;font-weight:900;line-height:1.22;margin-top:42px}.template-talardag .reg{background:#075985;color:#fff;margin-top:auto;margin-bottom:106px;font-size:34px}
 
-    .app {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 24px;
-      padding: 24px;
-    }
+    /* Mall 2 */
+    .template-konvent{background:linear-gradient(165deg,#071a49,#153f91 46%,#f5f7fb 100%);color:#fff}.template-konvent:before{content:"";position:absolute;inset:-80px;background:radial-gradient(circle at 50% 48%,rgba(255,221,112,.9),transparent 20%),radial-gradient(circle at 50% 52%,rgba(255,255,255,.7),transparent 33%),linear-gradient(135deg,transparent 30%,rgba(255,255,255,.25) 31%,transparent 42%);}.template-konvent .flyer-inner{text-align:center}.template-konvent .event-title{font-size:110px;background:linear-gradient(90deg,#ff6b6b,#ffd166,#8ac926,#4cc9f0,#c77dff,#f72585);-webkit-background-clip:text;color:transparent}.template-konvent .organizer{font-size:46px;font-style:italic;margin-top:6px}.template-konvent .datebar{border:3px solid #d9b45b;border-radius:999px;padding:15px 26px;font-size:37px;font-weight:900;margin-top:36px;background:rgba(4,20,55,.72)}.template-konvent .theme-title{font-size:72px;margin-top:70px;text-shadow:0 5px 12px rgba(0,0,0,.45)}.template-konvent .symbol{width:360px;height:360px;margin:52px auto 30px;border-radius:50%;border:10px solid #d9b45b;background:#081a3d;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:950;box-shadow:0 0 36px rgba(255,215,128,.8)}.template-konvent .reg{background:#083c89;border:4px solid #d9b45b;font-size:38px}.template-konvent .desc{font-size:42px;font-style:italic;margin-top:36px;color:#ffe39b}.template-konvent .bottom-info{color:#14324d;margin-top:auto;margin-bottom:105px;font-size:26px;font-weight:800}
 
-    .panel {
-      background: white;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-    }
+    /* Mall 3 */
+    .template-ren{background:#fff;color:#08172f}.template-ren:before{content:"";position:absolute;inset:0;border:36px solid transparent;border-image:linear-gradient(45deg,red,orange,#e1c500,green,#0066d6,purple,red) 1;opacity:.9}.template-ren .flyer-inner{text-align:center;padding:80px 80px}.template-ren .top-na{font-size:34px;font-weight:900;margin-top:18px}.template-ren .organizer{font-size:44px;font-weight:900;margin-top:38px;color:#004b8d}.template-ren .event-title{font-size:118px;margin-top:26px}.template-ren .iconline{display:flex;justify-content:center;gap:36px;margin-top:52px;font-size:44px;font-weight:950}.template-ren .place{font-size:38px;margin-top:48px;border-top:3px solid #c9d3e1;border-bottom:3px solid #c9d3e1;padding:30px}.template-ren .desc{display:flex;justify-content:center;gap:54px;margin-top:52px;font-size:33px;font-weight:950}.template-ren .welcome{font-size:64px;font-style:italic;font-weight:950;margin-top:auto;margin-bottom:110px;color:#08172f}
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-top: 14px;
-    }
+    /* Mall 4 */
+    .template-minimal{background:#f7f7f8;color:#8a1741}.template-minimal .flyer-inner{text-align:center;padding:78px}.template-minimal .dateside{position:absolute;left:70px;top:55px;text-align:left;font-size:36px;font-weight:950;letter-spacing:2px}.template-minimal .art{width:630px;height:520px;margin:120px auto 15px;border-radius:38% 62% 49% 51%;background:linear-gradient(135deg,#ffbf3f,#d93480,#4b8edb);position:relative;box-shadow:0 20px 50px rgba(0,0,0,.18)}.template-minimal .art:after{content:"";position:absolute;inset:80px;background:rgba(255,255,255,.16);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}.template-minimal .event-title{position:absolute;left:0;right:0;top:265px;font-size:118px;color:#fff;text-shadow:0 8px 18px rgba(0,0,0,.28)}.template-minimal .theme-title{font-size:42px;color:#fff;margin-top:0}.template-minimal .desc{font-size:34px;font-weight:900;line-height:1.32;margin-top:38px;text-transform:uppercase}.template-minimal .bottom-info{font-size:30px;font-weight:900;line-height:1.35;margin-top:32px}.template-minimal .organizer{font-size:34px;margin-top:40px;letter-spacing:2px}.template-minimal .na-logo{filter:grayscale(1)}
 
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccd3dd;
-      font-size: 15px;
-      box-sizing: border-box;
-    }
+    /* Mall 5 */
+    .template-mork{background:#090909;color:#fff}.template-mork .photo{position:absolute;left:58px;right:58px;top:145px;height:815px;background:linear-gradient(180deg,rgba(58,77,135,.95),rgba(16,22,40,.55)),radial-gradient(circle at 68% 82%,#ff7a00 0 8%,transparent 16%),linear-gradient(180deg,#5977b8,#151923 70%);border-radius:2px}.template-mork .flyer-inner{padding:58px 90px}.template-mork .event-title{font-size:52px;text-transform:none;letter-spacing:0;margin-bottom:54px}.template-mork .desc{font-size:34px;line-height:1.32;font-weight:800;max-width:650px;margin-top:38px;text-shadow:0 3px 8px rgba(0,0,0,.8)}.template-mork .dates{font-size:34px;font-weight:900;margin-top:auto;margin-bottom:178px}.template-mork .qr{position:absolute;right:90px;bottom:150px;width:190px;height:190px}.template-mork .contact{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:24px;color:#fff}.template-mork .na-logo{left:300px;bottom:82px;width:430px;background:rgba(0,0,0,.25);color:#fff;border-color:rgba(255,255,255,.2)}
 
-    textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
-    .warning {
-      background: #fff4d6;
-      border-left: 5px solid #f59e0b;
-      padding: 12px;
-      margin-top: 18px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .flyer-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    .flyer {
-      width: 432px;
-      height: 540px;
-      background: linear-gradient(160deg, #004b8d, #0f766e);
-      color: white;
-      border-radius: 18px;
-      padding: 28px;
-      box-sizing: border-box;
-      position: relative;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      overflow: hidden;
-    }
-
-    .flyer.light {
-      background: white;
-      color: #1f2933;
-      border: 1px solid #d7dde6;
-    }
-
-    .logo {
-      background: white;
-      color: #004b8d;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: bold;
-      text-align: center;
-      font-size: 13px;
-      margin-bottom: 24px;
-    }
-
-    .event-type {
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      font-size: 13px;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
-
-    .flyer h1 {
-      font-size: 34px;
-      line-height: 1.05;
-      margin: 0 0 18px;
-    }
-
-    .info {
-      font-size: 17px;
-      line-height: 1.45;
-      margin-top: 18px;
-    }
-
-    .description {
-      margin-top: 22px;
-      font-size: 16px;
-      line-height: 1.45;
-    }
-
-    .organizer {
-      position: absolute;
-      left: 28px;
-      right: 28px;
-      bottom: 24px;
-      font-size: 14px;
-      border-top: 1px solid rgba(255,255,255,0.4);
-      padding-top: 14px;
-    }
-
-    .light .organizer {
-      border-top-color: #d7dde6;
-    }
-
-    button {
-      width: 100%;
-      padding: 13px;
-      margin-top: 16px;
-      border: none;
-      border-radius: 10px;
-      background: #004b8d;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button.secondary {
-      background: #0f766e;
-    }
-
-    @media (max-width: 900px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-    }
+    @media(max-width:980px){.app{grid-template-columns:1fr}#flyer{transform:scale(.34);margin-bottom:-880px}.panel{max-width:100%}}
   </style>
 </head>
-
 <body>
-
-<header>
-  <h1>NA Flyer-generator</h1>
-  <p>Skapa godkända flyers i rätt format för NA-evenemang</p>
-</header>
-
+<header><div><h1>NA Flyer-generator</h1><p>Skapa 4:5-flyer i 1080 × 1350 px med policykontroll</p></div></header>
 <main class="app">
-
   <section class="panel">
-    <h2>Information till flyer</h2>
-
-    <label>Eventnamn *</label>
-    <input id="eventName" placeholder="Ex. Serviceworkshop i Stockholm" />
-
-    <label>Eventtyp</label>
-    <select id="eventType">
-      <option>NA-evenemang</option>
-      <option>Konvent</option>
-      <option>Workshop</option>
-      <option>Servicemöte</option>
-      <option>Speaker meeting</option>
-    </select>
-
-    <label>Arrangör / serviceenhet / grupp *</label>
-    <input id="organizer" placeholder="Ex. Stockholms Område" />
-
-    <label>Datum och tid *</label>
-    <input id="dateTime" placeholder="Ex. 12 oktober 2026, kl. 13.00–17.00" />
-
-    <label>Adress *</label>
-    <input id="address" placeholder="Ex. Exempelgatan 12, Stockholm" />
-
-    <label>Registrering / anmälan</label>
-    <input id="registration" placeholder="Ex. Ingen föranmälan krävs" />
-
-    <label>Beskrivning</label>
-    <textarea id="description" placeholder="Kort och tydlig beskrivning av evenemanget"></textarea>
-
-    <label>Kontaktinfo kopplad till NA</label>
-    <input id="contact" placeholder="Ex. info@nasverige.org" />
-
-    <label>Layout</label>
-    <select id="theme">
-      <option value="blue">Blå/grön</option>
-      <option value="light">Ljus utskriftsvänlig</option>
-    </select>
-
-    <div class="warning">
-      Obligatorisk NA-logotyp läggs alltid in automatiskt.  
-      Undvik fullständiga namn, privata telefonnummer och personliga e-postadresser.
-    </div>
-
+    <h2>Flyer-information</h2>
+    <label>Mall</label><select id="template"><option value="talardag">Talardag / workshop</option><option value="konvent">Konvent / tema</option><option value="ren">Ren informationsflyer</option><option value="minimal">Illustrerad minimal</option><option value="mork">Mörk bildbakgrund</option></select>
+    <label>Rubrik / eventnamn *</label><input id="title" value="TALARDAG">
+    <label>Tema / underrubrik</label><input id="themeText" value="Tema: Frihet">
+    <label>Arrangör / serviceenhet / grupp *</label><input id="organizer" value="NA Hässleholmsgruppen">
+    <div class="grid2"><div><label>Datum *</label><input id="date" value="Lördag 15 Augusti"></div><div><label>Tid *</label><input id="time" value="10:00 - 17:00"></div></div>
+    <label>Plats/adress *</label><textarea id="place">Församlingshemmet
+Kyrkbacken 2, 28138 Hässleholm</textarea>
+    <label>Program / beskrivning</label><textarea id="desc">5 män &amp; 5 kvinnor delar sina berättelser
+Vi serverar fika, kaffe och chili con carne
+Avslutande NA-möte efter sista talaren</textarea>
+    <label>Registrering/anmälan</label><input id="reg" value="Registrering: 50 kr">
+    <label>Kontaktinfo kopplad till NA</label><input id="contact" placeholder="Ex. info@nasverige.org">
+    <label>QR-länk</label><input id="qrUrl" placeholder="https://...">
+    <div class="hint">Loggan är en platshållare nu. När ni har riktig logga byter vi bara ut rutan mot bildfilen.</div>
     <button onclick="updateFlyer()">Uppdatera flyer</button>
-    <button class="secondary" onclick="downloadPNG()">Exportera som PNG</button>
+    <button class="secondary" onclick="downloadImage('png')">Exportera PNG</button>
+    <button class="ghost" onclick="downloadImage('jpeg')">Exportera JPG</button>
+    <div class="checks"><h3>Policykontroll</h3><div id="checks"><div class="check good">✓ <span>Rubrik finns</span></div><div class="check good">✓ <span>Arrangör/serviceenhet/grupp finns</span></div><div class="check good">✓ <span>Datum och tid finns</span></div><div class="check good">✓ <span>Adress/plats finns</span></div><div class="check good">✓ <span>Inget privat telefonnummer hittat</span></div><div class="check good">✓ <span>Ingen vanlig privat e-postdomän hittad</span></div><div class="check good">✓ <span>Textmängden är rimlig för läsbar flyer</span></div><div class="check good">✓ <span>Officiell NA-logga/platshållare ligger låst i layouten</span></div></div></div>
   </section>
-
-  <section class="flyer-wrap">
-    <div id="flyer" class="flyer">
-
-      <div class="logo">
-        NA Sverige · Narcotics Anonymous · Anonyma Narkomaner ®
-      </div>
-
-      <div id="previewType" class="event-type">NA-evenemang</div>
-
-      <h1 id="previewTitle">Eventnamn</h1>
-
-      <div class="info">
-        <strong>Datum & tid:</strong><br>
-        <span id="previewDate">Datum och tid</span>
-      </div>
-
-      <div class="info">
-        <strong>Plats:</strong><br>
-        <span id="previewAddress">Adress</span>
-      </div>
-
-      <div class="info">
-        <strong>Anmälan:</strong><br>
-        <span id="previewRegistration">Information om registrering</span>
-      </div>
-
-      <div id="previewDescription" class="description">
-        Kort beskrivning av evenemanget.
-      </div>
-
-      <div class="organizer">
-        Arrangör: <span id="previewOrganizer">Serviceenhet / grupp</span><br>
-        <span id="previewContact"></span>
-      </div>
-
-    </div>
-  </section>
-
+  <section><div class="phone-note">Förhandsvisning. Exporten blir 1080 × 1350 px.</div><div class="stage"><div id="flyer" class="template-talardag"><div class="flyer-inner"><div class="top-card"><h1 class="event-title">TALARDAG</h1><div class="theme-title">Tema: Frihet</div><div class="pill" style="background:#082f49;margin-top:24px;font-size:28px">Arrangeras av NA Hässleholmsgruppen</div></div><div class="content"><div class="date">Lördag 15 Augusti</div><div class="time">Kl 10:00 - 17:00</div><div class="place"><b>PLATS:</b> Församlingshemmet<br>Kyrkbacken 2, 28138 Hässleholm</div><div class="desc">5 män &amp; 5 kvinnor delar sina berättelser<br>Vi serverar fika, kaffe och chili con carne<br>Avslutande NA-möte efter sista talaren</div><div class="pill reg">Registrering: 50 kr</div></div><div class="na-logo">NA Sverige ®<small>Narcotics Anonymous<br>Anonyma Narkomaner</small></div></div></div></div></section>
 </main>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <script>
-  function updateFlyer() {
-    const flyer = document.getElementById("flyer");
-
-    document.getElementById("previewTitle").innerText =
-      document.getElementById("eventName").value || "Eventnamn";
-
-    document.getElementById("previewType").innerText =
-      document.getElementById("eventType").value;
-
-    document.getElementById("previewOrganizer").innerText =
-      document.getElementById("organizer").value || "Serviceenhet / grupp";
-
-    document.getElementById("previewDate").innerText =
-      document.getElementById("dateTime").value || "Datum och tid";
-
-    document.getElementById("previewAddress").innerText =
-      document.getElementById("address").value || "Adress";
-
-    document.getElementById("previewRegistration").innerText =
-      document.getElementById("registration").value || "Information om registrering";
-
-    document.getElementById("previewDescription").innerText =
-      document.getElementById("description").value || "Kort beskrivning av evenemanget.";
-
-    document.getElementById("previewContact").innerText =
-      document.getElementById("contact").value || "";
-
-    const theme = document.getElementById("theme").value;
-
-    if (theme === "light") {
-      flyer.classList.add("light");
-    } else {
-      flyer.classList.remove("light");
-    }
-
-    checkPolicy();
-  }
-
-  function checkPolicy() {
-    const allText = [
-      eventName.value,
-      organizer.value,
-      dateTime.value,
-      address.value,
-      registration.value,
-      description.value,
-      contact.value
-    ].join(" ");
-
-    const phonePattern = /(\+46|0)[0-9\s\-]{7,}/;
-    const personalEmailPattern = /@(gmail|hotmail|outlook|icloud|live)\./i;
-
-    if (phonePattern.test(allText)) {
-      alert("Varning: Flyern verkar innehålla ett telefonnummer. Privata telefonnummer bör inte användas.");
-    }
-
-    if (personalEmailPattern.test(allText)) {
-      alert("Varning: Flyern verkar innehålla en personlig e-postadress.");
-    }
-  }
-
-  function downloadPNG() {
-    const flyer = document.getElementById("flyer");
-
-    html2canvas(flyer, {
-      scale: 2,
-      backgroundColor: null
-    }).then(canvas => {
-      const link = document.createElement("a");
-      link.download = "na-flyer.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    });
-  }
-
-  updateFlyer();
+const $=id=>document.getElementById(id);
+function esc(s){return String(s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+function nl(s){return esc(s).replace(/\n/g,'<br>');}
+function logo(){return `<div class="na-logo">NA Sverige ®<small>Narcotics Anonymous<br>Anonyma Narkomaner</small></div>`}
+function qr(){return `<div id="qr" class="qr"></div>`}
+function data(){return {t:$('title').value,th:$('themeText').value,o:$('organizer').value,d:$('date').value,ti:$('time').value,p:$('place').value,de:$('desc').value,r:$('reg').value,c:$('contact').value,q:$('qrUrl').value,tm:$('template').value}}
+function updateFlyer(){const x=data(), f=$('flyer'); f.className='template-'+x.tm; let html='';
+ if(x.tm==='talardag') html=`<div class="flyer-inner"><div class="top-card"><h1 class="event-title">${esc(x.t)}</h1><div class="theme-title">${esc(x.th)}</div><div class="pill" style="background:#082f49;margin-top:24px;font-size:28px">Arrangeras av ${esc(x.o)}</div></div><div class="content"><div class="date">${esc(x.d)}</div><div class="time">Kl ${esc(x.ti)}</div><div class="place"><b>PLATS:</b> ${nl(x.p)}</div><div class="desc">${nl(x.de)}</div><div class="pill reg">${esc(x.r)}</div></div>${logo()}</div>`;
+ if(x.tm==='konvent') html=`<div class="flyer-inner"><h1 class="event-title">${esc(x.t)}</h1><div class="organizer">${esc(x.o)}</div><div class="datebar">${esc(x.d)} kl ${esc(x.ti)}</div><div class="theme-title">${esc(x.th)}</div><div class="symbol">NA<br>®</div><div class="pill reg">${esc(x.r)}</div><div class="desc">${nl(x.de)}</div><div class="bottom-info">${nl(x.p)}${x.c?'<br>'+esc(x.c):''}</div>${logo()}</div>`;
+ if(x.tm==='ren') html=`<div class="flyer-inner"><div class="top-na">Anonyma Narkomaner ®</div><div class="organizer">${esc(x.o)} anordnar</div><h1 class="event-title">${esc(x.t)}</h1><div class="iconline"><span>📅 ${esc(x.d)}</span><span>⏱ ${esc(x.ti)}</span></div><div class="place">📍 ${nl(x.p)}</div><div class="desc"><span>🎤 Talare</span><span>☕ Fika</span><span>👥 Möte</span></div><div class="welcome">Välkommen!</div>${logo()}</div>`;
+ if(x.tm==='minimal') html=`<div class="flyer-inner"><div class="dateside">${esc(x.d)}<br>${esc(x.ti)}</div><div class="art"></div><h1 class="event-title">${esc(x.t)}</h1><div class="theme-title">${esc(x.th)}</div><div class="desc">${nl(x.de)}</div><div class="bottom-info">${esc(x.r)}<br>${nl(x.p)}${x.c?'<br>Kontakt: '+esc(x.c):''}</div><div class="organizer">${esc(x.o)}</div>${logo()}</div>`;
+ if(x.tm==='mork') html=`<div class="photo"></div><div class="flyer-inner"><h1 class="event-title">${esc(x.o)}</h1><div class="desc">${nl(x.de)}<br><br>${esc(x.th)}</div><div class="dates">Datum/tid:<br>${esc(x.d)}<br>${esc(x.ti)}<br><br>${nl(x.p)}</div>${qr()}${logo()}<div class="contact">${esc(x.c)}</div></div>`;
+ f.innerHTML=html; makeQR(); checkPolicy();}
+function makeQR(){const url=$('qrUrl').value.trim(); const box=$('qr'); if(box&&url){box.innerHTML=''; new QRCode(box,{text:url,width:box.clientWidth-16,height:box.clientHeight-16,correctLevel:QRCode.CorrectLevel.M});}}
+function checkPolicy(){const x=data(); const all=Object.values(x).join(' '); const checks=[]; const add=(ok,msg)=>checks.push(`<div class="check ${ok?'good':'bad'}">${ok?'✓':'⚠'} <span>${msg}</span></div>`); add(!!x.t,'Rubrik finns'); add(!!x.o,'Arrangör/serviceenhet/grupp finns'); add(!!x.d&&!!x.ti,'Datum och tid finns'); add(!!x.p,'Adress/plats finns'); add(!/(\+46|0)[0-9\s\-]{7,}/.test(all),'Inget privat telefonnummer hittat'); add(!/@(gmail|hotmail|outlook|icloud|live)\./i.test(all),'Ingen vanlig privat e-postdomän hittad'); add(all.length<850,'Textmängden är rimlig för läsbar flyer'); add(true,'Officiell NA-logga/platshållare ligger låst i layouten'); $('checks').innerHTML=checks.join('');}
+async function downloadImage(type){updateFlyer(); const canvas=await html2canvas($('flyer'),{scale:1,backgroundColor:null,useCORS:true}); const a=document.createElement('a'); a.download='na-flyer.'+(type==='jpeg'?'jpg':'png'); a.href=canvas.toDataURL('image/'+type, type==='jpeg'?0.92:1); a.click();}
+['template','title','themeText','organizer','date','time','place','desc','reg','contact','qrUrl'].forEach(id=>$(id).addEventListener('input',updateFlyer));
+updateFlyer();
 </script>
 
-</body>
-</html>
+
+</body></html>
