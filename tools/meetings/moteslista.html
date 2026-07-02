@@ -1,4 +1,4 @@
-<html lang="sv"><head>
+<html lang="sv" style="--top-height: 47px;"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NA Sverige - Möten</title>
@@ -845,7 +845,7 @@ header,
 
 </aside>
 
-<div id="map"></div>
+<div id="map" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" style="position: relative;"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="https://b.tile.openstreetmap.org/5/17/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/17/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(110px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/16/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, -57px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/5/18/8.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, -57px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/5/16/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-146px, 199px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/5/18/9.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(366px, 199px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(4437.333333px, 2285.043853px, 0px) scale(16);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control">© OpenStreetMap</div></div></div></div>
 <section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
 </main>
 
@@ -856,7 +856,7 @@ header,
       <button class="secondary" onclick="clearAllFilters()">Rensa filter</button>
     </div>
 
-    <div id="statusStats" class="muted"></div>
+    <div id="statusStats" class="muted"><span class="bad">Fel:</span> Load failed</div>
 
     <div class="muted">Statistiken följer samma filter som möteslistan.</div>
 
@@ -899,7 +899,7 @@ header,
   </aside>
 
   <section id="statsFull">
-    <div id="stats"></div>
+    <div id="stats"><p class="muted">Hämtar möten...</p></div>
   </section>
 </main>
 
@@ -2126,7 +2126,7 @@ function exportFilteredToPdf(){
 
   let currentDay = "";
 
-  sortedMeetings.forEach((m, index) => {\n    setColumnFromIndex(index);
+  sortedMeetings.forEach(m => {
     const day = cleanDay(m.days);
 
     if (day !== currentDay) {
@@ -2419,8 +2419,9 @@ async function exportFolderPdf(){
   doc.setFontSize(7.5);
   doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + (panelW - margin*2)/2, pageHeight - 12, { align:"center" });
 
-  // Sida 2: insida. A4 stående med 3 kolumner för att få plats med upp till 80 möten.
-  // Sidan skrivs "åt andra hållet" jämfört med utsidan.
+  // Sida 2: insida. Antal kolumner anpassas efter antal möten.
+  // 1–20 = 1 kolumn, 21–45 = 2 kolumner, 46+ = 3 kolumner.
+  // Mötena fördelas jämnt mellan kolumnerna så att t.ex. möte 21/23 börjar i kolumn 2.
   doc.addPage("a4", "portrait");
 
   const innerPageWidth = doc.internal.pageSize.getWidth();
@@ -2429,31 +2430,30 @@ async function exportFolderPdf(){
   doc.setFillColor(255,255,255);
   doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
 
-  // Dynamiskt antal kolumner
   const meetingCountForLayout = sortedMeetings.length;
   const cols =
     meetingCountForLayout <= 20 ? 1 :
     meetingCountForLayout <= 45 ? 2 : 3;
-  const gap = 3.5;
-  const innerMargin = 6;
+
+  const gap = cols === 1 ? 0 : 3.5;
+  const innerMargin = cols === 1 ? 10 : 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
   const topY = 17;
   const bottomY = innerPageHeight - 12;
-  let col = 0;
-  x = innerMargin;
-  y = topY;
-  currentDay = "";
+  const itemsPerColumn = Math.ceil(Math.max(meetingCountForLayout, 1) / cols);
 
-  const itemsPerColumn = Math.ceil(Math.max(sortedMeetings.length,1) / cols);
+  const pdfStyle = cols === 1
+    ? { day: 10.2, time: 7.4, title: 7.4, address: 6.9, type: 6.5, dayGap: 5.0, titleLine: 3.25, addressLine: 3.05, typeLine: 2.8, itemGap: 1.25, timeW: 21 }
+    : cols === 2
+      ? { day: 8.8, time: 6.15, title: 6.15, address: 5.75, type: 5.35, dayGap: 4.4, titleLine: 2.7, addressLine: 2.5, typeLine: 2.25, itemGap: 0.9, timeW: 18 }
+      : { day: 7.8, time: 5.45, title: 5.45, address: 5.0, type: 4.85, dayGap: 3.8, titleLine: 2.25, addressLine: 2.15, typeLine: 1.9, itemGap: 0.65, timeW: 16 };
 
-  function setColumnFromIndex(index){
-    col = Math.min(Math.floor(index / itemsPerColumn), cols - 1);
-    x = innerMargin + col * (colW + gap);
-    y = topY;
-    currentDay = "";
+  function columnX(columnIndex){
+    return innerMargin + columnIndex * (colW + gap);
   }
 
   function addColumnGuides(){
+    if (cols <= 1) return;
     doc.setDrawColor(190, 205, 235);
     doc.setLineWidth(0.25);
     for (let i=1; i<cols; i++) {
@@ -2483,89 +2483,103 @@ async function exportFolderPdf(){
     doc.text(row, innerMargin, filterY);
     filterY += 2.35;
   });
-  y = Math.max(y, filterY + 1);
+  const contentTopY = Math.max(topY, filterY + 1);
 
   if (!sortedMeetings.length) {
     setBlack();
     doc.setFontSize(9);
-    doc.text("Inga fysiska möten matchar aktuellt filter.", x, y);
+    doc.text("Inga fysiska möten matchar aktuellt filter.", innerMargin, contentTopY);
   }
 
-  sortedMeetings.forEach((m, index) => {\n    setColumnFromIndex(index);
-    const day = cleanDay(m.days).toUpperCase();
-    const addressParts = meetingExportAddress(m);
-    const time = formatMeetingTimeForPdf(m);
-    const title = String(m.title || "Okänt möte");
-    const types = getTypes(m).filter(Boolean);
-    const typeText = types
-      .filter(t => t !== "Virtuellt möte")
-      .join(", ");
-    const typeShort = isOnline(m) ? "Online" : typeText;
+  for (let columnIndex = 0; columnIndex < cols; columnIndex++) {
+    const startIndex = columnIndex * itemsPerColumn;
+    const endIndex = Math.min(startIndex + itemsPerColumn, sortedMeetings.length);
+    const columnMeetings = sortedMeetings.slice(startIndex, endIndex);
+    if (!columnMeetings.length) continue;
 
-    let titleRows = doc.splitTextToSize(title, colW - 16);
-    titleRows = titleRows.slice(0,2);
+    x = columnX(columnIndex);
+    y = contentTopY;
+    currentDay = "";
 
-    let rowsForAddress = [];
-    addressParts.forEach(part => {
-      const wrappedRows = doc.splitTextToSize(part, colW - 16);
-      rowsForAddress.push(...wrappedRows.slice(0, 2));
-    });
+    columnMeetings.forEach(m => {
+      const day = cleanDay(m.days).toUpperCase();
+      const addressParts = meetingExportAddress(m);
+      const time = formatMeetingTimeForPdf(m);
+      const title = String(m.title || "Okänt möte");
+      const types = getTypes(m).filter(Boolean);
+      const typeText = types
+        .filter(t => t !== "Virtuellt möte")
+        .join(", ");
+      const typeShort = isOnline(m) ? "Online" : typeText;
+      const textX = x + pdfStyle.timeW;
+      const textW = colW - pdfStyle.timeW;
 
-    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, colW - 16) : [];
+      let titleRows = doc.splitTextToSize(title, textW);
+      titleRows = titleRows.slice(0, cols === 1 ? 3 : 2);
 
-    const needed =
-      (day !== currentDay ? 4.8 : 0) +
-      2.55 +
-      (titleRows.length - 1) * 2.25 +
-      rowsForAddress.length * 2.15 +
-      rowsForType.length * 1.9 +
-      0.65;
-
-    if (y + needed > bottomY) {
-      if (!nextColumn()) return;
-    }
-
-    if (day !== currentDay) {
-      currentDay = day;
-      setBlue();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.8);
-      doc.text(day, x, y);
-      y += 3.8;
-    }
-
-    setBlack();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.45);
-    doc.text(time, x, y);
-    doc.text(titleRows[0] || "", x + 16, y);
-    y += 2.25;
-
-    for (let i=1; i<titleRows.length; i++) {
-      doc.text(titleRows[i], x + 16, y);
-      y += 2.25;
-    }
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.0);
-    rowsForAddress.forEach(row => {
-      doc.text(row, x + 16, y);
-      y += 2.15;
-    });
-
-    if (typeShort) {
-      doc.setFontSize(4.85);
-      doc.setTextColor(90,90,90);
-      rowsForType.forEach(row => {
-        doc.text(row, x + 16, y);
-        y += 1.9;
+      let rowsForAddress = [];
+      addressParts.forEach(part => {
+        const wrappedRows = doc.splitTextToSize(part, textW);
+        rowsForAddress.push(...wrappedRows.slice(0, cols === 1 ? 3 : 2));
       });
-      setBlack();
-      doc.setFontSize(5.0);
-    }
 
-    y += 0.65;
-  });
+      const rowsForType = typeShort ? doc.splitTextToSize(typeShort, textW).slice(0, 2) : [];
+
+      const needed =
+        (day !== currentDay ? pdfStyle.dayGap + 1 : 0) +
+        titleRows.length * pdfStyle.titleLine +
+        rowsForAddress.length * pdfStyle.addressLine +
+        rowsForType.length * pdfStyle.typeLine +
+        pdfStyle.itemGap;
+
+      // Säkerhet: om en kolumn ändå blir för lång, tryck ihop genom att kapa sista infon i stället för att tappa mötet.
+      if (y + needed > bottomY) {
+        while (rowsForType.length && y + needed > bottomY) rowsForType.pop();
+        while (rowsForAddress.length && y + needed > bottomY) rowsForAddress.pop();
+      }
+
+      if (day !== currentDay) {
+        currentDay = day;
+        setBlue();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(pdfStyle.day);
+        doc.text(day, x, y);
+        y += pdfStyle.dayGap;
+      }
+
+      setBlack();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(pdfStyle.time);
+      doc.text(time, x, y);
+      doc.setFontSize(pdfStyle.title);
+      doc.text(titleRows[0] || "", textX, y);
+      y += pdfStyle.titleLine;
+
+      for (let i=1; i<titleRows.length; i++) {
+        doc.text(titleRows[i], textX, y);
+        y += pdfStyle.titleLine;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(pdfStyle.address);
+      rowsForAddress.forEach(row => {
+        doc.text(row, textX, y);
+        y += pdfStyle.addressLine;
+      });
+
+      if (typeShort) {
+        doc.setFontSize(pdfStyle.type);
+        doc.setTextColor(90,90,90);
+        rowsForType.forEach(row => {
+          doc.text(row, textX, y);
+          y += pdfStyle.typeLine;
+        });
+        setBlack();
+      }
+
+      y += pdfStyle.itemGap;
+    });
+  }
 
   doc.setDrawColor(...blue);
   doc.setLineWidth(0.3);
