@@ -2339,47 +2339,45 @@ async function exportFolderPdf(){
   doc.setFontSize(7.5);
   doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + (panelW - margin*2)/2, pageHeight - 12, { align:"center" });
 
-  // Sida 2: insida.
+  // Sida 2: insida. Dynamisk layout för folderns möteslista.
+  // Kolumner väljs efter antal möten och brytning sker helst vid veckodag.
   doc.addPage("a4", "portrait");
 
   const innerPageWidth = doc.internal.pageSize.getWidth();
   const innerPageHeight = doc.internal.pageSize.getHeight();
-  doc.setFillColor(255,255,255);
-  doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
-
-  const meetingCount = sortedMeetings.length;
-  const cols = meetingCount <= 20 ? 1 : meetingCount <= 45 ? 2 : 3;
+  const meetingCountForLayout = sortedMeetings.length;
+  const cols = meetingCountForLayout <= 20 ? 1 : meetingCountForLayout <= 45 ? 2 : 3;
   const gap = cols === 1 ? 0 : 3.5;
   const innerMargin = 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
+  const headerY = 8;
   const topY = 17;
   const bottomY = innerPageHeight - 13;
+  const columnHeight = bottomY - topY;
+  const targetMeetingsPerCol = Math.ceil(Math.max(meetingCountForLayout, 1) / cols);
+
+  const pdfStyle = meetingCountForLayout <= 20
+    ? { day: 9.4, time: 6.6, title: 6.6, address: 5.85, type: 5.45, dayStep: 4.7, mainStep: 2.75, addressStep: 2.45, typeStep: 2.1, gapAfter: 0.95, timeW: 18 }
+    : meetingCountForLayout <= 45
+      ? { day: 8.6, time: 5.95, title: 5.95, address: 5.35, type: 5.05, dayStep: 4.15, mainStep: 2.45, addressStep: 2.22, typeStep: 1.95, gapAfter: 0.75, timeW: 17 }
+      : { day: 7.8, time: 5.45, title: 5.45, address: 5.0, type: 4.85, dayStep: 3.8, mainStep: 2.25, addressStep: 2.15, typeStep: 1.9, gapAfter: 0.65, timeW: 16 };
+
   let col = 0;
   x = innerMargin;
   y = topY;
-  let currentDay = "";
-
-  const layout = meetingCount <= 20
-    ? { daySize: 10.4, dayGap: 5.2, timeSize: 7.2, titleSize: 7.2, addrSize: 6.5, typeSize: 6.0, timeW: 22, titleLH: 3.1, addrLH: 2.65, typeLH: 2.35, itemGap: 1.15, maxTitleRows: 2, maxAddressRows: 3 }
-    : meetingCount <= 45
-      ? { daySize: 8.4, dayGap: 4.3, timeSize: 5.8, titleSize: 5.8, addrSize: 5.25, typeSize: 4.95, timeW: 18, titleLH: 2.55, addrLH: 2.25, typeLH: 2.0, itemGap: 0.8, maxTitleRows: 2, maxAddressRows: 2 }
-      : { daySize: 7.4, dayGap: 3.75, timeSize: 5.25, titleSize: 5.25, addrSize: 4.75, typeSize: 4.55, timeW: 16, titleLH: 2.25, addrLH: 2.0, typeLH: 1.8, itemGap: 0.55, maxTitleRows: 2, maxAddressRows: 2 };
+  currentDay = "";
+  let meetingsInCol = 0;
+  let usedPages = 1;
 
   function setColumn(newCol){
     col = newCol;
     x = innerMargin + col * (colW + gap);
     y = topY;
     currentDay = "";
-  }
-
-  function nextColumn(){
-    if (col >= cols - 1) return false;
-    setColumn(col + 1);
-    return true;
+    meetingsInCol = 0;
   }
 
   function addColumnGuides(){
-    if (cols < 2) return;
     doc.setDrawColor(190, 205, 235);
     doc.setLineWidth(0.25);
     for (let i=1; i<cols; i++) {
@@ -2388,47 +2386,18 @@ async function exportFolderPdf(){
     }
   }
 
-  function prepareMeetingRows(m){
-    const usableTextW = Math.max(18, colW - layout.timeW - 2);
-    const title = String(m.title || "Okänt möte");
-    const titleRows = doc.splitTextToSize(title, usableTextW).slice(0, layout.maxTitleRows);
+  function drawInnerHeaderFooter(){
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
+    addColumnGuides();
 
-    const rowsForAddress = [];
-    meetingExportAddress(m).forEach(part => {
-      doc.splitTextToSize(part, usableTextW).forEach(row => rowsForAddress.push(row));
-    });
-
-    const types = getTypes(m).filter(Boolean);
-    const typeText = isOnline(m)
-      ? "Online"
-      : types.filter(t => t !== "Virtuellt möte").slice(0,2).join(", ");
-    const typeRows = typeText ? doc.splitTextToSize(typeText, usableTextW).slice(0, 1) : [];
-
-    return {
-      day: cleanDay(m.days).toUpperCase(),
-      time: formatMeetingTimeForPdf(m),
-      titleRows,
-      addressRows: rowsForAddress.slice(0, layout.maxAddressRows),
-      typeRows
-    };
-  }
-
-  function meetingHeight(rows, includeDay){
-    return (includeDay ? layout.dayGap : 0)
-      + Math.max(layout.titleLH, rows.titleRows.length * layout.titleLH)
-      + rows.addressRows.length * layout.addrLH
-      + rows.typeRows.length * layout.typeLH
-      + layout.itemGap;
-  }
-
-  function drawInnerHeader(){
     setBlue();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text("MÖTESLISTA", innerMargin, 8);
+    doc.text("MÖTESLISTA", innerMargin, headerY);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.2);
-    doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
+    doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, headerY);
 
     setBlack();
     doc.setFont("helvetica", "normal");
@@ -2442,52 +2411,146 @@ async function exportFolderPdf(){
       doc.text(row, innerMargin, filterY);
       filterY += 2.35;
     });
-    y = Math.max(y, filterY + 1);
+
+    doc.setDrawColor(...blue);
+    doc.setLineWidth(0.3);
+    doc.line(innerMargin, innerPageHeight - 9, innerPageWidth - innerMargin, innerPageHeight - 9);
+    setBlue();
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
+    const pageSuffix = usedPages > 1 ? " · sida " + usedPages : "";
+    doc.text(String(sortedMeetings.length) + " möten i valt urval" + pageSuffix, innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
+
+    y = Math.max(topY, filterY + 1);
   }
 
-  function drawMeetingRows(rows){
-    if (rows.day !== currentDay) {
-      currentDay = rows.day;
-      setBlue();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(layout.daySize);
-      doc.text(rows.day, x, y);
-      y += layout.dayGap;
+  function nextColumnOrPage(){
+    if (col < cols - 1) {
+      setColumn(col + 1);
+      return;
+    }
+    doc.addPage("a4", "portrait");
+    usedPages++;
+    setColumn(0);
+    drawInnerHeaderFooter();
+  }
+
+  function getMeetingRows(m){
+    const addressParts = meetingExportAddress(m);
+    const time = formatMeetingTimeForPdf(m);
+    const title = String(m.title || "Okänt möte");
+    const types = getTypes(m).filter(Boolean);
+    const typeText = types
+      .filter(t => t !== "Virtuellt möte")
+      .slice(0, meetingCountForLayout > 45 ? 2 : 3)
+      .join(", ");
+    const typeShort = isOnline(m) ? "Online" : typeText;
+
+    const textW = colW - pdfStyle.timeW;
+    let titleRows = doc.splitTextToSize(title, textW).slice(0, 2);
+    let rowsForAddress = [];
+    addressParts.forEach(part => {
+      const wrappedRows = doc.splitTextToSize(part, textW);
+      rowsForAddress.push(...wrappedRows.slice(0, meetingCountForLayout > 45 ? 2 : 3));
+    });
+    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, textW).slice(0, 2) : [];
+
+    return { time, titleRows, rowsForAddress, rowsForType };
+  }
+
+  function meetingHeight(m, includeDayHeading){
+    const rows = getMeetingRows(m);
+    return (includeDayHeading ? pdfStyle.dayStep : 0) +
+      pdfStyle.mainStep +
+      Math.max(0, rows.titleRows.length - 1) * pdfStyle.mainStep +
+      rows.rowsForAddress.length * pdfStyle.addressStep +
+      rows.rowsForType.length * pdfStyle.typeStep +
+      pdfStyle.gapAfter;
+  }
+
+  function dayHeight(dayMeetings, includeDayHeading){
+    return dayMeetings.reduce((sum, meeting, index) => {
+      return sum + meetingHeight(meeting, includeDayHeading && index === 0);
+    }, 0);
+  }
+
+  function writeDayHeading(day, continued = false){
+    setBlue();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(pdfStyle.day);
+    doc.text(day + (continued ? " FORTS." : ""), x, y);
+    y += pdfStyle.dayStep;
+    currentDay = day;
+  }
+
+  function writeMeeting(m, forceDayHeading = false){
+    const day = cleanDay(m.days).toUpperCase();
+    const rows = getMeetingRows(m);
+    const needsDayHeading = forceDayHeading || day !== currentDay;
+    let needed = meetingHeight(m, needsDayHeading);
+
+    if (y + needed > bottomY && y > topY) {
+      nextColumnOrPage();
+      needed = meetingHeight(m, true);
     }
 
-    const textX = x + layout.timeW;
+    if (needsDayHeading || currentDay !== day) {
+      writeDayHeading(day, forceDayHeading && currentDay === day);
+    }
+
     setBlack();
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(layout.timeSize);
+    doc.setFontSize(pdfStyle.time);
     doc.text(rows.time, x, y);
-    doc.setFontSize(layout.titleSize);
-    rows.titleRows.forEach((row, index) => {
-      doc.text(row, textX, y + index * layout.titleLH);
-    });
-    y += Math.max(layout.titleLH, rows.titleRows.length * layout.titleLH);
+    doc.text(rows.titleRows[0] || "", x + pdfStyle.timeW, y);
+    y += pdfStyle.mainStep;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(layout.addrSize);
-    rows.addressRows.forEach(row => {
-      doc.text(row, textX, y);
-      y += layout.addrLH;
-    });
-
-    if (rows.typeRows.length) {
-      doc.setTextColor(90,90,90);
-      doc.setFontSize(layout.typeSize);
-      rows.typeRows.forEach(row => {
-        doc.text(row, textX, y);
-        y += layout.typeLH;
-      });
-      setBlack();
+    for (let i=1; i<rows.titleRows.length; i++) {
+      doc.text(rows.titleRows[i], x + pdfStyle.timeW, y);
+      y += pdfStyle.mainStep;
     }
 
-    y += layout.itemGap;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(pdfStyle.address);
+    rows.rowsForAddress.forEach(row => {
+      doc.text(row, x + pdfStyle.timeW, y);
+      y += pdfStyle.addressStep;
+    });
+
+    if (rows.rowsForType.length) {
+      doc.setFontSize(pdfStyle.type);
+      doc.setTextColor(90,90,90);
+      rows.rowsForType.forEach(row => {
+        doc.text(row, x + pdfStyle.timeW, y);
+        y += pdfStyle.typeStep;
+      });
+      setBlack();
+      doc.setFontSize(pdfStyle.address);
+    }
+
+    y += pdfStyle.gapAfter;
+    meetingsInCol++;
   }
 
-  addColumnGuides();
-  drawInnerHeader();
+  function groupMeetingsByDay(meetings){
+    const result = [];
+    let activeDay = null;
+    let activeItems = [];
+    meetings.forEach(meeting => {
+      const day = cleanDay(meeting.days).toUpperCase();
+      if (day !== activeDay) {
+        if (activeItems.length) result.push({ day: activeDay, meetings: activeItems });
+        activeDay = day;
+        activeItems = [];
+      }
+      activeItems.push(meeting);
+    });
+    if (activeItems.length) result.push({ day: activeDay, meetings: activeItems });
+    return result;
+  }
+
+  drawInnerHeaderFooter();
 
   if (!sortedMeetings.length) {
     setBlack();
@@ -2495,30 +2558,30 @@ async function exportFolderPdf(){
     doc.text("Inga fysiska möten matchar aktuellt filter.", x, y);
   }
 
-  // Skriv alla möten i ordning. Den här delen skapar inte extrasidor och hoppar inte över mittkolumnen.
-  for (const m of sortedMeetings) {
-    const rows = prepareMeetingRows(m);
-    let needed = meetingHeight(rows, rows.day !== currentDay);
+  const dayGroups = groupMeetingsByDay(sortedMeetings);
 
-    if (y + needed > bottomY) {
-      if (!nextColumn()) {
-        // Sista säkerhetsnivå: pressa in sista raderna ovanför sidfoten i stället för att tappa möten.
-        y = Math.min(y, bottomY - needed);
-      }
-      needed = meetingHeight(rows, rows.day !== currentDay);
+  dayGroups.forEach(dayGroup => {
+    const fullDayHeight = dayHeight(dayGroup.meetings, true);
+    const remainingHeight = bottomY - y;
+
+    // Håll ihop veckodagen om den får plats bättre i nästa kolumn.
+    // Men bryt inte för tidigt: fyll kolumnen till ungefär 70 % eller nära målantalet först.
+    const shouldMoveWholeDay =
+      col < cols - 1 &&
+      y > topY &&
+      fullDayHeight > remainingHeight &&
+      (y - topY > columnHeight * 0.70 || meetingsInCol >= targetMeetingsPerCol * 0.85);
+
+    if (shouldMoveWholeDay) {
+      nextColumnOrPage();
     }
 
-    drawMeetingRows(rows);
-  }
-
-  doc.setDrawColor(...blue);
-  doc.setLineWidth(0.3);
-  doc.line(innerMargin, innerPageHeight - 9, innerPageWidth - innerMargin, innerPageHeight - 9);
-  setBlue();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
-  doc.text(String(sortedMeetings.length) + " möten i valt urval", innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
+    dayGroup.meetings.forEach((meeting, index) => {
+      const day = cleanDay(meeting.days).toUpperCase();
+      const startsNewDayHere = index === 0 || day !== currentDay;
+      writeMeeting(meeting, startsNewDayHere && index > 0);
+    });
+  });
 
   doc.save("na-sverige-folder-" + exportDate + ".pdf");
   setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
