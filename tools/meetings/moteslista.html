@@ -2441,10 +2441,10 @@ async function exportFolderPdf(){
     if (count <= 30) {
       return { cols:2, gap:5, titleSize:7.4, timeSize:7.0, bodySize:6.25, typeSize:5.85, daySize:9.2, lineHeight:2.85, addressLineHeight:2.55, typeLineHeight:2.35, itemGap:1.1, maxTitleRows:2, maxAddressRowsPerPart:2 };
     }
-    if (count <= 40) {
-      return { cols:2, gap:5, titleSize:6.7, timeSize:6.35, bodySize:5.75, typeSize:5.35, daySize:8.4, lineHeight:2.55, addressLineHeight:2.35, typeLineHeight:2.15, itemGap:0.85, maxTitleRows:2, maxAddressRowsPerPart:2 };
+    if (count <= 45) {
+      return { cols:2, gap:5, titleSize:6.45, timeSize:6.15, bodySize:5.55, typeSize:5.15, daySize:8.2, lineHeight:2.45, addressLineHeight:2.25, typeLineHeight:2.05, itemGap:0.7, maxTitleRows:2, maxAddressRowsPerPart:2 };
     }
-    if (count <= 60) {
+    if (count <= 65) {
       return { cols:3, gap:3.5, titleSize:5.8, timeSize:5.55, bodySize:5.1, typeSize:4.8, daySize:8.0, lineHeight:2.35, addressLineHeight:2.15, typeLineHeight:1.95, itemGap:0.65, maxTitleRows:2, maxAddressRowsPerPart:2 };
     }
     return { cols:3, gap:3.5, titleSize:5.35, timeSize:5.15, bodySize:4.75, typeSize:4.45, daySize:7.4, lineHeight:2.15, addressLineHeight:1.95, typeLineHeight:1.78, itemGap:0.45, maxTitleRows:2, maxAddressRowsPerPart:1 };
