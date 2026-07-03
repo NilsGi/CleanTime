@@ -1054,25 +1054,37 @@ header{
   gap:6px;
   margin-top:8px;
 }
-.meeting-action-btn{
+.meeting-action-btn,
+.meeting-actions .meeting-action-btn,
+.meeting-actions a.meeting-action-btn,
+.meeting-actions button.meeting-action-btn,
+.meeting-actions button.meeting-action-btn.secondary{
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  box-sizing:border-box;
   margin:0;
   padding:3px 8px;
   border-radius:9px;
   font-size:11px;
   line-height:1;
+  min-height:20px;
+  height:20px;
+  background:#0a1981;
+  color:#fff;
+  border:0;
   box-shadow:none;
   text-decoration:none;
-  min-height:18px;
-  height:20px;
-}
-.meeting-action-link{
-  background:#eef2ff;
-  border:1px solid #b9c3ef;
-  color:#0a1981;
   font-weight:800;
+  font-family:inherit;
+}
+.meeting-actions a.meeting-action-btn:visited{
+  color:#fff;
+}
+.meeting-actions .meeting-action-btn:hover,
+.meeting-actions button.meeting-action-btn.secondary:hover{
+  filter:brightness(1.08);
+  background:#0a1981;
 }
 .directions-dialog-backdrop{
   position:fixed;
