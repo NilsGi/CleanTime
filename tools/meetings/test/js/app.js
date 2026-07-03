@@ -23,6 +23,16 @@ function renderActiveFilters(){
     ).join("");
 }
 
+function appendListLimitNotice(containerId){
+  const container = $(containerId);
+  if (!container) return;
+
+  const p = document.createElement("p");
+  p.className = "muted";
+  p.textContent = "Listan visar de första 150 grupperna. Använd sök/filter för att begränsa.";
+  container.appendChild(p);
+}
+
 function syncOnlineToggleButton(){
   const button = $("toggleOnlineBtn");
   const type = $("typeFilter");
@@ -175,10 +185,8 @@ function renderAll(syncFromMap = false){
   renderList(visibleGroupList.slice(0, 150));
 
   if (visibleGroupList.length > 150) {
-    const p = document.createElement("p");
-    p.className = "muted";
-    p.textContent = "Listan visar de första 150 grupperna. Använd sök/filter för att begränsa.";
-    $("list")?.appendChild(p);
+    appendListLimitNotice("list");
+    appendListLimitNotice("listMobile");
   }
 }
 

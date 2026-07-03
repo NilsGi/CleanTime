@@ -713,16 +713,16 @@ header{
     overflow:visible!important;
   }
 
-  #map{
-    flex:0 0 auto!important;
-    height:52vh!important;
-    min-height:320px!important;
-    touch-action:pan-y!important;
-  }
-
-  #map.leaflet-container{
-    touch-action:pan-y!important;
-  }
+	  #map{
+	    flex:0 0 auto!important;
+	    height:52vh!important;
+	    min-height:320px!important;
+	    touch-action:auto!important;
+	  }
+	
+	  #map.leaflet-container{
+	    touch-action:auto!important;
+	  }
 
   #mobileList{
     display:block!important;
@@ -732,10 +732,16 @@ header{
     display:none!important;
   }
 
-  .stats-count-line{
-    font-size:13px;
-  }
-}
+	  .stats-count-line{
+	    font-size:13px;
+	  }
+
+	  header{
+	    position:sticky;
+	    top:0;
+	    z-index:2000;
+	  }
+	}
 
 /* Senaste layoutjusteringar */
 #status{
@@ -784,14 +790,12 @@ header{
 .quick-online-toggle{
   width:auto;
   min-height:28px;
-  margin:0 0 7px;
+  margin:0;
   padding:5px 9px;
-  border-radius:999px;
+  border-radius:8px;
   box-shadow:none;
   font-size:11.5px;
   line-height:1.1;
-  position:relative;
-  z-index:2;
 }
 .quick-online-toggle.online-visible{
   background:#eaf6ef;
@@ -910,9 +914,9 @@ header{
 .top-buttons{
   position:sticky!important;
   top:0!important;
-  z-index:80!important;
+  z-index:120!important;
   gap:6px!important;
-  margin:-14px -14px 8px!important;
+  margin:0 -14px 8px!important;
   padding:8px 14px 7px!important;
   background:#fff!important;
   border-bottom:1px solid #eee!important;
@@ -929,22 +933,61 @@ header{
 @media(min-width:901px){
   .top-buttons{
     top:0!important;
-    margin:-14px -14px 8px!important;
-    padding:7px 14px 7px!important;
+    margin:0 -14px 8px!important;
+    padding:8px 14px 7px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
 }
 
 @media(max-width:900px){
   .top-buttons{
     top:0!important;
-    margin:-12px -12px 7px!important;
+    margin:0 -12px 7px!important;
     padding:7px 12px 6px!important;
     gap:5px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
 
   .top-buttons button{
     min-height:34px!important;
+    margin:0!important;
     padding:6px 5px!important;
     font-size:11.5px!important;
+  }
+}
+
+#meetingsPanel > aside{
+  padding-top:0!important;
+}
+
+@media(max-width:760px){
+  aside,
+  #meetingsPanel > aside{
+    padding-top:0!important;
+  }
+}
+
+/* Mobil: lås headern och låt knapparna följa direkt under. */
+@media(max-width:900px){
+	  header{
+	    position:fixed!important;
+	    top:0!important;
+	    left:0!important;
+	    right:0!important;
+	    z-index:2000!important;
+	  }
+
+  .top-buttons{
+    position:fixed!important;
+    top:var(--top-height, 56px)!important;
+	    left:0!important;
+	    right:0!important;
+	    margin:0!important;
+	    z-index:1900!important;
+	    box-sizing:border-box!important;
+	  }
+
+  #meetingsPanel{
+    padding-top:calc(var(--top-height, 56px) + var(--controls-height, 48px))!important;
   }
 }

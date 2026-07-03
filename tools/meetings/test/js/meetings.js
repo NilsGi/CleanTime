@@ -1,22 +1,23 @@
 const DISTRICT_COLORS = [
-  "#1565c0", "#d84315", "#2e7d32", "#6a1b9a", "#00838f",
-  "#ad1457", "#5d4037", "#283593", "#f57f17", "#00695c",
-  "#8e24aa", "#455a64", "#9e2a2b", "#33691e", "#0277bd",
-  "#c2185b", "#3e2723", "#3949ab", "#ef6c00", "#00796b"
+  "#0057b8", "#c43e1c", "#00843d", "#6a2ca0", "#b0005a",
+  "#006d77", "#8a6500", "#2f3a8f", "#a23e48", "#4b7f1e",
+  "#b85c00", "#006ba6", "#6d4c41", "#005f73", "#5c677d"
 ];
 
 const DISTRICT_COLOR_OVERRIDES = {
-  "stockholm": "#1565c0",
-  "gossnad": "#d84315",
-  "malardalen": "#2e7d32",
-  "mälardalen": "#2e7d32",
-  "skane": "#6a1b9a",
-  "skåne": "#6a1b9a",
-  "vastra gotaland": "#00838f",
-  "västra götaland": "#00838f",
-  "norra norrland": "#ad1457",
-  "sodra norrland": "#5d4037",
-  "södra norrland": "#5d4037"
+  "stockholm": "#0057b8",
+  "gossnad": "#c43e1c",
+  "sidna": "#6a2ca0",
+  "nisna": "#006d77",
+  "malardalen": "#00843d",
+  "mälardalen": "#00843d",
+  "skane": "#b0005a",
+  "skåne": "#b0005a",
+  "vastra gotaland": "#8a6500",
+  "västra götaland": "#8a6500",
+  "norra norrland": "#2f3a8f",
+  "sodra norrland": "#b85c00",
+  "södra norrland": "#b85c00"
 };
 
 let districtColorMap = {};
@@ -105,7 +106,7 @@ function getCities(m){
 
 function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
 
-function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
+function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!safeUrl(m.onlineMeeting?.url); }
 
 function getCity(m){
   const city = getCities(m).join(", ");

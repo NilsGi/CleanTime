@@ -275,7 +275,8 @@ function getActiveFilterTags(){
   if (districts.length) tags.push({ label: "Distrikt", value: summarizeFilterValues(districts) });
   if (days.length) tags.push({ label: "Dag", value: summarizeFilterValues(days) });
   if (meetingTypes.length) tags.push({ label: "Typ", value: summarizeFilterValues(meetingTypes) });
-  if (includeOnlineMeetings) tags.push({ label: "Online", value: "visas" });
+  if ($("typeFilter")?.value === "online") tags.push({ label: "Visning", value: "Endast online i listan" });
+  else if (includeOnlineMeetings) tags.push({ label: "Online", value: "visas" });
   else if (view.length && $("typeFilter")?.value) tags.push({ label: "Visning", value: view[0] });
   if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
 

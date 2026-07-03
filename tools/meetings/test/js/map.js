@@ -182,7 +182,7 @@ function clusterPopupHtml(groups){
           .filter(Boolean)
           .map(esc);
         const address = addressRows.join("<br>");
-        const mapLink = m.linkMap ? ' · <a href="'+esc(m.linkMap)+'" target="_blank" rel="noopener noreferrer">Karta</a>' : "";
+        const mapLink = externalLinkHtml(m.linkMap, "Karta");
 
         return `
           <div class="meeting-time">
@@ -190,7 +190,7 @@ function clusterPopupHtml(groups){
             ${isOnline(m) ? " · Online" : " · Fysiskt"}
             ${address ? "<br>" + address : ""}
             ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
-            ${mapLink}
+            ${mapLink ? " · " + mapLink : ""}
           </div>
         `;
       }).join("");
@@ -256,7 +256,7 @@ function groupPopupHtml(g){
   const times = g.meetings.map(m => {
     const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join(" ");
     const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
-    const mapLink = m.linkMap ? ' · <a href="'+esc(m.linkMap)+'" target="_blank" rel="noopener noreferrer">Karta</a>' : "";
+    const mapLink = externalLinkHtml(m.linkMap, "Karta");
     return `
       <div class="meeting-time">
         ${esc(cleanDay(m.days))} ${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}
@@ -264,7 +264,7 @@ function groupPopupHtml(g){
         ${address ? "<br>" + esc(address) : ""}
         ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
         ${m.information ? "<div class=\"meeting-info\">" + formatInformation(m.information) + "</div>" : ""}
-        ${mapLink}<br>${types}
+        ${mapLink ? " · " + mapLink : ""}<br>${types}
       </div>
     `;
   }).join("");
@@ -313,8 +313,8 @@ function buildListHtml(groups){
 
     const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join("");
     const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
-    const online = m.onlineMeeting?.url ? '<a href="'+esc(m.onlineMeeting.url)+'" target="_blank" rel="noopener noreferrer">Online-länk</a>' : "";
-    const mapLink = m.linkMap ? '<a href="'+esc(m.linkMap)+'" target="_blank" rel="noopener noreferrer">Karta</a>' : "";
+    const online = externalLinkHtml(m.onlineMeeting?.url, "Online-länk");
+    const mapLink = externalLinkHtml(m.linkMap, "Karta");
     const dist = m._groupDistance != null ? "<br><b>" + m._groupDistance.toFixed(1) + " km bort</b>" : "";
     const station = m.station ? `<br><span class="muted">Närmaste hållplats: ${esc(m.station)}</span>` : "";
     const info = m.information ? `<div class="meeting-info">${formatInformation(m.information)}</div>` : "";
@@ -392,8 +392,12 @@ function fitVisible(){
 
 function updateLayoutHeight(){
   const header = document.querySelector("header");
+  const topButtons = document.querySelector(".top-buttons");
   const topHeight = (header?.offsetHeight || 0);
+  const controlsHeight = (topButtons?.offsetHeight || 0);
+
   document.documentElement.style.setProperty("--top-height", topHeight + "px");
+  document.documentElement.style.setProperty("--controls-height", controlsHeight + "px");
 
   if (map) {
     setTimeout(() => map.invalidateSize(), 50);
