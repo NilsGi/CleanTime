@@ -1,9 +1,23 @@
 const DISTRICT_COLORS = [
-  "#1976d2", "#00a6a6", "#6c5ce7", "#2e7d32", "#f57c00",
-  "#c2185b", "#455a64", "#00897b", "#5e35b1", "#ef6c00",
-  "#0277bd", "#7cb342", "#ad1457", "#546e7a", "#3949ab",
-  "#0097a7", "#8e24aa", "#6d4c41", "#1565c0", "#00838f"
+  "#1565c0", "#d84315", "#2e7d32", "#6a1b9a", "#00838f",
+  "#ad1457", "#5d4037", "#283593", "#f57f17", "#00695c",
+  "#8e24aa", "#455a64", "#9e2a2b", "#33691e", "#0277bd",
+  "#c2185b", "#3e2723", "#3949ab", "#ef6c00", "#00796b"
 ];
+
+const DISTRICT_COLOR_OVERRIDES = {
+  "stockholm": "#1565c0",
+  "gossnad": "#d84315",
+  "malardalen": "#2e7d32",
+  "mälardalen": "#2e7d32",
+  "skane": "#6a1b9a",
+  "skåne": "#6a1b9a",
+  "vastra gotaland": "#00838f",
+  "västra götaland": "#00838f",
+  "norra norrland": "#ad1457",
+  "sodra norrland": "#5d4037",
+  "södra norrland": "#5d4037"
+};
 
 let districtColorMap = {};
 
@@ -11,18 +25,42 @@ function getMeetingDistrict(m){
   return m.meetingDistrict?.district || "Okänt distrikt";
 }
 
+function normalizeDistrictColorKey(district){
+  return String(district || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function updateDistrictColorMap(meetings){
   const districts = [...new Set((meetings || []).map(getMeetingDistrict).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "sv"));
 
   districtColorMap = {};
+  let fallbackIndex = 0;
+
   districts.forEach((district, index) => {
-    districtColorMap[district] = DISTRICT_COLORS[index % DISTRICT_COLORS.length];
+    const override = DISTRICT_COLOR_OVERRIDES[normalizeDistrictColorKey(district)];
+    if (override) {
+      districtColorMap[district] = override;
+      return;
+    }
+
+    districtColorMap[district] = DISTRICT_COLORS[fallbackIndex % DISTRICT_COLORS.length];
+    fallbackIndex++;
   });
 }
 
 function getDistrictColor(district){
   if (!districtColorMap[district]) {
+    const override = DISTRICT_COLOR_OVERRIDES[normalizeDistrictColorKey(district)];
+    if (override) {
+      districtColorMap[district] = override;
+      return districtColorMap[district];
+    }
+
     const index = Object.keys(districtColorMap).length;
     districtColorMap[district] = DISTRICT_COLORS[index % DISTRICT_COLORS.length];
   }
