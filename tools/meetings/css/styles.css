@@ -98,29 +98,18 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   background:transparent!important;
   border:0!important;
 }
-.user-position-marker > div{
-  width:44px;
-  height:44px;
-  border-radius:50%;
+.user-position-marker .user-position-pin{
+  width:20px;
+  height:20px;
+  border-radius:50% 50% 50% 0;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(255,255,255,.92)!important;
-  border:3px solid #111!important;
-  box-shadow:0 2px 9px rgba(0,0,0,.35);
-}
-.user-position-marker span{
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#111;
-  color:#fff;
-  font-size:11px;
-  font-weight:900;
-  line-height:1;
+  background:#ff0000!important;
+  border:3px solid #fff!important;
+  box-shadow:0 2px 9px rgba(0,0,0,.42);
+  transform:rotate(-45deg);
+  transform-origin:center;
 }
 
 

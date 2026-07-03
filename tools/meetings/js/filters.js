@@ -379,15 +379,15 @@ function updateUserPositionMarker(){
     userMarker = null;
   }
 
-  userMarker = L.marker([userPosition.lat, userPosition.lng], {
-    icon: L.divIcon({
-      className: "user-position-marker",
-      html: "<div><span>Du</span></div>",
-      iconSize: [44, 44],
-      iconAnchor: [22, 22]
-    }),
-    zIndexOffset: 1000
-  }).addTo(map).bindPopup("Du är här");
+	  userMarker = L.marker([userPosition.lat, userPosition.lng], {
+	    icon: L.divIcon({
+	      className: "user-position-marker",
+	      html: '<div class="user-position-pin"></div>',
+	      iconSize: [24, 34],
+	      iconAnchor: [12, 32]
+	    }),
+	    zIndexOffset: 1000
+	  }).addTo(map).bindPopup("Du är här");
 }
 
 function handleDistanceFilterChange(){
