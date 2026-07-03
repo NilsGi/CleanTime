@@ -15,7 +15,7 @@ function meetingAddressText(m){
 
 function meetingShareText(m){
   const rows = [
-    "Narcotics Anonymous – Mötesinformation",
+    "Mötesinformation",
     "",
     "Grupp: " + cleanSingleLineField(m.title || "Okänd grupp"),
     "Tid: " + meetingDisplayTime(m),
@@ -178,8 +178,11 @@ document.addEventListener("click", async event => {
   const actionButton = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address");
   if (!actionButton) return;
 
+  // Knapparna ligger inuti klickbara möteskort. Fånga klicket tidigt så
+  // möteskortets/kartans egen klickhändelse inte öppnar popup först.
   event.preventDefault();
   event.stopPropagation();
+  if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
 
   if (actionButton.classList.contains("share-meeting-btn")) {
     await shareMeetingByKey(actionButton.getAttribute("data-meeting-key"));
@@ -200,4 +203,4 @@ document.addEventListener("click", async event => {
       setTemporaryNotice("Kunde inte kopiera adressen.");
     }
   }
-});
+}, true);
