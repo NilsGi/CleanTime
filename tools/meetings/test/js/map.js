@@ -49,7 +49,7 @@ function initMap(){
 	        return L.divIcon({
 	          html: '<div style="background:' + esc(color) + '!important;color:' + esc(textColor) + '!important"><span>' + totalMeetings + '</span></div>',
 	          className: 'district-cluster-marker',
-	          iconSize: L.point(40, 40)
+	          iconSize: L.point(46, 46)
 	        });
       }
     }).addTo(map);
@@ -138,10 +138,10 @@ function renderMarkers(groups){
 	      icon: L.divIcon({
 	        className: 'meeting-count-marker',
 	        html: '<div style="background:' + esc(color) + ';color:' + esc(textColor) + '">' + g.meetings.length + '</div>',
-	        iconSize: [32, 32],
-	        iconAnchor: [16, 16]
+	        iconSize: [38, 38],
+	        iconAnchor: [19, 19]
 	      })
-    });
+	    });
 
     marker.on("click", event => {
       if (window.innerWidth <= 900) {

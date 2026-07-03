@@ -41,18 +41,19 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   background:transparent!important;
   border:0!important;
 }
-.district-cluster-marker > div{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:800;
-  border:3px solid #fff!important;
-  box-shadow:0 2px 7px rgba(0,0,0,.35);
-}
+	.district-cluster-marker > div{
+	  width:46px;
+	  height:46px;
+	  border-radius:50%;
+	  color:#fff;
+	  display:flex;
+	  align-items:center;
+	  justify-content:center;
+	  font-weight:800;
+	  border:4px solid #fff!important;
+	  outline:2px solid rgba(0,0,0,.55);
+	  box-shadow:0 3px 11px rgba(0,0,0,.45);
+	}
 .district-swatch{
   display:inline-block;
   width:10px;
@@ -78,17 +79,18 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 
 
 .meeting-count-marker div{
-  width:32px;
-  height:32px;
+  width:38px;
+  height:38px;
   border-radius:50%;
   background:#0a1981;
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:700;
-  border:2px solid #fff;
-  box-shadow:0 1px 4px rgba(0,0,0,.35);
+  font-weight:900;
+  border:3px solid #fff;
+  outline:2px solid rgba(0,0,0,.5);
+  box-shadow:0 2px 8px rgba(0,0,0,.42);
 }
 
 .user-position-marker,
@@ -241,6 +243,41 @@ select[multiple]{
   margin:2px 0 0 26px;
   font-size:12px;
   line-height:1.25;
+}
+.district-legend{
+  margin:6px 0 2px;
+}
+.district-legend-title{
+  margin-bottom:5px;
+  color:#444;
+  font-size:12px;
+  font-weight:800;
+}
+.district-legend-items{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.district-legend-item{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:100%;
+  padding:4px 6px;
+  border:1px solid #ddd;
+  border-radius:999px;
+  background:#fff;
+  color:#333;
+  font-size:11.5px;
+  line-height:1.15;
+}
+.district-legend-swatch{
+  width:13px;
+  height:13px;
+  flex:0 0 auto;
+  border-radius:50%;
+  border:2px solid #fff;
+  outline:1px solid rgba(0,0,0,.45);
 }
 
 
