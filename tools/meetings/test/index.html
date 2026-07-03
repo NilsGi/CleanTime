@@ -1,4 +1,4 @@
-<html lang="sv" style="--top-height: 47px;"><head>
+<html lang="sv"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NA Sverige - Möten</title>
@@ -419,12 +419,12 @@ header h1{
 button:hover{filter:brightness(1.08)}
 button.secondary:hover{background:#cfd9ff}
 .beta-notice{
-  margin:0 0 7px;
-  padding:0 1px;
-  color:#666;
-  font-size:12px;
+  margin:0 0 4px;
+  padding:0;
+  color:#777;
+  font-size:10.5px;
   font-weight:500;
-  line-height:1.3;
+  line-height:1.18;
 }
 @media(max-width:700px){
   header{padding:12px 14px}
@@ -432,8 +432,8 @@ button.secondary:hover{background:#cfd9ff}
   header h1{font-size:22px!important}
   .back-link{padding:8px 10px;font-size:14px}
   .beta-notice{
-    font-size:11.5px;
-    margin-bottom:6px;
+    font-size:10px;
+    margin-bottom:4px;
   }
 }
 
@@ -753,6 +753,29 @@ header,
   }
 }
 
+
+.service-credit{
+  margin:0 0 8px;
+  padding:5px 7px;
+  border:1px solid #d7def7;
+  border-radius:7px;
+  background:#f7f9ff;
+  color:#666;
+  font-size:10.5px;
+  line-height:1.18;
+}
+.service-credit strong{
+  color:#0a1981;
+}
+
+@media(max-width:700px){
+  .service-credit{
+    font-size:10px;
+    padding:4px 6px;
+    margin-bottom:6px;
+  }
+}
+
 </style>
 </head>
 
@@ -773,6 +796,10 @@ header,
 <main id="meetingsPanel" class="tab-panel active">
 <aside>
 <div class="beta-notice">Beta-version: möteslistan uppdateras och förbättras löpande.</div>
+
+<div class="service-credit">
+  Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+</div>
 
 <div class="top-buttons">
   <button onclick="fetchAllMeetings()">Uppdatera möten</button>
@@ -926,6 +953,40 @@ function setStatus(html){
   const statusStats = $("statusStats");
   if (status) status.innerHTML = html;
   if (statusStats) statusStats.innerHTML = html;
+}
+
+
+function cleanSingleLineField(value){
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanInformationField(value){
+  const text = String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map(row => row.replace(/[\t ]+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
+
+  return text.trim();
+}
+
+function cleanMeetingFields(meeting){
+  return {
+    ...meeting,
+    location: cleanSingleLineField(meeting.location),
+    address: cleanSingleLineField(meeting.address),
+    zip: cleanSingleLineField(meeting.zip),
+    station: cleanSingleLineField(meeting.station),
+    information: cleanInformationField(meeting.information)
+  };
+}
+
+function cleanMeetingsData(meetings){
+  return Array.isArray(meetings) ? meetings.map(cleanMeetingFields) : [];
 }
 
 function selectedValues(id){
@@ -1102,8 +1163,8 @@ async function fetchAllMeetings(){
       throw new Error(json.error || "Oväntat svar från /mote. data saknas.");
     }
 
-    rawMeetings = json.data;
-    allMeetings = json.data;
+    rawMeetings = cleanMeetingsData(json.data);
+    allMeetings = rawMeetings;
 
     populateFiltersFromSmartProxy(json);
     renderAll(false);
@@ -1282,7 +1343,7 @@ function hasActiveTextSearch(){
 
 
 function formatInformation(text){
-  const raw = String(text || "").trim();
+  const raw = cleanInformationField(text);
   if (!raw) return "";
   return esc(raw)
     .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
@@ -2305,6 +2366,7 @@ async function exportFolderPdf(){
   const exportDate = new Date().toISOString().slice(0,10);
   const exportMonthYear = formatExportMonthYear(new Date());
   const siteUrl = "https://www.nasverige.org";
+  const serviceCreditText = "Denna lista är skapad från ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.";
   const qrDataUrl = await makeQrDataUrl(siteUrl);
   const logo = await loadImageAsDataUrl("/assets/NA_logo_blue.png");
 
@@ -2354,6 +2416,11 @@ async function exportFolderPdf(){
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("www.nasverige.org", x + 34, y + 20);
+
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.7);
+  drawWrappedText(doc, serviceCreditText, margin, pageHeight - 24, panelW - margin*2, 3.2);
 
   // Mitten panel
   x = panelW + margin;
@@ -2419,7 +2486,9 @@ async function exportFolderPdf(){
   doc.setFontSize(7.5);
   doc.text("Uppgifterna kan ha ändrats sedan utskrift.", x + (panelW - margin*2)/2, pageHeight - 12, { align:"center" });
 
-  // Sida 2: insida. Kolumner och textstorlek anpassas efter antal möten.
+  // Sida 2: insida. A4 stående med dynamiska kolumner.
+  // Kolumnerna balanseras efter uppskattad höjd. Veckodagar hålls ihop när det går,
+  // men kan brytas och fortsätta i nästa kolumn om det krävs.
   doc.addPage("a4", "portrait");
 
   const innerPageWidth = doc.internal.pageSize.getWidth();
@@ -2428,51 +2497,31 @@ async function exportFolderPdf(){
   doc.setFillColor(255,255,255);
   doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
 
-  function folderLayoutForMeetingCount(count){
-    if (count <= 5) {
-      return { cols:1, gap:0, titleSize:12.2, timeSize:11.2, bodySize:9.6, typeSize:8.8, daySize:14, lineHeight:4.35, addressLineHeight:3.9, typeLineHeight:3.55, itemGap:2.8, maxTitleRows:3, maxAddressRowsPerPart:3 };
-    }
-    if (count <= 10) {
-      return { cols:1, gap:0, titleSize:10.8, timeSize:10.0, bodySize:8.7, typeSize:8.0, daySize:12.5, lineHeight:3.95, addressLineHeight:3.5, typeLineHeight:3.2, itemGap:2.2, maxTitleRows:3, maxAddressRowsPerPart:3 };
-    }
-    if (count <= 20) {
-      return { cols:1, gap:0, titleSize:9.0, timeSize:8.5, bodySize:7.4, typeSize:6.9, daySize:10.7, lineHeight:3.35, addressLineHeight:3.0, typeLineHeight:2.75, itemGap:1.6, maxTitleRows:2, maxAddressRowsPerPart:2 };
-    }
-    if (count <= 30) {
-      return { cols:2, gap:5, titleSize:7.4, timeSize:7.0, bodySize:6.25, typeSize:5.85, daySize:9.2, lineHeight:2.85, addressLineHeight:2.55, typeLineHeight:2.35, itemGap:1.1, maxTitleRows:2, maxAddressRowsPerPart:2 };
-    }
-    if (count <= 40) {
-      return { cols:2, gap:5, titleSize:6.7, timeSize:6.35, bodySize:5.75, typeSize:5.35, daySize:8.4, lineHeight:2.55, addressLineHeight:2.35, typeLineHeight:2.15, itemGap:0.85, maxTitleRows:2, maxAddressRowsPerPart:2 };
-    }
-    if (count <= 60) {
-      return { cols:3, gap:3.5, titleSize:5.8, timeSize:5.55, bodySize:5.1, typeSize:4.8, daySize:8.0, lineHeight:2.35, addressLineHeight:2.15, typeLineHeight:1.95, itemGap:0.65, maxTitleRows:2, maxAddressRowsPerPart:2 };
-    }
-    return { cols:3, gap:3.5, titleSize:5.35, timeSize:5.15, bodySize:4.75, typeSize:4.45, daySize:7.4, lineHeight:2.15, addressLineHeight:1.95, typeLineHeight:1.78, itemGap:0.45, maxTitleRows:2, maxAddressRowsPerPart:1 };
-  }
-
-  const layout = folderLayoutForMeetingCount(sortedMeetings.length);
-  const cols = layout.cols;
-  const gap = layout.gap;
+  const meetingCountForLayout = sortedMeetings.length;
+  const cols = meetingCountForLayout <= 20 ? 1 : meetingCountForLayout <= 45 ? 2 : 3;
+  const gap = cols === 1 ? 0 : 3.5;
   const innerMargin = cols === 1 ? 12 : 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
-  const topY = cols === 1 ? 24 : 17;
-  const bottomY = innerPageHeight - 12;
-  let col = 0;
-  x = innerMargin;
-  y = topY;
-  currentDay = "";
+  const topY = 17;
+  const bottomY = innerPageHeight - 14;
 
-  function nextColumn(){
-    col++;
-    if (col >= cols) return false;
-    x = innerMargin + col * (colW + gap);
-    y = topY;
-    currentDay = "";
-    return true;
+  function createLayoutStyle(scale = 1){
+    let style;
+    if (cols === 1) style = { day: 10.2, dayH: 5.2, time: 7.1, title: 7.1, body: 6.3, type: 5.9, rowH: 3.0, titleH: 3.0, typeH: 2.7, gap: 1.15, timeW: 24, maxTitle: 2, maxAddr: 4, maxType: 2 };
+    else if (cols === 2) style = { day: 8.9, dayH: 4.6, time: 6.1, title: 6.1, body: 5.5, type: 5.2, rowH: 2.5, titleH: 2.5, typeH: 2.15, gap: 0.9, timeW: 17, maxTitle: 2, maxAddr: 3, maxType: 2 };
+    else if (meetingCountForLayout > 70) style = { day: 7.0, dayH: 3.45, time: 4.55, title: 4.55, body: 4.15, type: 3.95, rowH: 1.85, titleH: 1.85, typeH: 1.65, gap: 0.42, timeW: 15, maxTitle: 1, maxAddr: 2, maxType: 1 };
+    else style = { day: 7.6, dayH: 3.8, time: 5.05, title: 5.05, body: 4.65, type: 4.4, rowH: 2.05, titleH: 2.05, typeH: 1.82, gap: 0.58, timeW: 16, maxTitle: 2, maxAddr: 2, maxType: 1 };
+
+    ["day","dayH","time","title","body","type","rowH","titleH","typeH","gap"].forEach(k=>{
+      style[k] = +(style[k] * scale).toFixed(2);
+    });
+    return style;
   }
 
+  let layoutStyle = createLayoutStyle(1);
+
   function addColumnGuides(){
-    if (cols < 2) return;
+    if (cols <= 1) return;
     doc.setDrawColor(190, 205, 235);
     doc.setLineWidth(0.25);
     for (let i=1; i<cols; i++) {
@@ -2484,109 +2533,251 @@ async function exportFolderPdf(){
   addColumnGuides();
   setBlue();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(cols === 1 ? 14 : 11);
+  doc.setFontSize(11);
   doc.text("MÖTESLISTA", innerMargin, 8);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(cols === 1 ? 7.2 : 6.2);
-  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + (cols === 1 ? 42 : 28), 8);
+  doc.setFontSize(6.2);
+  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
 
   setBlack();
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(cols === 1 ? 6.8 : 5.8);
+  doc.setFontSize(5.8);
   const filterHeaderText = getFilterLabelText()
     .map(([label, value]) => label + ": " + value)
     .join("  ·  ");
   const filterHeaderRows = doc.splitTextToSize("Valda filter: " + filterHeaderText, innerPageWidth - innerMargin*2);
-  let filterY = 12;
-  filterHeaderRows.slice(0, cols === 1 ? 3 : 2).forEach(row => {
+  let filterY = 11.4;
+  filterHeaderRows.slice(0,2).forEach(row => {
     doc.text(row, innerMargin, filterY);
-    filterY += cols === 1 ? 2.8 : 2.35;
+    filterY += 2.35;
   });
-  y = Math.max(y, filterY + 2);
+  const firstContentY = Math.max(topY, filterY + 1);
 
-  if (!sortedMeetings.length) {
-    setBlack();
-    doc.setFontSize(9);
-    doc.text("Inga fysiska möten matchar aktuellt filter.", x, y);
-  }
-
-  sortedMeetings.forEach(m => {
+  function buildMeetingBlock(m){
     const day = cleanDay(m.days).toUpperCase();
     const addressParts = meetingExportAddress(m);
     const time = formatMeetingTimeForPdf(m);
     const title = String(m.title || "Okänt möte");
     const types = getTypes(m).filter(Boolean);
-    const typeText = types
-      .filter(t => t !== "Virtuellt möte")
-      .join(", ");
+    const typeText = types.filter(t => t !== "Virtuellt möte").join(", ");
     const typeShort = isOnline(m) ? "Online" : typeText;
-    const textIndent = cols === 1 ? 25 : 16;
+    const textWidth = colW - layoutStyle.timeW;
 
-    let titleRows = doc.splitTextToSize(title, colW - textIndent);
-    titleRows = titleRows.slice(0, layout.maxTitleRows);
-
-    let rowsForAddress = [];
-    addressParts.forEach(part => {
-      const wrappedRows = doc.splitTextToSize(part, colW - textIndent);
-      rowsForAddress.push(...wrappedRows.slice(0, layout.maxAddressRowsPerPart));
-    });
-
-    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, colW - textIndent) : [];
-
-    const needed =
-      (day !== currentDay ? layout.daySize * 0.55 : 0) +
-      layout.lineHeight +
-      Math.max(0, titleRows.length - 1) * layout.lineHeight +
-      rowsForAddress.length * layout.addressLineHeight +
-      rowsForType.length * layout.typeLineHeight +
-      layout.itemGap;
-
-    if (y + needed > bottomY) {
-      if (!nextColumn()) return;
-    }
-
-    if (day !== currentDay) {
-      currentDay = day;
-      setBlue();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(layout.daySize);
-      doc.text(day, x, y);
-      y += layout.daySize * 0.45;
-    }
-
-    setBlack();
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(layout.timeSize);
-    doc.text(time, x, y);
-    doc.setFontSize(layout.titleSize);
-    doc.text(titleRows[0] || "", x + textIndent, y);
-    y += layout.lineHeight;
-
-    for (let i=1; i<titleRows.length; i++) {
-      doc.text(titleRows[i], x + textIndent, y);
-      y += layout.lineHeight;
-    }
+    doc.setFontSize(layoutStyle.title);
+    let titleRows = doc.splitTextToSize(title, textWidth).slice(0, layoutStyle.maxTitle);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(layout.bodySize);
-    rowsForAddress.forEach(row => {
-      doc.text(row, x + textIndent, y);
-      y += layout.addressLineHeight;
+    doc.setFontSize(layoutStyle.body);
+    let rowsForAddress = [];
+    addressParts.forEach(part => {
+      rowsForAddress.push(...doc.splitTextToSize(part, textWidth));
+    });
+    rowsForAddress = rowsForAddress.slice(0, layoutStyle.maxAddr);
+
+    doc.setFontSize(layoutStyle.type);
+    const rowsForType = typeShort ? doc.splitTextToSize(typeShort, textWidth).slice(0, layoutStyle.maxType) : [];
+
+    const height =
+      Math.max(layoutStyle.rowH, titleRows.length * layoutStyle.titleH) +
+      rowsForAddress.length * layoutStyle.rowH +
+      rowsForType.length * layoutStyle.typeH +
+      layoutStyle.gap;
+
+    return { day, time, titleRows, rowsForAddress, rowsForType, height };
+  }
+
+  const blocks = sortedMeetings.map(buildMeetingBlock);
+  const dayGroups = [];
+  blocks.forEach(block => {
+    const last = dayGroups[dayGroups.length - 1];
+    if (!last || last.day !== block.day) dayGroups.push({ day: block.day, blocks: [] });
+    dayGroups[dayGroups.length - 1].blocks.push(block);
+  });
+
+  const availableHeight = bottomY - firstContentY;
+  function estimateHeight(style){
+    const textWidth = colW - style.timeW;
+    let total = 0;
+    let currentDay = null;
+
+    sortedMeetings.forEach(m => {
+      const day = cleanDay(m.days).toUpperCase();
+      if (day !== currentDay) {
+        total += style.dayH;
+        currentDay = day;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(style.title);
+      const titleRows = doc.splitTextToSize(String(m.title || "Okänt möte"), textWidth).slice(0, style.maxTitle);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(style.body);
+      let addrRows = [];
+      meetingExportAddress(m).forEach(part => {
+        addrRows.push(...doc.splitTextToSize(part, textWidth));
+      });
+      addrRows = addrRows.slice(0, style.maxAddr);
+
+      doc.setFontSize(style.type);
+      const typeShort = (isOnline(m) ? "Online" : getTypes(m).filter(t => t !== "Virtuellt möte").join(", "));
+      const typeRows = typeShort ? doc.splitTextToSize(typeShort, textWidth).slice(0, style.maxType) : [];
+
+      total +=
+        Math.max(style.rowH, titleRows.length * style.titleH) +
+        addrRows.length * style.rowH +
+        typeRows.length * style.typeH +
+        style.gap;
     });
 
-    if (typeShort) {
-      doc.setFontSize(layout.typeSize);
-      doc.setTextColor(90,90,90);
-      rowsForType.forEach(row => {
-        doc.text(row, x + textIndent, y);
-        y += layout.typeLineHeight;
-      });
-      setBlack();
-      doc.setFontSize(layout.bodySize);
+    return total / cols;
+  }
+
+  let scale = 1;
+  while (scale > 0.72) {
+    const testStyle = createLayoutStyle(scale);
+    if (estimateHeight(testStyle) <= availableHeight * 0.98) {
+      layoutStyle = testStyle;
+      break;
+    }
+    scale -= 0.03;
+  }
+
+
+  const columns = Array.from({ length: cols }, () => []);
+  let layoutCol = 0;
+  let currentHeight = 0;
+
+  const totalContentHeight = dayGroups.reduce((sum, group) => {
+    return sum + layoutStyle.dayH +
+      group.blocks.reduce((s, block) => s + block.height, 0);
+  }, 0);
+
+  const targetHeight = cols > 1
+    ? Math.min(availableHeight, totalContentHeight / cols)
+    : availableHeight;
+
+  function pushDayHeading(day, continued = false){
+    if (currentHeight + layoutStyle.dayH > availableHeight && layoutCol < cols - 1) {
+      moveToNextColumn();
+    }
+    columns[layoutCol].push({ type: "day", day, continued });
+    currentHeight += layoutStyle.dayH;
+  }
+
+  function moveToNextColumn(){
+    if (layoutCol < cols - 1) {
+      layoutCol++;
+      currentHeight = 0;
+      return true;
+    }
+    return false;
+  }
+
+  dayGroups.forEach((group, groupIndex) => {
+    const groupHeight = layoutStyle.dayH +
+      group.blocks.reduce((sum, block) => sum + block.height, 0);
+
+    const groupsLeft = dayGroups.length - groupIndex;
+    const colsLeft = cols - layoutCol - 1;
+
+    const shouldBalance =
+      cols > 1 &&
+      layoutCol < cols - 1 &&
+      currentHeight > 0 &&
+      groupsLeft > colsLeft &&
+      (
+        currentHeight >= targetHeight * 0.92 ||
+        currentHeight + groupHeight > targetHeight * 1.12
+      );
+
+    if (
+      shouldBalance ||
+      (layoutCol < cols - 1 &&
+       currentHeight > 0 &&
+       currentHeight + groupHeight > availableHeight)
+    ) {
+      moveToNextColumn();
     }
 
-    y += layout.itemGap;
+    pushDayHeading(group.day, false);
+
+    group.blocks.forEach(block => {
+      if (currentHeight + block.height > availableHeight && layoutCol < cols - 1) {
+        moveToNextColumn();
+        pushDayHeading(group.day, true);
+      }
+
+      columns[layoutCol].push({ type: "meeting", block });
+      currentHeight += block.height;
+    });
   });
+
+  let writtenMeetings = 0;
+  columns.forEach((items, columnIndex) => {
+    let cx = innerMargin + columnIndex * (colW + gap);
+    let cy = firstContentY;
+
+    items.forEach(item => {
+      if (item.type === "day") {
+        if (cy + layoutStyle.dayH > bottomY) return;
+        setBlue();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(layoutStyle.day);
+        doc.text(item.day + (item.continued ? " FORTS." : ""), cx, cy);
+        cy += layoutStyle.dayH;
+        return;
+      }
+
+      const block = item.block;
+      if (cy + block.height > bottomY) return;
+
+      setBlack();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(layoutStyle.time);
+      doc.text(block.time, cx, cy);
+
+      doc.setFontSize(layoutStyle.title);
+      doc.text(block.titleRows[0] || "", cx + layoutStyle.timeW, cy);
+      cy += layoutStyle.titleH;
+
+      for (let i=1; i<block.titleRows.length; i++) {
+        doc.text(block.titleRows[i], cx + layoutStyle.timeW, cy);
+        cy += layoutStyle.titleH;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(layoutStyle.body);
+      block.rowsForAddress.forEach(row => {
+        doc.text(row, cx + layoutStyle.timeW, cy);
+        cy += layoutStyle.rowH;
+      });
+
+      if (block.rowsForType.length) {
+        doc.setFontSize(layoutStyle.type);
+        doc.setTextColor(90,90,90);
+        block.rowsForType.forEach(row => {
+          doc.text(row, cx + layoutStyle.timeW, cy);
+          cy += layoutStyle.typeH;
+        });
+        setBlack();
+      }
+
+      cy += layoutStyle.gap;
+      writtenMeetings++;
+    });
+  });
+
+  if (!sortedMeetings.length) {
+    setBlack();
+    doc.setFontSize(9);
+    doc.text("Inga fysiska möten matchar aktuellt filter.", innerMargin, firstContentY);
+  }
+
+  if (writtenMeetings < sortedMeetings.length) {
+    console.warn("Alla möten fick inte plats i foldern", { writtenMeetings, total: sortedMeetings.length });
+  }
 
   doc.setDrawColor(...blue);
   doc.setLineWidth(0.3);
@@ -2596,8 +2787,12 @@ async function exportFolderPdf(){
   doc.setFontSize(6.5);
   doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
   doc.text(String(sortedMeetings.length) + " möten i valt urval", innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.2);
+  doc.text("Skapad i serviceverktyg utvecklat av NA Region Sveriges webbkommitté. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.", innerMargin, innerPageHeight - 10.8);
 
-  doc.save("na-sverige-folder-" + exportDate + ".pdf");
+  doc.save("NA Sverige Möteslista " + exportDate + ".pdf");
   setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
 }
 
