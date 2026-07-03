@@ -371,6 +371,25 @@ function fitDistanceFilteredMeetings(){
   }
 }
 
+function updateUserPositionMarker(){
+  if (!map || !userPosition || typeof L === "undefined") return;
+
+  if (userMarker) {
+    map.removeLayer(userMarker);
+    userMarker = null;
+  }
+
+  userMarker = L.marker([userPosition.lat, userPosition.lng], {
+    icon: L.divIcon({
+      className: "user-position-marker",
+      html: "<div><span>Du</span></div>",
+      iconSize: [44, 44],
+      iconAnchor: [22, 22]
+    }),
+    zIndexOffset: 1000
+  }).addTo(map).bindPopup("Du är här");
+}
+
 function handleDistanceFilterChange(){
   const distanceEl = $("distanceFilter");
   const value = distanceEl ? distanceEl.value : "";
@@ -404,19 +423,7 @@ function handleDistanceFilterChange(){
         lng: pos.coords.longitude
       };
 
-      if (userMarker && map) {
-        map.removeLayer(userMarker);
-      }
-
-      if (map && typeof L !== "undefined") {
-        userMarker = L.circleMarker([userPosition.lat, userPosition.lng], {
-          radius: 8,
-          color: "#111",
-          fillColor: "#111",
-          fillOpacity: 0.9,
-          weight: 2
-        }).addTo(map).bindPopup("Du är här");
-      }
+      updateUserPositionMarker();
 
       renderAll(false);
       fitDistanceFilteredMeetings();

@@ -172,6 +172,18 @@ function safeUrl(href){
   }
 }
 
+function textColorForBackground(hexColor){
+  const hex = String(hexColor || "").replace("#", "").trim();
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return "#ffffff";
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.58 ? "#111111" : "#ffffff";
+}
+
 function externalLinkHtml(href, label){
   const url = safeUrl(href);
   return url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>' : "";

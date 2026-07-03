@@ -41,18 +41,19 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   background:transparent!important;
   border:0!important;
 }
-.district-cluster-marker > div{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:800;
-  border:3px solid #fff!important;
-  box-shadow:0 2px 7px rgba(0,0,0,.35);
-}
+	.district-cluster-marker > div{
+	  width:40px;
+	  height:40px;
+	  border-radius:50%;
+	  color:#fff;
+	  display:flex;
+	  align-items:center;
+	  justify-content:center;
+	  font-weight:800;
+	  border:3px solid #fff!important;
+	  outline:1px solid rgba(0,0,0,.55);
+	  box-shadow:0 2px 7px rgba(0,0,0,.4);
+	}
 .district-swatch{
   display:inline-block;
   width:10px;
@@ -86,9 +87,40 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:700;
+  font-weight:900;
   border:2px solid #fff;
-  box-shadow:0 1px 4px rgba(0,0,0,.35);
+  outline:1px solid rgba(0,0,0,.5);
+  box-shadow:0 1px 5px rgba(0,0,0,.4);
+}
+
+.user-position-marker,
+.user-position-marker div{
+  background:transparent!important;
+  border:0!important;
+}
+.user-position-marker > div{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.92)!important;
+  border:3px solid #111!important;
+  box-shadow:0 2px 9px rgba(0,0,0,.35);
+}
+.user-position-marker span{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#111;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  line-height:1;
 }
 
 
@@ -211,6 +243,41 @@ select[multiple]{
   margin:2px 0 0 26px;
   font-size:12px;
   line-height:1.25;
+}
+.district-legend{
+  margin:6px 0 2px;
+}
+.district-legend-title{
+  margin-bottom:5px;
+  color:#444;
+  font-size:12px;
+  font-weight:800;
+}
+.district-legend-items{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.district-legend-item{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:100%;
+  padding:4px 6px;
+  border:1px solid #ddd;
+  border-radius:999px;
+  background:#fff;
+  color:#333;
+  font-size:11.5px;
+  line-height:1.15;
+}
+.district-legend-swatch{
+  width:13px;
+  height:13px;
+  flex:0 0 auto;
+  border-radius:50%;
+  border:2px solid #fff;
+  outline:1px solid rgba(0,0,0,.45);
 }
 
 

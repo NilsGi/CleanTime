@@ -33,6 +33,30 @@ function appendListLimitNotice(containerId){
   container.appendChild(p);
 }
 
+function renderDistrictLegend(){
+  const el = $("districtLegend");
+  if (!el) return;
+
+  const entries = Object.entries(districtColorMap)
+    .sort((a,b) => a[0].localeCompare(b[0], "sv"));
+
+  if (!entries.length) {
+    el.innerHTML = "";
+    return;
+  }
+
+  el.innerHTML =
+    '<div class="district-legend-title">Färgnyckel distrikt</div>' +
+    '<div class="district-legend-items">' +
+    entries.map(([district, color]) =>
+      '<span class="district-legend-item">' +
+      '<span class="district-legend-swatch" style="background:' + esc(color) + '"></span>' +
+      '<span>' + esc(district) + '</span>' +
+      '</span>'
+    ).join("") +
+    '</div>';
+}
+
 function syncOnlineToggleButton(){
   const button = $("toggleOnlineBtn");
   const type = $("typeFilter");
@@ -98,9 +122,10 @@ async function fetchAllMeetings(){
     if (!initMap()) return;
   }
 
-  rawMeetings = [];
-  allMeetings = [];
-  markersLayer.clearLayers();
+	  rawMeetings = [];
+	  allMeetings = [];
+	  districtColorMap = {};
+	  markersLayer.clearLayers();
 
   const list = $("list");
   if (list) list.innerHTML = "";
@@ -108,7 +133,8 @@ async function fetchAllMeetings(){
   if (listMobile) listMobile.innerHTML = "";
   const summary = $("summary");
   if (summary) summary.textContent = "";
-  renderActiveFilters();
+	  renderActiveFilters();
+	  renderDistrictLegend();
 
   renderStats([]);
   setStatus("Hämtar möten...");
@@ -120,11 +146,12 @@ async function fetchAllMeetings(){
       throw new Error(json.error || "Oväntat svar från /mote. data saknas.");
     }
 
-    rawMeetings = cleanMeetingsData(json.data);
-    allMeetings = rawMeetings;
-    updateDistrictColorMap(allMeetings);
-
-    populateFiltersFromSmartProxy(json);
+	    rawMeetings = cleanMeetingsData(json.data);
+	    allMeetings = rawMeetings;
+	    updateDistrictColorMap(allMeetings);
+	    renderDistrictLegend();
+	
+	    populateFiltersFromSmartProxy(json);
     renderAll(false);
     fitVisible();
 

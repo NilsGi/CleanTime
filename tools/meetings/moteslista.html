@@ -103,15 +103,17 @@
           </div>
         </div>
 
-        <div class="map-sync-box">
-          <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
-            <input id="listFollowsMap" type="checkbox" checked style="width:auto;margin-top:2px">
-            <span>Listan följer kartans synliga område</span>
-          </label>
-          <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
-        </div>
-      </div>
-    </details>
+	        <div class="map-sync-box">
+	          <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
+	            <input id="listFollowsMap" type="checkbox" checked style="width:auto;margin-top:2px">
+	            <span>Listan följer kartans synliga område</span>
+	          </label>
+	          <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
+	        </div>
+
+	        <div id="districtLegend" class="district-legend" aria-live="polite"></div>
+	      </div>
+	    </details>
 
     <details id="statsFull" class="stats-details">
       <summary>Detaljerad statistik</summary>
