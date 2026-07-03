@@ -960,3 +960,17 @@ header{
     padding-top:0!important;
   }
 }
+
+/* Mobil: lås headern och låt knapparna följa direkt under. */
+@media(max-width:900px){
+  header{
+    position:sticky!important;
+    top:0!important;
+    z-index:200!important;
+  }
+
+  .top-buttons{
+    top:var(--top-height, 56px)!important;
+    z-index:160!important;
+  }
+}
