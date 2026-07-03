@@ -1,23 +1,23 @@
 const DISTRICT_COLORS = [
-  "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00",
-  "#FF00FF", "#00FFFF", "#FF8000", "#8000FF", "#008000",
-  "#603000", "#808080", "#FF8080", "#808000", "#FFE0B0"
+  "#111111", "#D32F2F", "#2E7D32", "#1565C0", "#FBC02D",
+  "#C2185B", "#00ACC1", "#EF6C00", "#7B1FA2", "#6D4C41",
+  "#757575", "#F06292", "#9E9D24", "#00897B", "#3949AB"
 ];
 
 const DISTRICT_COLOR_OVERRIDES = {
-  "stockholm": "#000000",
-  "gossnad": "#FF0000",
-  "sidna": "#0000FF",
-  "nisna": "#8000FF",
-  "malardalen": "#00FF00",
-  "mälardalen": "#00FF00",
-  "skane": "#FF00FF",
-  "skåne": "#FF00FF",
-  "vastra gotaland": "#FF8000",
-  "västra götaland": "#FF8000",
-  "norra norrland": "#00FFFF",
-  "sodra norrland": "#808000",
-  "södra norrland": "#808000"
+  "stockholm": "#111111",
+  "gossnad": "#D32F2F",
+  "sidna": "#1565C0",
+  "nisna": "#7B1FA2",
+  "malardalen": "#2E7D32",
+  "mälardalen": "#2E7D32",
+  "skane": "#C2185B",
+  "skåne": "#C2185B",
+  "vastra gotaland": "#EF6C00",
+  "västra götaland": "#EF6C00",
+  "norra norrland": "#00ACC1",
+  "sodra norrland": "#9E9D24",
+  "södra norrland": "#9E9D24"
 };
 
 let districtColorMap = {};
@@ -40,17 +40,34 @@ function updateDistrictColorMap(meetings){
     .sort((a,b) => a.localeCompare(b, "sv"));
 
   districtColorMap = {};
+  const usedColors = new Set();
   let fallbackIndex = 0;
+
+  function nextUnusedFallbackColor(){
+    for (let i = 0; i < DISTRICT_COLORS.length; i++) {
+      const color = DISTRICT_COLORS[(fallbackIndex + i) % DISTRICT_COLORS.length];
+      if (!usedColors.has(color)) {
+        fallbackIndex = fallbackIndex + i + 1;
+        return color;
+      }
+    }
+
+    const color = DISTRICT_COLORS[fallbackIndex % DISTRICT_COLORS.length];
+    fallbackIndex++;
+    return color;
+  }
 
   districts.forEach((district, index) => {
     const override = DISTRICT_COLOR_OVERRIDES[normalizeDistrictColorKey(district)];
     if (override) {
       districtColorMap[district] = override;
+      usedColors.add(override);
       return;
     }
 
-    districtColorMap[district] = DISTRICT_COLORS[fallbackIndex % DISTRICT_COLORS.length];
-    fallbackIndex++;
+    const color = nextUnusedFallbackColor();
+    districtColorMap[district] = color;
+    usedColors.add(color);
   });
 }
 
@@ -62,8 +79,11 @@ function getDistrictColor(district){
       return districtColorMap[district];
     }
 
+    const usedColors = new Set(Object.values(districtColorMap));
     const index = Object.keys(districtColorMap).length;
-    districtColorMap[district] = DISTRICT_COLORS[index % DISTRICT_COLORS.length];
+    const color = DISTRICT_COLORS.find(candidate => !usedColors.has(candidate))
+      || DISTRICT_COLORS[index % DISTRICT_COLORS.length];
+    districtColorMap[district] = color;
   }
   return districtColorMap[district];
 }
