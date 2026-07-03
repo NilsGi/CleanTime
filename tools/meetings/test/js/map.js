@@ -139,7 +139,28 @@ function renderMarkers(groups){
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
-    }).bindPopup(groupPopupHtml(g));
+    });
+
+    marker.on("click", event => {
+      if (window.innerWidth <= 900) {
+        if (event.originalEvent) {
+          L.DomEvent.stop(event.originalEvent);
+        }
+        map.closePopup();
+        showMobileClusterSheet([g]);
+        return;
+      }
+
+      L.popup({
+        maxWidth: 420,
+        maxHeight: 440,
+        keepInView: true,
+        closeButton: true
+      })
+        .setLatLng([g.latitude, g.longitude])
+        .setContent(groupPopupHtml(g))
+        .openOn(map);
+    });
 
     marker.meetingCount = g.meetings.length;
     marker.meetingGroup = g;
@@ -330,6 +351,11 @@ function bindListClicks(groups, containerId){
       el.style.cursor = "pointer";
       el.onclick = () => {
         map.setView([lat, lng], 15);
+        if (window.innerWidth <= 900) {
+          map.closePopup();
+          showMobileClusterSheet([g]);
+          return;
+        }
         L.popup().setLatLng([lat, lng]).setContent(groupPopupHtml(g)).openOn(map);
       };
     }
