@@ -50,11 +50,9 @@ function buildStats(meetings){
 }
 
 function renderStats(meetings){
-  const cardsEl = $("statsCards");
   const el = $("stats");
 
   if (!meetings.length) {
-    if (cardsEl) cardsEl.innerHTML = "";
     if (el) el.innerHTML = '<p class="muted">Ingen statistik ännu. Hämta möten först.</p>';
     return;
   }
@@ -69,7 +67,6 @@ function renderStats(meetings){
     </div>
   `;
 
-  if (cardsEl) cardsEl.innerHTML = cardsHtml;
   if (!el) return;
 
   const districtRows = stats.districts.map(d => `

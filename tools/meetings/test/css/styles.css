@@ -7,6 +7,13 @@ button{padding:10px 13px;border:0;border-radius:10px;background:#0a1981;color:#f
 button.secondary{background:#d9e1ff;color:#0a1981;border:1px solid rgba(10,25,129,.15)}
 input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;margin:5px 0 10px}
 .filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.view-distance-grid{
+  align-items:end;
+  margin-bottom:2px;
+}
+.view-distance-grid select{
+  margin-bottom:6px;
+}
 .ok{color:#087a2a;font-weight:800}.bad{color:#b00020;font-weight:800}.muted{color:#666}
 .meeting{border:1px solid #ddd;border-radius:10px;padding:10px;margin:9px 0;background:#fafafa}
 .meeting h3{font-size:15px;margin:0 0 4px}
@@ -165,10 +172,19 @@ select[multiple]{
 .map-sync-box{
   background:#f3f6ff;
   border:1px solid #c7d7ff;
-  border-radius:10px;
-  padding:9px;
-  margin:8px 0 12px;
-  font-size:13px;
+  border-radius:8px;
+  padding:7px 9px;
+  margin:4px 0 10px;
+  font-size:12.5px;
+  line-height:1.25;
+}
+.map-sync-box label{
+  font-weight:600;
+}
+.map-sync-box .filter-hint{
+  margin:2px 0 0 26px;
+  font-size:12px;
+  line-height:1.25;
 }
 
 

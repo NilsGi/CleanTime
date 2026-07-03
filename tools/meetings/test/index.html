@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <div class="filter-grid">
+    <div class="filter-grid view-distance-grid">
       <div>
         <label for="typeFilter">Visning</label>
         <select id="typeFilter">
@@ -79,18 +79,19 @@
           <option value="online">Endast online i listan</option>
         </select>
       </div>
+      <div>
+        <label for="distanceFilter">Avstånd från mig</label>
+        <select id="distanceFilter">
+          <option value="">Alla avstånd</option>
+          <option value="5">Inom 5 km</option>
+          <option value="10">Inom 10 km</option>
+          <option value="25">Inom 25 km</option>
+          <option value="50">Inom 50 km</option>
+          <option value="100">Inom 100 km</option>
+          <option value="250">Inom 250 km</option>
+        </select>
+      </div>
     </div>
-
-    <label for="distanceFilter">Avstånd från mig</label>
-    <select id="distanceFilter">
-      <option value="">Alla avstånd</option>
-      <option value="5">Inom 5 km</option>
-      <option value="10">Inom 10 km</option>
-      <option value="25">Inom 25 km</option>
-      <option value="50">Inom 50 km</option>
-      <option value="100">Inom 100 km</option>
-      <option value="250">Inom 250 km</option>
-    </select>
 
     <div class="map-sync-box">
       <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
@@ -101,7 +102,6 @@
     </div>
 
     <div id="summary" class="muted"></div>
-    <div id="statsCards"></div>
     <details id="statsFull" class="stats-details">
       <summary>Detaljerad statistik</summary>
       <div id="stats"><p class="muted">Hämtar möten...</p></div>
