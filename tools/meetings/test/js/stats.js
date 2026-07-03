@@ -49,6 +49,18 @@ function buildStats(meetings){
   };
 }
 
+function meetingWord(count){
+  return count === 1 ? "möte" : "möten";
+}
+
+function physicalWord(count){
+  return count === 1 ? "fysiskt" : "fysiska";
+}
+
+function formatStatsLine(total, physical, online){
+  return `${total} ${meetingWord(total)} (${physical} ${physicalWord(physical)}/${online} online)`;
+}
+
 function renderStats(meetings){
   const el = $("stats");
 
@@ -72,12 +84,8 @@ function renderStats(meetings){
   const districtCards = stats.districts.map(d => `
     <div class="stats-district-card">
       <div class="stats-district-title">${esc(d.district)}</div>
-      <div class="stats-mini-grid">
-        <span><b>${d.meetings}</b> möten</span>
-        <span><b>${d.groups}</b> grupper/ort</span>
-        <span><b>${d.physical}</b> fysiska</span>
-        <span><b>${d.online}</b> online</span>
-      </div>
+      <div class="stats-count-line">${esc(formatStatsLine(d.meetings, d.physical, d.online))}</div>
+      <div class="stats-muted-line">${d.groups} grupper/ort</div>
     </div>
   `).join("");
 
@@ -96,17 +104,13 @@ function renderStats(meetings){
           <span class="group-name">${esc(g.group)}</span>
           <span class="group-city">${esc(g.city)}</span>
         </div>
-        <div class="stats-mini-grid">
-          <span><b>${g.meetings}</b> möten</span>
-          <span><b>${g.physical}</b> fysiska</span>
-          <span><b>${g.online}</b> online</span>
-        </div>
+        <div class="stats-count-line">${esc(formatStatsLine(g.meetings, g.physical, g.online))}</div>
       </div>
     `).join("");
 
     return `
       <details class="accordion-district">
-        <summary>${esc(district)} – ${groups.length} grupper, ${meetingSum} möten</summary>
+        <summary>${esc(district)} – ${groups.length} grupper, ${meetingSum} ${meetingWord(meetingSum)}</summary>
         <div class="accordion-content">
           ${rows}
         </div>

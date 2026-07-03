@@ -26,8 +26,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 .stats-district-list{display:grid;gap:8px;margin:8px 0 14px}
 .stats-district-card,.stats-group-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:9px}
 .stats-district-title,.stats-group-main{font-weight:800;margin-bottom:5px}
-.stats-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;color:#333;font-size:13px}
-.stats-mini-grid span{min-width:0}
+.stats-count-line{font-size:13.5px;color:#222}
+.stats-count-line b{font-weight:800}
+.stats-muted-line{margin-top:2px;font-size:12.5px;color:#666}
 .accordion-district{border:1px solid #ddd;border-radius:10px;margin:8px 0;background:#fafafa;overflow:hidden}
 .accordion-district summary{cursor:pointer;padding:10px;font-weight:700;background:#eee}
 .accordion-content{display:grid;gap:8px;padding:8px}
@@ -698,7 +699,7 @@ header{
     display:none!important;
   }
 
-  .stats-mini-grid{
-    grid-template-columns:1fr;
+  .stats-count-line{
+    font-size:13px;
   }
 }
