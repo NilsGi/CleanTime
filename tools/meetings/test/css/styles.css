@@ -23,29 +23,21 @@ pre{white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;border
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .stat-card{background:#f3f3f3;border-radius:10px;padding:10px}
 .stat-card b{display:block;font-size:20px}
-.stats-table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
-.stats-table th,.stats-table td{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
-.stats-table th{background:#eee}
+.stats-district-list{display:grid;gap:8px;margin:8px 0 14px}
+.stats-district-card,.stats-group-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:9px}
+.stats-district-title,.stats-group-main{font-weight:800;margin-bottom:5px}
+.stats-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;color:#333;font-size:13px}
+.stats-mini-grid span{min-width:0}
 .accordion-district{border:1px solid #ddd;border-radius:10px;margin:8px 0;background:#fafafa;overflow:hidden}
 .accordion-district summary{cursor:pointer;padding:10px;font-weight:700;background:#eee}
-.accordion-content{padding:8px}
-.group-row{
-  display:grid;
-  grid-template-columns:1fr 90px 90px 90px;
-  gap:8px;
-  border-bottom:1px solid #ddd;
-  padding:8px 0;
-  font-size:13px;
-  align-items:start;
-}
-.group-row.header{font-weight:700;background:#f6f6f6}
+.accordion-content{display:grid;gap:8px;padding:8px}
 .group-count{font-weight:700;text-align:right}
 .missing-coords{background:#fff7e6;border:1px solid #e5b95c;border-radius:10px;padding:10px;margin:10px 0}
 .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(10,25,129,0.25)!important}
 .marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#0a1981!important;color:white!important;font-weight:bold}
 .leaflet-control-attribution .leaflet-attribution-flag{display:none!important}
 .leaflet-control-attribution a[href*="leafletjs.com"]{display:none!important}
-@media(max-width:900px){main.tab-panel{display:block;min-height:auto}aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}#map{height:70vh}#statsFull{max-height:none}.filter-grid,.stats-grid{grid-template-columns:1fr}.group-row{grid-template-columns:1fr}}
+@media(max-width:900px){main.tab-panel{display:block;min-height:auto}aside{max-height:none;border-right:0;border-bottom:1px solid #ddd}#map{height:70vh}#statsFull{max-height:none}.filter-grid,.stats-grid{grid-template-columns:1fr}}
 
 .tab-panel{display:grid}
 #meetingsPanel{grid-template-columns:430px 1fr;min-height:calc(100vh - 64px)}
@@ -307,26 +299,6 @@ select[multiple]{
     font-size:28px;
   }
 
-  #statsFull .group-row{
-  font-size:14px;
-  grid-template-columns:1fr 90px 90px 90px;
-}
-
-  #statsFull .group-row > div:first-child{
-    grid-column:1 / -1;
-  }
-
-  #statsFull .group-row.header{
-    display:none;
-  }
-
-  #statsFull .group-count{
-    text-align:left;
-  }
-
-  #statsFull .stats-table{
-    font-size:13px;
-  }
 }
 
 .header-inner{
@@ -402,19 +374,6 @@ button.secondary:hover{background:#cfd9ff}
   margin-top:2px;
   font-size:13px;
 }
-.group-row.header{
-  grid-template-columns:1fr 90px 90px 90px;
-}
-@media(max-width:900px){
-  #statsFull .group-row{
-    grid-template-columns:1fr auto auto auto;
-    gap:6px;
-  }
-  #statsFull .group-row.header{
-    display:none;
-  }
-}
-
 .stats-details{
   margin:8px 0 12px;
   border:1px solid #ddd;
@@ -686,5 +645,60 @@ header{
     font-size:10px;
     padding:4px 6px;
     margin-bottom:6px;
+  }
+}
+
+/* Slutlig mobil-override: sidan ska alltid kunna scrolla på telefon. */
+@media(max-width:900px){
+  html,
+  body{
+    height:auto!important;
+    min-height:100%!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  body{
+    display:block!important;
+    position:static!important;
+  }
+
+  #meetingsPanel{
+    display:flex!important;
+    flex-direction:column!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+  }
+
+  #meetingsPanel > aside{
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  #map{
+    flex:0 0 auto!important;
+    height:52vh!important;
+    min-height:320px!important;
+    touch-action:pan-y!important;
+  }
+
+  #map.leaflet-container{
+    touch-action:pan-y!important;
+  }
+
+  #mobileList{
+    display:block!important;
+  }
+
+  #desktopListWrapper{
+    display:none!important;
+  }
+
+  .stats-mini-grid{
+    grid-template-columns:1fr;
   }
 }

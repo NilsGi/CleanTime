@@ -69,8 +69,16 @@ function renderStats(meetings){
 
   if (!el) return;
 
-  const districtRows = stats.districts.map(d => `
-    <tr><td>${esc(d.district)}</td><td>${d.meetings}</td><td>${d.groups}</td><td>${d.physical}</td><td>${d.online}</td></tr>
+  const districtCards = stats.districts.map(d => `
+    <div class="stats-district-card">
+      <div class="stats-district-title">${esc(d.district)}</div>
+      <div class="stats-mini-grid">
+        <span><b>${d.meetings}</b> möten</span>
+        <span><b>${d.groups}</b> grupper/ort</span>
+        <span><b>${d.physical}</b> fysiska</span>
+        <span><b>${d.online}</b> online</span>
+      </div>
+    </div>
   `).join("");
 
   const groupsByDistrict = {};
@@ -83,14 +91,16 @@ function renderStats(meetings){
     const groups = groupsByDistrict[district];
     const meetingSum = groups.reduce((sum,g)=>sum+g.meetings,0);
     const rows = groups.map(g => `
-      <div class="group-row">
-        <div>
+      <div class="stats-group-card">
+        <div class="stats-group-main">
           <span class="group-name">${esc(g.group)}</span>
           <span class="group-city">${esc(g.city)}</span>
         </div>
-        <div class="group-count">${g.meetings} möten</div>
-        <div>${g.physical} fysiska</div>
-        <div>${g.online} online</div>
+        <div class="stats-mini-grid">
+          <span><b>${g.meetings}</b> möten</span>
+          <span><b>${g.physical}</b> fysiska</span>
+          <span><b>${g.online}</b> online</span>
+        </div>
       </div>
     `).join("");
 
@@ -98,7 +108,6 @@ function renderStats(meetings){
       <details class="accordion-district">
         <summary>${esc(district)} – ${groups.length} grupper, ${meetingSum} möten</summary>
         <div class="accordion-content">
-          <div class="group-row header"><div>Grupp / ort</div><div>Möten</div><div>Fysiska</div><div>Online</div></div>
           ${rows}
         </div>
       </details>`;
@@ -107,10 +116,7 @@ function renderStats(meetings){
   el.innerHTML = `
     ${cardsHtml}
     <h3>Summering per distrikt</h3>
-    <table class="stats-table">
-      <thead><tr><th>Distrikt</th><th>Möten</th><th>Grupp/ort</th><th>Fysiska</th><th>Online</th></tr></thead>
-      <tbody>${districtRows}</tbody>
-    </table>
+    <div class="stats-district-list">${districtCards}</div>
     <h3>Grupper per distrikt</h3>
     <p class="muted">Statistik grupperas på distrikt + ort + gruppnamn.</p>
     ${groupAccordion}
