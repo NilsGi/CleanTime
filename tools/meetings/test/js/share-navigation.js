@@ -57,7 +57,7 @@ async function shareMeetingByKey(key){
   if (!m) return;
 
   const text = meetingShareText(m);
-  const title = "NA-möte: " + cleanSingleLineField(m.title || "Möte");
+  const title = "Möte: " + cleanSingleLineField(m.title || "Möte");
 
   try {
     if (navigator.share) {
@@ -208,11 +208,12 @@ document.addEventListener("click", async event => {
 
 ["touchstart","touchend","pointerdown","pointerup"].forEach(type => {
   document.addEventListener(type, event => {
-    const btn = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-actions, .directions-dialog");
-    if (!btn) return;
-    event.preventDefault();
+    const target = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-actions, .directions-dialog");
+    if (!target) return;
+
+    // Stoppa händelsen från att bubbla till möteskortet/kartan, men använd inte
+    // preventDefault här. På mobil kan preventDefault på touch/pointer stoppa
+    // det efterföljande click-eventet, vilket gör att knapparna inte fungerar.
     event.stopPropagation();
-    if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
-    return false;
   }, true);
 });

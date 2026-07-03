@@ -59,7 +59,7 @@ async function exportFolderPdf(){
   const exportDate = new Date().toISOString().slice(0,10);
   const exportMonthYear = formatExportMonthYear(new Date());
   const siteUrl = "https://www.nasverige.org";
-  const serviceCreditText = "Denna lista är skapad från ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.";
+  const serviceCreditText = "Denna lista är skapad från ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. NA® och NA-logotyper används inom NA:s servicestruktur.";
   const qrDataUrl = await makeQrDataUrl(siteUrl);
   const logo = await loadImageAsDataUrl("/assets/NA_logo_blue.png");
 
