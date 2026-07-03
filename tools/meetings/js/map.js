@@ -392,8 +392,12 @@ function fitVisible(){
 
 function updateLayoutHeight(){
   const header = document.querySelector("header");
+  const topButtons = document.querySelector(".top-buttons");
   const topHeight = (header?.offsetHeight || 0);
+  const controlsHeight = (topButtons?.offsetHeight || 0);
+
   document.documentElement.style.setProperty("--top-height", topHeight + "px");
+  document.documentElement.style.setProperty("--controls-height", controlsHeight + "px");
 
   if (map) {
     setTimeout(() => map.invalidateSize(), 50);
