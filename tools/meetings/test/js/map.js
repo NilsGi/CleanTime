@@ -43,13 +43,14 @@ function initMap(){
 
         const dominantDistrict = Object.keys(districtCounts)
           .sort((a,b) => districtCounts[b] - districtCounts[a])[0];
-        const color = getDistrictColor(dominantDistrict || "Okänt distrikt");
-
-        return L.divIcon({
-          html: '<div style="background:' + esc(color) + '!important"><span>' + totalMeetings + '</span></div>',
-          className: 'district-cluster-marker',
-          iconSize: L.point(40, 40)
-        });
+	        const color = getDistrictColor(dominantDistrict || "Okänt distrikt");
+	        const textColor = textColorForBackground(color);
+	
+	        return L.divIcon({
+	          html: '<div style="background:' + esc(color) + '!important;color:' + esc(textColor) + '!important"><span>' + totalMeetings + '</span></div>',
+	          className: 'district-cluster-marker',
+	          iconSize: L.point(40, 40)
+	        });
       }
     }).addTo(map);
 
@@ -130,15 +131,16 @@ function renderMarkers(groups){
   markersLayer.clearLayers();
   const bounds = [];
 
-  groups.forEach(g => {
-    const color = g.color || getDistrictColor(g.district);
-    const marker = L.marker([g.latitude, g.longitude], {
-      icon: L.divIcon({
-        className: 'meeting-count-marker',
-        html: '<div style="background:' + esc(color) + '">' + g.meetings.length + '</div>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      })
+	  groups.forEach(g => {
+	    const color = g.color || getDistrictColor(g.district);
+	    const textColor = textColorForBackground(color);
+	    const marker = L.marker([g.latitude, g.longitude], {
+	      icon: L.divIcon({
+	        className: 'meeting-count-marker',
+	        html: '<div style="background:' + esc(color) + ';color:' + esc(textColor) + '">' + g.meetings.length + '</div>',
+	        iconSize: [32, 32],
+	        iconAnchor: [16, 16]
+	      })
     });
 
     marker.on("click", event => {

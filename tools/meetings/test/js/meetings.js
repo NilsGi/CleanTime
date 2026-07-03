@@ -1,23 +1,23 @@
 const DISTRICT_COLORS = [
-  "#0057b8", "#c43e1c", "#00843d", "#6a2ca0", "#b0005a",
-  "#006d77", "#8a6500", "#2f3a8f", "#a23e48", "#4b7f1e",
-  "#b85c00", "#006ba6", "#6d4c41", "#005f73", "#5c677d"
+  "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00",
+  "#FF00FF", "#00FFFF", "#FF8000", "#8000FF", "#008000",
+  "#603000", "#808080", "#FF8080", "#808000", "#FFE0B0"
 ];
 
 const DISTRICT_COLOR_OVERRIDES = {
-  "stockholm": "#0057b8",
-  "gossnad": "#c43e1c",
-  "sidna": "#6a2ca0",
-  "nisna": "#006d77",
-  "malardalen": "#00843d",
-  "mälardalen": "#00843d",
-  "skane": "#b0005a",
-  "skåne": "#b0005a",
-  "vastra gotaland": "#8a6500",
-  "västra götaland": "#8a6500",
-  "norra norrland": "#2f3a8f",
-  "sodra norrland": "#b85c00",
-  "södra norrland": "#b85c00"
+  "stockholm": "#000000",
+  "gossnad": "#FF0000",
+  "sidna": "#0000FF",
+  "nisna": "#8000FF",
+  "malardalen": "#00FF00",
+  "mälardalen": "#00FF00",
+  "skane": "#FF00FF",
+  "skåne": "#FF00FF",
+  "vastra gotaland": "#FF8000",
+  "västra götaland": "#FF8000",
+  "norra norrland": "#00FFFF",
+  "sodra norrland": "#808000",
+  "södra norrland": "#808000"
 };
 
 let districtColorMap = {};
