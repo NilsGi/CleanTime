@@ -482,12 +482,22 @@ header{
 
 /* Mobil: filter -> karta -> lista */
 @media(max-width:900px){
+  html,
   body{
+    height:auto;
+    min-height:100%;
     display:block;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .tab-panel{
+    min-height:auto!important;
   }
 
   #meetingsPanel{
     height:auto;
+    min-height:auto!important;
     overflow:visible;
   }
 
