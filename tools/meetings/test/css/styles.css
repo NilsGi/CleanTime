@@ -874,8 +874,14 @@ header{
 
 /* Kompaktare sticky-knappar */
 .top-buttons{
+  position:sticky!important;
+  top:0!important;
+  z-index:80!important;
   gap:6px!important;
-  margin:-3px 0 8px!important;
+  margin:-14px -14px 8px!important;
+  padding:8px 14px 7px!important;
+  background:#fff!important;
+  border-bottom:1px solid #eee!important;
 }
 .top-buttons button{
   min-height:36px!important;
@@ -888,15 +894,17 @@ header{
 
 @media(min-width:901px){
   .top-buttons{
-    top:-6px!important;
-    margin:-8px -2px 8px!important;
-    padding:6px 2px 7px!important;
+    top:0!important;
+    margin:-14px -14px 8px!important;
+    padding:7px 14px 7px!important;
   }
 }
 
 @media(max-width:900px){
   .top-buttons{
-    margin:-5px 0 7px!important;
+    top:0!important;
+    margin:-12px -12px 7px!important;
+    padding:7px 12px 6px!important;
     gap:5px!important;
   }
 
