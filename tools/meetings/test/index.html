@@ -2499,7 +2499,7 @@ async function exportFolderPdf(){
 
 
   const meetingCountForLayout = sortedMeetings.length;
-  const cols = meetingCountForLayout <= 20 ? 1 : meetingCountForLayout <= 45 ? 2 : 3;
+  const cols = meetingCountForLayout <= 13 ? 1 : meetingCountForLayout <= 45 ? 2 : 3;
   const gap = cols === 1 ? 0 : 3.5;
   const innerMargin = cols === 1 ? 12 : 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
@@ -2511,8 +2511,8 @@ async function exportFolderPdf(){
       cols === 1
         ? { day: 12.2, time: 9.2, title: 9.2, body: 8.2, type: 7.7, timeW: 28, maxTitle: 3, maxAddr: 5, maxType: 3 }
         : cols === 2
-          ? { day: 10.8, time: 7.9, title: 7.9, body: 7.1, type: 6.6, timeW: 21, maxTitle: 3, maxAddr: 4, maxType: 3 }
-          : { day: 8.8, time: 6.1, title: 6.1, body: 5.55, type: 5.15, timeW: 17, maxTitle: 2, maxAddr: 3, maxType: 2 };
+          ? { day: 11.0, time: 8.15, title: 8.15, body: 7.35, type: 6.8, timeW: 20, maxTitle: 3, maxAddr: 4, maxType: 5 }
+          : { day: 8.8, time: 6.25, title: 6.25, body: 5.7, type: 5.25, timeW: 16.5, maxTitle: 2, maxAddr: 3, maxType: 4 };
 
     const s = Math.max(0.48, scale);
     return {
@@ -2652,7 +2652,10 @@ async function exportFolderPdf(){
       const groupsLeft = dayGroups.length - groupIndex;
       const colsLeft = cols - layoutCol - 1;
 
+      const ignoreDayBalancing = meetingCountForLayout > 70;
+
       const shouldBalance =
+        !ignoreDayBalancing &&
         cols > 1 &&
         layoutCol < cols - 1 &&
         currentHeight > 0 &&
@@ -2664,7 +2667,8 @@ async function exportFolderPdf(){
 
       if (
         shouldBalance ||
-        (layoutCol < cols - 1 &&
+        (!ignoreDayBalancing &&
+         layoutCol < cols - 1 &&
          currentHeight > 0 &&
          currentHeight + groupHeight > availableHeight)
       ) {
