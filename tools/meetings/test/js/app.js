@@ -28,20 +28,22 @@ function syncOnlineToggleButton(){
   const type = $("typeFilter");
   if (!button || !type) return;
 
-  if (type.value === "physical") {
+  if (!includeOnlineMeetings) {
     button.textContent = "Visa online-möten";
     button.classList.remove("online-visible");
+    type.value = "physical";
   } else {
     button.textContent = "Dölj online-möten";
     button.classList.add("online-visible");
+    if (type.value === "physical") type.value = "";
   }
 }
 
 function toggleOnlineMeetings(){
   const type = $("typeFilter");
-  if (!type) return;
 
-  type.value = type.value === "physical" ? "" : "physical";
+  includeOnlineMeetings = !includeOnlineMeetings;
+  if (type) type.value = includeOnlineMeetings ? "" : "physical";
   renderAll(false);
 }
 
@@ -185,7 +187,7 @@ function bindUi(){
   $("exportFolderPdfBtn")?.addEventListener("click", exportFolderPdf);
   $("clearFiltersBtn")?.addEventListener("click", clearAllFilters);
   $("search")?.addEventListener("input", () => renderAll(false));
-  $("typeFilter")?.addEventListener("change", () => renderAll(false));
+  $("typeFilter")?.addEventListener("change", handleTypeFilterChange);
   $("toggleOnlineBtn")?.addEventListener("click", toggleOnlineMeetings);
   $("distanceFilter")?.addEventListener("change", handleDistanceFilterChange);
   $("listFollowsMap")?.addEventListener("change", toggleListFollowsMap);

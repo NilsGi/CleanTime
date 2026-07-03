@@ -5,6 +5,7 @@ let map = null;
 let markersLayer = null;
 let userMarker = null;
 let listFollowsMap = true;
+let includeOnlineMeetings = false;
 let suppressMapMoveRender = false;
 
 window.addEventListener("error", event => {

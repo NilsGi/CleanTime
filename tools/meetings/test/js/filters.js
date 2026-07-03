@@ -42,6 +42,7 @@ function getActiveFilterState(){
     days: selectedValues("dayFilter"),
     meetingTypes: selectedValues("meetingTypeFilter"),
     type: $("typeFilter")?.value || "",
+    includeOnline: includeOnlineMeetings,
     maxDistance: Number($("distanceFilter")?.value || 0)
   };
 }
@@ -53,6 +54,7 @@ function meetingMatchesState(m, state, ignore = new Set()){
   if (!ignore.has("day") && state.days.length && !state.days.includes(m.days)) return false;
   if (!ignore.has("meetingType") && state.meetingTypes.length && !state.meetingTypes.some(t => getTypes(m).includes(t))) return false;
   if (!ignore.has("type")) {
+    if (!state.includeOnline && isOnline(m)) return false;
     if (state.type === "online" && !isOnline(m)) return false;
     if (state.type === "physical" && isOnline(m)) return false;
   }
@@ -273,7 +275,8 @@ function getActiveFilterTags(){
   if (districts.length) tags.push({ label: "Distrikt", value: summarizeFilterValues(districts) });
   if (days.length) tags.push({ label: "Dag", value: summarizeFilterValues(days) });
   if (meetingTypes.length) tags.push({ label: "Typ", value: summarizeFilterValues(meetingTypes) });
-  if (view.length && $("typeFilter")?.value) tags.push({ label: "Visning", value: view[0] });
+  if (includeOnlineMeetings) tags.push({ label: "Online", value: "visas" });
+  else if (view.length && $("typeFilter")?.value) tags.push({ label: "Visning", value: view[0] });
   if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
 
   return tags;
@@ -282,6 +285,12 @@ function getActiveFilterTags(){
 function toggleListFollowsMap(){
   const el = $("listFollowsMap");
   listFollowsMap = !!(el && el.checked);
+  renderAll(false);
+}
+
+function handleTypeFilterChange(){
+  const type = $("typeFilter");
+  includeOnlineMeetings = type ? type.value !== "physical" : false;
   renderAll(false);
 }
 
@@ -300,6 +309,7 @@ function clearAllFilters(){
 
   const type = $("typeFilter");
   if (type) type.value = "physical";
+  includeOnlineMeetings = false;
 
   userPosition = null;
   if (userMarker && map) {

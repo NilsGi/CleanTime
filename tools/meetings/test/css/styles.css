@@ -782,13 +782,16 @@ header{
   color:#17204f;
 }
 .quick-online-toggle{
-  width:100%;
-  min-height:34px;
-  margin:0 0 8px;
-  padding:7px 10px;
-  border-radius:8px;
+  width:auto;
+  min-height:28px;
+  margin:0 0 7px;
+  padding:5px 9px;
+  border-radius:999px;
   box-shadow:none;
-  font-size:12.5px;
+  font-size:11.5px;
+  line-height:1.1;
+  position:relative;
+  z-index:2;
 }
 .quick-online-toggle.online-visible{
   background:#eaf6ef;
@@ -863,9 +866,10 @@ header{
   }
 
   .quick-online-toggle{
-    min-height:36px;
-    margin-bottom:8px;
-    font-size:12px;
+    min-height:30px;
+    margin-bottom:7px;
+    padding:5px 9px;
+    font-size:11.5px;
   }
 
   #summary{
