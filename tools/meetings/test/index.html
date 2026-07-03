@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>NA Sverige - Möten</title>
+  <meta name="theme-color" content="#0a1981">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -139,6 +142,14 @@
 <script src="js/map.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/pdf-folder.js"></script>
+<script src="js/share-navigation.js"></script>
 <script src="js/app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(error => console.warn("Service worker kunde inte registreras", error));
+  });
+}
+</script>
 </body>
 </html>

@@ -193,6 +193,7 @@ function clusterPopupHtml(groups){
             ${address ? "<br>" + address : ""}
             ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
             ${mapLink ? " · " + mapLink : ""}
+            ${meetingActionButtonsHtml(m)}
           </div>
         `;
       }).join("");
@@ -267,6 +268,7 @@ function groupPopupHtml(g){
         ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
         ${m.information ? "<div class=\"meeting-info\">" + formatInformation(m.information) + "</div>" : ""}
         ${mapLink ? " · " + mapLink : ""}<br>${types}
+        ${meetingActionButtonsHtml(m)}
       </div>
     `;
   }).join("");
@@ -332,6 +334,7 @@ function buildListHtml(groups){
         ${info}
         <div>${online} ${mapLink}</div>
         <div>${types}</div>
+        ${meetingActionButtonsHtml(m)}
       </div>
     `;
   });
