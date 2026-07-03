@@ -23,6 +23,28 @@ function renderActiveFilters(){
     ).join("");
 }
 
+function syncOnlineToggleButton(){
+  const button = $("toggleOnlineBtn");
+  const type = $("typeFilter");
+  if (!button || !type) return;
+
+  if (type.value === "physical") {
+    button.textContent = "Visa online-möten";
+    button.classList.remove("online-visible");
+  } else {
+    button.textContent = "Dölj online-möten";
+    button.classList.add("online-visible");
+  }
+}
+
+function toggleOnlineMeetings(){
+  const type = $("typeFilter");
+  if (!type) return;
+
+  type.value = type.value === "physical" ? "" : "physical";
+  renderAll(false);
+}
+
 function setMobileMapCollapsed(collapsed){
   const panel = $("meetingsPanel");
   const button = $("toggleMobileMapBtn");
@@ -144,6 +166,7 @@ function renderAll(syncFromMap = false){
       distanceText;
   }
   renderActiveFilters();
+  syncOnlineToggleButton();
 
   renderMarkers(mapGroups);
   renderStats(meetingList);
@@ -163,6 +186,7 @@ function bindUi(){
   $("clearFiltersBtn")?.addEventListener("click", clearAllFilters);
   $("search")?.addEventListener("input", () => renderAll(false));
   $("typeFilter")?.addEventListener("change", () => renderAll(false));
+  $("toggleOnlineBtn")?.addEventListener("click", toggleOnlineMeetings);
   $("distanceFilter")?.addEventListener("change", handleDistanceFilterChange);
   $("listFollowsMap")?.addEventListener("change", toggleListFollowsMap);
   $("toggleMobileMapBtn")?.addEventListener("click", toggleMobileMap);
@@ -172,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindUi();
   syncResponsivePanels();
   renderActiveFilters();
+  syncOnlineToggleButton();
   updateLayoutHeight();
   initMap();
   fetchAllMeetings();

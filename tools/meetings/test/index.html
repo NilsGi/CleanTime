@@ -41,6 +41,7 @@
 
     <div id="status" class="muted"><span class="muted">Startar...</span></div>
     <div id="activeFilters" class="active-filters" aria-live="polite"></div>
+    <button id="toggleOnlineBtn" class="quick-online-toggle secondary" type="button">Visa online-möten</button>
 
     <details id="filterSection" class="filter-section">
       <summary>Filter</summary>
@@ -84,7 +85,7 @@
             <label for="typeFilter">Visning</label>
             <select id="typeFilter">
               <option value="">Alla möten i listan</option>
-              <option value="physical">Endast fysiska möten</option>
+              <option value="physical" selected>Endast fysiska möten</option>
               <option value="online">Endast online i listan</option>
             </select>
           </div>
@@ -112,11 +113,11 @@
       </div>
     </details>
 
-    <div id="summary" class="muted"></div>
     <details id="statsFull" class="stats-details">
       <summary>Detaljerad statistik</summary>
       <div id="stats"><p class="muted">Hämtar möten...</p></div>
     </details>
+    <div id="summary" class="muted"></div>
     <div id="desktopListWrapper"><div id="list"></div></div>
   </aside>
 

@@ -103,11 +103,14 @@ function getCities(m){
   return [...new Set(cities)].sort((a,b)=>a.localeCompare(b,"sv"));
 }
 
-function getCity(m){ return getCities(m).join(", "); }
-
 function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
 
 function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
+
+function getCity(m){
+  const city = getCities(m).join(", ");
+  return city || (isOnline(m) ? "Online" : "");
+}
 
 function hasCoords(m){ return m.latitude !== null && m.longitude !== null && !isNaN(Number(m.latitude)) && !isNaN(Number(m.longitude)); }
 
@@ -132,7 +135,7 @@ function groupMeetingsForDisplay(meetings){
   meetings.forEach(m => {
     const district = getMeetingDistrict(m);
     const cities = getCities(m);
-    const cityList = cities.length ? [cities.join(", ")] : ["Okänd ort"];
+    const cityList = cities.length ? [cities.join(", ")] : [isOnline(m) ? "Online" : "Okänd ort"];
 
     if (selectedCities.length && !cities.some(city => selectedCities.includes(city))) return;
 

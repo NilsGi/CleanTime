@@ -781,6 +781,26 @@ header{
   background:#f4f7ff;
   color:#17204f;
 }
+.quick-online-toggle{
+  width:100%;
+  min-height:34px;
+  margin:0 0 8px;
+  padding:7px 10px;
+  border-radius:8px;
+  box-shadow:none;
+  font-size:12.5px;
+}
+.quick-online-toggle.online-visible{
+  background:#eaf6ef;
+  color:#17632b;
+  border-color:#bfe4c9;
+}
+#summary{
+  margin:8px 0 12px;
+  color:#666;
+  font-size:12.5px;
+  line-height:1.35;
+}
 .filter-section{
   margin:8px 0;
   border:1px solid #ddd;
@@ -840,6 +860,16 @@ header{
 
   .active-filters{
     margin-bottom:8px;
+  }
+
+  .quick-online-toggle{
+    min-height:36px;
+    margin-bottom:8px;
+    font-size:12px;
+  }
+
+  #summary{
+    font-size:12px;
   }
 
   .mobile-map-toggle{

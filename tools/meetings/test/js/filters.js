@@ -299,7 +299,7 @@ function clearAllFilters(){
   if (distance) distance.value = "";
 
   const type = $("typeFilter");
-  if (type) type.value = "";
+  if (type) type.value = "physical";
 
   userPosition = null;
   if (userMarker && map) {
