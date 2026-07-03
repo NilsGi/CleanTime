@@ -2593,6 +2593,15 @@ async function exportFolderPdf(){
   let layoutCol = 0;
   let currentHeight = 0;
 
+  const totalContentHeight = dayGroups.reduce((sum, group) => {
+    return sum + layoutStyle.dayH +
+      group.blocks.reduce((s, block) => s + block.height, 0);
+  }, 0);
+
+  const targetHeight = cols > 1
+    ? Math.min(availableHeight, totalContentHeight / cols)
+    : availableHeight;
+
   function pushDayHeading(day, continued = false){
     if (currentHeight + layoutStyle.dayH > availableHeight && layoutCol < cols - 1) {
       moveToNextColumn();
@@ -2610,12 +2619,29 @@ async function exportFolderPdf(){
     return false;
   }
 
-  dayGroups.forEach(group => {
-    const groupHeight = layoutStyle.dayH + group.blocks.reduce((sum, block) => sum + block.height, 0);
+  dayGroups.forEach((group, groupIndex) => {
+    const groupHeight = layoutStyle.dayH +
+      group.blocks.reduce((sum, block) => sum + block.height, 0);
 
-    // Fyll aktuell kolumn så långt det går. Flytta en hel veckodag först när den inte ryms.
-    // Om veckodagen är större än en hel kolumn får den börja här och brytas inom dagen.
-    if (layoutCol < cols - 1 && currentHeight > 0 && currentHeight + groupHeight > availableHeight) {
+    const groupsLeft = dayGroups.length - groupIndex;
+    const colsLeft = cols - layoutCol - 1;
+
+    const shouldBalance =
+      cols > 1 &&
+      layoutCol < cols - 1 &&
+      currentHeight > 0 &&
+      groupsLeft > colsLeft &&
+      (
+        currentHeight >= targetHeight * 0.92 ||
+        currentHeight + groupHeight > targetHeight * 1.12
+      );
+
+    if (
+      shouldBalance ||
+      (layoutCol < cols - 1 &&
+       currentHeight > 0 &&
+       currentHeight + groupHeight > availableHeight)
+    ) {
       moveToNextColumn();
     }
 
