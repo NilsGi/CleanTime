@@ -713,16 +713,16 @@ header{
     overflow:visible!important;
   }
 
-  #map{
-    flex:0 0 auto!important;
-    height:52vh!important;
-    min-height:320px!important;
-    touch-action:pan-y!important;
-  }
-
-  #map.leaflet-container{
-    touch-action:pan-y!important;
-  }
+	  #map{
+	    flex:0 0 auto!important;
+	    height:52vh!important;
+	    min-height:320px!important;
+	    touch-action:auto!important;
+	  }
+	
+	  #map.leaflet-container{
+	    touch-action:auto!important;
+	  }
 
   #mobileList{
     display:block!important;
@@ -732,10 +732,16 @@ header{
     display:none!important;
   }
 
-  .stats-count-line{
-    font-size:13px;
-  }
-}
+	  .stats-count-line{
+	    font-size:13px;
+	  }
+
+	  header{
+	    position:sticky;
+	    top:0;
+	    z-index:2000;
+	  }
+	}
 
 /* Senaste layoutjusteringar */
 #status{
@@ -963,23 +969,23 @@ header{
 
 /* Mobil: lås headern och låt knapparna följa direkt under. */
 @media(max-width:900px){
-  header{
-    position:fixed!important;
-    top:0!important;
-    left:0!important;
-    right:0!important;
-    z-index:200!important;
-  }
+	  header{
+	    position:fixed!important;
+	    top:0!important;
+	    left:0!important;
+	    right:0!important;
+	    z-index:2000!important;
+	  }
 
   .top-buttons{
     position:fixed!important;
     top:var(--top-height, 56px)!important;
-    left:0!important;
-    right:0!important;
-    margin:0!important;
-    z-index:190!important;
-    box-sizing:border-box!important;
-  }
+	    left:0!important;
+	    right:0!important;
+	    margin:0!important;
+	    z-index:1900!important;
+	    box-sizing:border-box!important;
+	  }
 
   #meetingsPanel{
     padding-top:calc(var(--top-height, 56px) + var(--controls-height, 48px))!important;
