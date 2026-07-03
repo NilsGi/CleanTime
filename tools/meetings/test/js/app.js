@@ -1,0 +1,113 @@
+async function fetchAllMeetings(){
+  if (!map || !markersLayer) {
+    if (!initMap()) return;
+  }
+
+  rawMeetings = [];
+  allMeetings = [];
+  markersLayer.clearLayers();
+
+  const list = $("list");
+  if (list) list.innerHTML = "";
+  const listMobile = $("listMobile");
+  if (listMobile) listMobile.innerHTML = "";
+  const summary = $("summary");
+  if (summary) summary.textContent = "";
+
+  renderStats([]);
+  setStatus("Hämtar möten...");
+
+  try {
+    const json = await fetchSmartProxy();
+
+    if (!json.ok || !Array.isArray(json.data)) {
+      throw new Error(json.error || "Oväntat svar från /mote. data saknas.");
+    }
+
+    rawMeetings = cleanMeetingsData(json.data);
+    allMeetings = rawMeetings;
+
+    populateFiltersFromSmartProxy(json);
+    renderAll(false);
+    fitVisible();
+
+    const meta = json.meta || {};
+    setStatus(
+      '<span class="ok">Klart.</span> Hämtade ' +
+      (meta.uniqueCount || allMeetings.length) +
+      ' möten.' +
+      (meta.duplicateCount ? ' Dubbletter borttagna: ' + meta.duplicateCount + '.' : '')
+    );
+  } catch(error) {
+    setStatus('<span class="bad">Fel:</span> ' + esc(error.message));
+    console.error(error);
+  }
+}
+
+function renderAll(syncFromMap = false){
+  if (!markersLayer) return;
+
+  const meetingList = filteredMeetings(syncFromMap);
+  const groupList = groupMeetingsForDisplay(meetingList);
+  const mapGroups = groupList.filter(groupMatchesMap);
+  const searchActive = hasActiveTextSearch();
+
+  const shouldFitMapToFilters =
+    !syncFromMap &&
+    map &&
+    mapGroups.length &&
+    !suppressMapMoveRender;
+
+  if (shouldFitMapToFilters) {
+    fitGroupsOnMap(mapGroups);
+  }
+
+  const visibleGroupList = listFollowsMap && map && !searchActive && syncFromMap
+    ? groupList.filter(isGroupInMapView)
+    : groupList;
+
+  const visibleMeetingCount = visibleGroupList.reduce((sum, group) => sum + group.meetings.length, 0);
+  const distanceText = userPosition && $("distanceFilter").value
+    ? "<br><b>Avstånd:</b> visar grupper inom " + $("distanceFilter").value + " km från din position."
+    : userPosition
+      ? "<br><b>Position hämtad:</b> välj ett avstånd i filtret för att begränsa resultaten."
+      : "";
+
+  const summary = $("summary");
+  if (summary) {
+    summary.innerHTML =
+      "Visar " + visibleGroupList.length + " grupper baserat på " + visibleMeetingCount + " möten i listan.<br>" +
+      mapGroups.length + " grupper finns på kartan efter filter." +
+      distanceText;
+  }
+
+  renderMarkers(mapGroups);
+  renderStats(meetingList);
+  renderList(visibleGroupList.slice(0, 150));
+
+  if (visibleGroupList.length > 150) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Listan visar de första 150 grupperna. Använd sök/filter för att begränsa.";
+    $("list")?.appendChild(p);
+  }
+}
+
+function bindUi(){
+  $("refreshMeetingsBtn")?.addEventListener("click", fetchAllMeetings);
+  $("exportFolderPdfBtn")?.addEventListener("click", exportFolderPdf);
+  $("clearFiltersBtn")?.addEventListener("click", clearAllFilters);
+  $("search")?.addEventListener("input", () => renderAll(false));
+  $("typeFilter")?.addEventListener("change", () => renderAll(false));
+  $("distanceFilter")?.addEventListener("change", handleDistanceFilterChange);
+  $("listFollowsMap")?.addEventListener("change", toggleListFollowsMap);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  bindUi();
+  updateLayoutHeight();
+  initMap();
+  fetchAllMeetings();
+  window.addEventListener("resize", updateLayoutHeight);
+  setTimeout(updateLayoutHeight, 250);
+});
