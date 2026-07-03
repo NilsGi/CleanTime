@@ -736,3 +736,138 @@ header{
     font-size:13px;
   }
 }
+
+/* Senaste layoutjusteringar */
+#status{
+  min-height:18px;
+  margin:0 0 8px;
+  padding:2px 0;
+  color:#777;
+  font-size:11.5px;
+  line-height:1.35;
+}
+#status .ok{
+  color:#3f7a46;
+  font-weight:700;
+}
+#status .bad{
+  color:#b00020;
+  font-weight:700;
+}
+.active-filters{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  margin:0 0 10px;
+  font-size:12.5px;
+  line-height:1.3;
+}
+.active-filter-empty{
+  color:#777;
+}
+.active-filter-title{
+  color:#444;
+  font-weight:800;
+}
+.active-filter-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  max-width:100%;
+  padding:4px 7px;
+  border:1px solid #cdd7ff;
+  border-radius:999px;
+  background:#f4f7ff;
+  color:#17204f;
+}
+.filter-section{
+  margin:8px 0;
+  border:1px solid #ddd;
+  border-radius:8px;
+  background:#fff;
+  overflow:hidden;
+}
+.filter-section > summary{
+  cursor:pointer;
+  padding:9px 10px;
+  background:#f0f0f0;
+  font-weight:800;
+}
+.filter-section-body{
+  padding:10px;
+}
+.mobile-map-toggle{
+  display:none;
+}
+
+@media(min-width:901px){
+  main,
+  #meetingsPanel{
+    grid-template-columns:minmax(390px,420px) minmax(0,1fr)!important;
+  }
+
+  .top-buttons{
+    position:sticky;
+    top:0;
+    z-index:20;
+    margin:0 -2px 10px;
+    padding:8px 2px;
+    background:rgba(255,255,255,.96);
+    border-bottom:1px solid #eee;
+    backdrop-filter:blur(8px);
+  }
+}
+
+@media(max-width:900px){
+  .filter-section{
+    margin:7px 0;
+  }
+
+  .filter-section > summary,
+  .stats-details summary{
+    padding:10px;
+  }
+
+  .filter-section-body{
+    padding:9px;
+  }
+
+  #status{
+    margin-bottom:6px;
+    font-size:11px;
+  }
+
+  .active-filters{
+    margin-bottom:8px;
+  }
+
+  .mobile-map-toggle{
+    order:2;
+    display:block!important;
+    width:calc(100% - 24px);
+    margin:10px 12px 8px;
+    box-shadow:none;
+  }
+
+  #map{
+    order:3;
+    height:47vh!important;
+    min-height:280px!important;
+  }
+
+  #meetingsPanel.map-collapsed #map{
+    display:none!important;
+  }
+
+  #mobileList{
+    order:4;
+  }
+}
+
+@media(max-width:380px){
+  #map{
+    height:45vh!important;
+    min-height:250px!important;
+  }
+}
