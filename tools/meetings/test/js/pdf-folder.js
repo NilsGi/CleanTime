@@ -219,6 +219,7 @@ async function exportFolderPdf(){
       titleH: base.title * s * (cols === 3 && meetingCountForLayout > 70 ? 0.46 : 0.48),
       typeH: base.type * s * (cols === 3 && meetingCountForLayout > 70 ? 0.39 : 0.44),
       gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : (meetingCountForLayout > 70 ? 0.44 * s : 0.55 * s),
+      dayGapBefore: cols === 3 && meetingCountForLayout > 70 ? 0.9 * s : 1.25 * s,
       timeW: base.timeW * Math.max(0.86, Math.min(1.08, s)),
       maxTitle: base.maxTitle,
       maxAddr: base.maxAddr,
@@ -327,11 +328,13 @@ async function exportFolderPdf(){
     }
 
     function pushDayHeading(day, continued = false){
-      if (currentHeight + layoutStyle.dayH > availableHeight) {
+      let gapBefore = currentHeight > 0 ? layoutStyle.dayGapBefore : 0;
+      if (currentHeight + gapBefore + layoutStyle.dayH > availableHeight) {
         if (!moveToNextColumn()) return false;
+        gapBefore = 0;
       }
-      columns[layoutCol].push({ type: "day", day, continued });
-      currentHeight += layoutStyle.dayH;
+      columns[layoutCol].push({ type: "day", day, continued, gapBefore });
+      currentHeight += gapBefore + layoutStyle.dayH;
       return true;
     }
 
@@ -424,7 +427,9 @@ async function exportFolderPdf(){
 
     items.forEach(item => {
       if (item.type === "day") {
-        if (cy + layoutStyle.dayH > bottomY) return;
+        const gapBefore = item.gapBefore || 0;
+        if (cy + gapBefore + layoutStyle.dayH > bottomY) return;
+        cy += gapBefore;
         setBlue();
         doc.setFont("helvetica", "bold");
         doc.setFontSize(layoutStyle.day);
