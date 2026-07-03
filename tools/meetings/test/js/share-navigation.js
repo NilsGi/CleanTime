@@ -204,3 +204,15 @@ document.addEventListener("click", async event => {
     }
   }
 }, true);
+
+
+["touchstart","touchend","pointerdown","pointerup"].forEach(type => {
+  document.addEventListener(type, event => {
+    const btn = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-actions, .directions-dialog");
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+    return false;
+  }, true);
+});
