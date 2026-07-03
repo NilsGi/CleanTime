@@ -2504,7 +2504,7 @@ async function exportFolderPdf(){
   const innerMargin = cols === 1 ? 12 : 6;
   const colW = (innerPageWidth - innerMargin*2 - gap*(cols-1)) / cols;
   const topY = 17;
-  const bottomY = innerPageHeight - 14;
+  const bottomY = innerPageHeight - 5.5;
 
   function makeLayoutStyle(scale){
     const base =
@@ -2544,13 +2544,6 @@ async function exportFolderPdf(){
   }
 
   addColumnGuides();
-  setBlue();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("MÖTESLISTA", innerMargin, 8);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.2);
-  doc.text("www.nasverige.org – Exportdatum: " + exportDate, innerMargin + 28, 8);
 
   setBlack();
   doc.setFont("helvetica", "normal");
@@ -2558,8 +2551,14 @@ async function exportFolderPdf(){
   const filterHeaderText = getFilterLabelText()
     .map(([label, value]) => label + ": " + value)
     .join("  ·  ");
-  const filterHeaderRows = doc.splitTextToSize("Valda filter: " + filterHeaderText, innerPageWidth - innerMargin*2);
-  let filterY = 11.4;
+  const filterMetaText =
+    "Antal möten: " + sortedMeetings.length +
+    "  ·  Exportdatum: " + exportDate;
+  const filterHeaderRows = doc.splitTextToSize(
+    "Valda filter: " + filterHeaderText + "  ·  " + filterMetaText,
+    innerPageWidth - innerMargin*2
+  );
+  let filterY = 7.8;
   filterHeaderRows.slice(0,2).forEach(row => {
     doc.text(row, innerMargin, filterY);
     filterY += 2.35;
@@ -2706,7 +2705,9 @@ async function exportFolderPdf(){
   let bestLayout = null;
   let layoutStyle = null;
 
-  for (let scale = 1.28; scale >= 0.48; scale -= 0.02) {
+  const maxScale = meetingCountForLayout > 70 ? 1.42 : meetingCountForLayout > 45 ? 1.34 : 1.28;
+
+  for (let scale = maxScale; scale >= 0.48; scale -= 0.02) {
     const candidateStyle = makeLayoutStyle(scale);
     const candidateLayout = makeLayout(candidateStyle);
 
@@ -2787,19 +2788,6 @@ async function exportFolderPdf(){
   if (writtenMeetings < sortedMeetings.length) {
     console.warn("Alla möten fick inte plats i foldern", { writtenMeetings, total: sortedMeetings.length });
   }
-
-  doc.setDrawColor(...blue);
-  doc.setLineWidth(0.3);
-  doc.line(innerMargin, innerPageHeight - 9, innerPageWidth - innerMargin, innerPageHeight - 9);
-  setBlue();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.text("Insidan är stående. Skriv ut dubbelsidigt och vik foldern i tre delar.", innerMargin, innerPageHeight - 5);
-  doc.text(String(sortedMeetings.length) + " möten i valt urval", innerPageWidth - innerMargin, innerPageHeight - 5, { align:"right" });
-  setBlack();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(5.2);
-  doc.text("Skapad i serviceverktyg utvecklat av NA Region Sveriges webbkommitté. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.", innerMargin, innerPageHeight - 10.8);
 
   doc.save("NA Sverige Möteslista " + exportDate + ".pdf");
   setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
