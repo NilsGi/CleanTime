@@ -2497,6 +2497,7 @@ async function exportFolderPdf(){
   doc.setFillColor(255,255,255);
   doc.rect(0,0,innerPageWidth,innerPageHeight,"F");
 
+
   const meetingCountForLayout = sortedMeetings.length;
   const cols = meetingCountForLayout <= 20 ? 1 : meetingCountForLayout <= 45 ? 2 : 3;
   const gap = cols === 1 ? 0 : 3.5;
@@ -2505,20 +2506,32 @@ async function exportFolderPdf(){
   const topY = 17;
   const bottomY = innerPageHeight - 14;
 
-  function createLayoutStyle(scale = 1){
-    let style;
-    if (cols === 1) style = { day: 10.2, dayH: 5.2, time: 7.1, title: 7.1, body: 6.3, type: 5.9, rowH: 3.0, titleH: 3.0, typeH: 2.7, gap: 1.15, timeW: 24, maxTitle: 2, maxAddr: 4, maxType: 2 };
-    else if (cols === 2) style = { day: 8.9, dayH: 4.6, time: 6.1, title: 6.1, body: 5.5, type: 5.2, rowH: 2.5, titleH: 2.5, typeH: 2.15, gap: 0.9, timeW: 17, maxTitle: 2, maxAddr: 3, maxType: 2 };
-    else if (meetingCountForLayout > 70) style = { day: 7.0, dayH: 3.45, time: 4.55, title: 4.55, body: 4.15, type: 3.95, rowH: 1.85, titleH: 1.85, typeH: 1.65, gap: 0.42, timeW: 15, maxTitle: 1, maxAddr: 2, maxType: 1 };
-    else style = { day: 7.6, dayH: 3.8, time: 5.05, title: 5.05, body: 4.65, type: 4.4, rowH: 2.05, titleH: 2.05, typeH: 1.82, gap: 0.58, timeW: 16, maxTitle: 2, maxAddr: 2, maxType: 1 };
+  function makeLayoutStyle(scale){
+    const base =
+      cols === 1
+        ? { day: 12.2, time: 9.2, title: 9.2, body: 8.2, type: 7.7, timeW: 28, maxTitle: 3, maxAddr: 5, maxType: 3 }
+        : cols === 2
+          ? { day: 10.8, time: 7.9, title: 7.9, body: 7.1, type: 6.6, timeW: 21, maxTitle: 3, maxAddr: 4, maxType: 3 }
+          : { day: 8.8, time: 6.1, title: 6.1, body: 5.55, type: 5.15, timeW: 17, maxTitle: 2, maxAddr: 3, maxType: 2 };
 
-    ["day","dayH","time","title","body","type","rowH","titleH","typeH","gap"].forEach(k=>{
-      style[k] = +(style[k] * scale).toFixed(2);
-    });
-    return style;
+    const s = Math.max(0.48, scale);
+    return {
+      day: base.day * s,
+      dayH: base.day * s * 0.56,
+      time: base.time * s,
+      title: base.title * s,
+      body: base.body * s,
+      type: base.type * s,
+      rowH: base.body * s * 0.46,
+      titleH: base.title * s * 0.48,
+      typeH: base.type * s * 0.44,
+      gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : 0.55 * s,
+      timeW: base.timeW * Math.max(0.86, Math.min(1.08, s)),
+      maxTitle: base.maxTitle,
+      maxAddr: base.maxAddr,
+      maxType: base.maxType
+    };
   }
-
-  let layoutStyle = createLayoutStyle(1);
 
   function addColumnGuides(){
     if (cols <= 1) return;
@@ -2552,8 +2565,9 @@ async function exportFolderPdf(){
     filterY += 2.35;
   });
   const firstContentY = Math.max(topY, filterY + 1);
+  const availableHeight = bottomY - firstContentY;
 
-  function buildMeetingBlock(m){
+  function buildMeetingBlockWithStyle(m, layoutStyle){
     const day = cleanDay(m.days).toUpperCase();
     const addressParts = meetingExportAddress(m);
     const time = formatMeetingTimeForPdf(m);
@@ -2587,133 +2601,124 @@ async function exportFolderPdf(){
     return { day, time, titleRows, rowsForAddress, rowsForType, height };
   }
 
-  const blocks = sortedMeetings.map(buildMeetingBlock);
-  const dayGroups = [];
-  blocks.forEach(block => {
-    const last = dayGroups[dayGroups.length - 1];
-    if (!last || last.day !== block.day) dayGroups.push({ day: block.day, blocks: [] });
-    dayGroups[dayGroups.length - 1].blocks.push(block);
-  });
-
-  const availableHeight = bottomY - firstContentY;
-  function estimateHeight(style){
-    const textWidth = colW - style.timeW;
-    let total = 0;
-    let currentDay = null;
-
-    sortedMeetings.forEach(m => {
-      const day = cleanDay(m.days).toUpperCase();
-      if (day !== currentDay) {
-        total += style.dayH;
-        currentDay = day;
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(style.title);
-      const titleRows = doc.splitTextToSize(String(m.title || "Okänt möte"), textWidth).slice(0, style.maxTitle);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(style.body);
-      let addrRows = [];
-      meetingExportAddress(m).forEach(part => {
-        addrRows.push(...doc.splitTextToSize(part, textWidth));
-      });
-      addrRows = addrRows.slice(0, style.maxAddr);
-
-      doc.setFontSize(style.type);
-      const typeShort = (isOnline(m) ? "Online" : getTypes(m).filter(t => t !== "Virtuellt möte").join(", "));
-      const typeRows = typeShort ? doc.splitTextToSize(typeShort, textWidth).slice(0, style.maxType) : [];
-
-      total +=
-        Math.max(style.rowH, titleRows.length * style.titleH) +
-        addrRows.length * style.rowH +
-        typeRows.length * style.typeH +
-        style.gap;
+  function makeLayout(layoutStyle){
+    const blocks = sortedMeetings.map(m => buildMeetingBlockWithStyle(m, layoutStyle));
+    const dayGroups = [];
+    blocks.forEach(block => {
+      const last = dayGroups[dayGroups.length - 1];
+      if (!last || last.day !== block.day) dayGroups.push({ day: block.day, blocks: [] });
+      dayGroups[dayGroups.length - 1].blocks.push(block);
     });
 
-    return total / cols;
-  }
+    const columns = Array.from({ length: cols }, () => []);
+    let layoutCol = 0;
+    let currentHeight = 0;
+    let failed = false;
 
-  let scale = 1;
-  while (scale > 0.72) {
-    const testStyle = createLayoutStyle(scale);
-    if (estimateHeight(testStyle) <= availableHeight * 0.98) {
-      layoutStyle = testStyle;
-      break;
+    const totalContentHeight = dayGroups.reduce((sum, group) => {
+      return sum + layoutStyle.dayH +
+        group.blocks.reduce((s, block) => s + block.height, 0);
+    }, 0);
+
+    const targetHeight = cols > 1
+      ? Math.min(availableHeight, totalContentHeight / cols)
+      : availableHeight;
+
+    function moveToNextColumn(){
+      if (layoutCol < cols - 1) {
+        layoutCol++;
+        currentHeight = 0;
+        return true;
+      }
+      failed = true;
+      return false;
     }
-    scale -= 0.03;
-  }
 
-
-  const columns = Array.from({ length: cols }, () => []);
-  let layoutCol = 0;
-  let currentHeight = 0;
-
-  const totalContentHeight = dayGroups.reduce((sum, group) => {
-    return sum + layoutStyle.dayH +
-      group.blocks.reduce((s, block) => s + block.height, 0);
-  }, 0);
-
-  const targetHeight = cols > 1
-    ? Math.min(availableHeight, totalContentHeight / cols)
-    : availableHeight;
-
-  function pushDayHeading(day, continued = false){
-    if (currentHeight + layoutStyle.dayH > availableHeight && layoutCol < cols - 1) {
-      moveToNextColumn();
-    }
-    columns[layoutCol].push({ type: "day", day, continued });
-    currentHeight += layoutStyle.dayH;
-  }
-
-  function moveToNextColumn(){
-    if (layoutCol < cols - 1) {
-      layoutCol++;
-      currentHeight = 0;
+    function pushDayHeading(day, continued = false){
+      if (currentHeight + layoutStyle.dayH > availableHeight) {
+        if (!moveToNextColumn()) return false;
+      }
+      columns[layoutCol].push({ type: "day", day, continued });
+      currentHeight += layoutStyle.dayH;
       return true;
     }
-    return false;
-  }
 
-  dayGroups.forEach((group, groupIndex) => {
-    const groupHeight = layoutStyle.dayH +
-      group.blocks.reduce((sum, block) => sum + block.height, 0);
+    dayGroups.forEach((group, groupIndex) => {
+      if (failed) return;
 
-    const groupsLeft = dayGroups.length - groupIndex;
-    const colsLeft = cols - layoutCol - 1;
+      const groupHeight = layoutStyle.dayH +
+        group.blocks.reduce((sum, block) => sum + block.height, 0);
 
-    const shouldBalance =
-      cols > 1 &&
-      layoutCol < cols - 1 &&
-      currentHeight > 0 &&
-      groupsLeft > colsLeft &&
-      (
-        currentHeight >= targetHeight * 0.92 ||
-        currentHeight + groupHeight > targetHeight * 1.12
-      );
+      const groupsLeft = dayGroups.length - groupIndex;
+      const colsLeft = cols - layoutCol - 1;
 
-    if (
-      shouldBalance ||
-      (layoutCol < cols - 1 &&
-       currentHeight > 0 &&
-       currentHeight + groupHeight > availableHeight)
-    ) {
-      moveToNextColumn();
-    }
+      const shouldBalance =
+        cols > 1 &&
+        layoutCol < cols - 1 &&
+        currentHeight > 0 &&
+        groupsLeft > colsLeft &&
+        (
+          currentHeight >= targetHeight * 0.98 ||
+          currentHeight + groupHeight > targetHeight * 1.18
+        );
 
-    pushDayHeading(group.day, false);
-
-    group.blocks.forEach(block => {
-      if (currentHeight + block.height > availableHeight && layoutCol < cols - 1) {
+      if (
+        shouldBalance ||
+        (layoutCol < cols - 1 &&
+         currentHeight > 0 &&
+         currentHeight + groupHeight > availableHeight)
+      ) {
         moveToNextColumn();
-        pushDayHeading(group.day, true);
       }
 
-      columns[layoutCol].push({ type: "meeting", block });
-      currentHeight += block.height;
-    });
-  });
+      if (!pushDayHeading(group.day, false)) return;
 
+      group.blocks.forEach(block => {
+        if (failed) return;
+
+        if (block.height > availableHeight - layoutStyle.dayH) {
+          failed = true;
+          return;
+        }
+
+        if (currentHeight + block.height > availableHeight) {
+          if (!moveToNextColumn()) return;
+          if (!pushDayHeading(group.day, true)) return;
+        }
+
+        columns[layoutCol].push({ type: "meeting", block });
+        currentHeight += block.height;
+      });
+    });
+
+    const written = columns.reduce((sum, items) => sum + items.filter(item => item.type === "meeting").length, 0);
+    return {
+      columns,
+      fits: !failed && written === sortedMeetings.length,
+      written
+    };
+  }
+
+  let bestLayout = null;
+  let layoutStyle = null;
+
+  for (let scale = 1.28; scale >= 0.48; scale -= 0.02) {
+    const candidateStyle = makeLayoutStyle(scale);
+    const candidateLayout = makeLayout(candidateStyle);
+
+    if (candidateLayout.fits) {
+      layoutStyle = candidateStyle;
+      bestLayout = candidateLayout;
+      break;
+    }
+  }
+
+  if (!bestLayout) {
+    layoutStyle = makeLayoutStyle(0.48);
+    bestLayout = makeLayout(layoutStyle);
+  }
+
+  const columns = bestLayout.columns;
   let writtenMeetings = 0;
   columns.forEach((items, columnIndex) => {
     let cx = innerMargin + columnIndex * (colW + gap);
