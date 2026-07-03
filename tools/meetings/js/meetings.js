@@ -107,7 +107,7 @@ function getCities(m){
 
 function getTypes(m){ return (m.meetingTypes||[]).map(t=>t.title); }
 
-function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!m.onlineMeeting; }
+function isOnline(m){ return getTypes(m).includes("Virtuellt möte") || !!safeUrl(m.onlineMeeting?.url); }
 
 function getCity(m){
   const city = getCities(m).join(", ");

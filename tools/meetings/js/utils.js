@@ -161,8 +161,11 @@ function formatExportMonthYear(date = new Date()){
 }
 
 function safeUrl(href){
+  const raw = String(href ?? "").trim();
+  if (!raw) return "";
+
   try {
-    const url = new URL(String(href || ""), window.location.href);
+    const url = new URL(raw, window.location.href);
     return ["http:", "https:"].includes(url.protocol) ? url.href : "";
   } catch {
     return "";
