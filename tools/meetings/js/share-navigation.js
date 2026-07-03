@@ -20,15 +20,12 @@ function meetingShareText(m){
     "Grupp: " + cleanSingleLineField(m.title || "Okänd grupp"),
     "Tid: " + meetingDisplayTime(m),
     "Plats: " + (isOnline(m) ? "Online" : (meetingAddressText(m) || "Ej angiven")),
-    "Ort: " + (getCity(m) || (isOnline(m) ? "Online" : "Ej angiven")),
-    "Distrikt: " + getMeetingDistrict(m),
   ];
 
   const types = getTypes(m).filter(Boolean).join(", ");
   if (types) rows.push("Mötestyp: " + types);
   if (m.station && !isOnline(m)) rows.push("Närmaste hållplats: " + cleanSingleLineField(m.station));
   if (safeUrl(m.onlineMeeting?.url)) rows.push("Online-länk: " + safeUrl(m.onlineMeeting.url));
-  if (m.information) rows.push("", "Info: " + cleanInformationField(m.information));
 
   rows.push("", "Hitta fler möten:", "https://www.nasverige.org/");
   return rows.filter(row => row !== null && row !== undefined).join("\n");
@@ -165,24 +162,42 @@ function setTemporaryNotice(message){
   notice._timer = setTimeout(() => notice.classList.remove("show"), 2200);
 }
 
+function meetingActionLinkHtml(href, label){
+  const url = safeUrl(href);
+  return url ? `<a class="meeting-action-btn meeting-action-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : "";
+}
+
+function meetingQuickLinksHtml(m){
+  return [
+    meetingActionLinkHtml(m.onlineMeeting?.url, "Online-länk"),
+    meetingActionLinkHtml(m.linkMap, "Karta")
+  ].filter(Boolean).join("");
+}
+
 function meetingActionButtonsHtml(m){
   const key = esc(meetingUniqueKey(m));
+  const quickLinks = meetingQuickLinksHtml(m);
   const share = `<button type="button" class="meeting-action-btn share-meeting-btn" data-meeting-key="${key}">Dela</button>`;
   const directions = !isOnline(m) && (hasCoords(m) || meetingAddressText(m))
     ? `<button type="button" class="meeting-action-btn directions-meeting-btn secondary" data-meeting-key="${key}">Vägbeskrivning</button>`
     : "";
-  return `<div class="meeting-actions">${share}${directions}</div>`;
+  return `<div class="meeting-actions">${quickLinks}${share}${directions}</div>`;
 }
 
 document.addEventListener("click", async event => {
-  const actionButton = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address");
+  const actionButton = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-action-link");
   if (!actionButton) return;
 
-  // Knapparna ligger inuti klickbara möteskort. Fånga klicket tidigt så
-  // möteskortets/kartans egen klickhändelse inte öppnar popup först.
-  event.preventDefault();
+  // Knapparna/länkarna ligger inuti klickbara möteskort. Stoppa bubbling
+  // så möteskortets/kartans egen klickhändelse inte öppnar popup först.
   event.stopPropagation();
   if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+
+  if (actionButton.classList.contains("meeting-action-link")) {
+    return;
+  }
+
+  event.preventDefault();
 
   if (actionButton.classList.contains("share-meeting-btn")) {
     await shareMeetingByKey(actionButton.getAttribute("data-meeting-key"));
@@ -208,7 +223,7 @@ document.addEventListener("click", async event => {
 
 ["touchstart","touchend","pointerdown","pointerup"].forEach(type => {
   document.addEventListener(type, event => {
-    const target = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-actions, .directions-dialog");
+    const target = event.target.closest(".share-meeting-btn, .directions-meeting-btn, .copy-address, .meeting-action-link, .meeting-actions, .directions-dialog");
     if (!target) return;
 
     // Stoppa händelsen från att bubbla till möteskortet/kartan, men använd inte

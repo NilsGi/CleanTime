@@ -1055,12 +1055,23 @@ header{
   margin-top:8px;
 }
 .meeting-action-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   margin:0;
   padding:7px 10px;
   border-radius:9px;
   font-size:12px;
   line-height:1.1;
   box-shadow:none;
+  text-decoration:none;
+  min-height:34px;
+}
+.meeting-action-link{
+  background:#eef2ff;
+  border:1px solid #b9c3ef;
+  color:#0a1981;
+  font-weight:800;
 }
 .directions-dialog-backdrop{
   position:fixed;
