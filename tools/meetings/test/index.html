@@ -2522,10 +2522,10 @@ async function exportFolderPdf(){
       title: base.title * s,
       body: base.body * s,
       type: base.type * s,
-      rowH: base.body * s * (cols === 3 && meetingCountForLayout > 70 ? 0.40 : 0.46),
-      titleH: base.title * s * (cols === 3 && meetingCountForLayout > 70 ? 0.43 : 0.48),
-      typeH: base.type * s * (cols === 3 && meetingCountForLayout > 70 ? 0.34 : 0.44),
-      gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : (meetingCountForLayout > 70 ? 0.32 * s : 0.55 * s),
+      rowH: base.body * s * (cols === 3 && meetingCountForLayout > 70 ? 0.43 : 0.46),
+      titleH: base.title * s * (cols === 3 && meetingCountForLayout > 70 ? 0.46 : 0.48),
+      typeH: base.type * s * (cols === 3 && meetingCountForLayout > 70 ? 0.39 : 0.44),
+      gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : (meetingCountForLayout > 70 ? 0.44 * s : 0.55 * s),
       timeW: base.timeW * Math.max(0.86, Math.min(1.08, s)),
       maxTitle: base.maxTitle,
       maxAddr: base.maxAddr,
@@ -2705,7 +2705,7 @@ async function exportFolderPdf(){
   let bestLayout = null;
   let layoutStyle = null;
 
-  const maxScale = meetingCountForLayout > 70 ? 1.62 : meetingCountForLayout > 45 ? 1.42 : 1.30;
+  const maxScale = meetingCountForLayout > 70 ? 1.50 : meetingCountForLayout > 45 ? 1.40 : 1.30;
 
   for (let scale = maxScale; scale >= 0.48; scale -= 0.02) {
     const candidateStyle = makeLayoutStyle(scale);
