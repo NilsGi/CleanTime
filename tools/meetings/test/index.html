@@ -40,66 +40,77 @@
     </div>
 
     <div id="status" class="muted"><span class="muted">Startar...</span></div>
+    <div id="activeFilters" class="active-filters" aria-live="polite"></div>
 
-    <label for="search">Sök grupp/ort</label>
-    <input id="search" placeholder="Sök möte, ort, adress, station, info...">
+    <details id="filterSection" class="filter-section">
+      <summary>Filter</summary>
+      <div class="filter-section-body">
+        <label for="search">Sök grupp/ort</label>
+        <input id="search" placeholder="Sök möte, ort, adress, station, info...">
 
-    <div class="filter-grid">
-      <div>
-        <label>Ort</label>
-        <div id="cityFilter" class="checkbox-filter"></div>
-        <div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
-      </div>
-      <div>
-        <label>Distrikt</label>
-        <div id="districtFilter" class="checkbox-filter"></div>
-        <div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
-      </div>
-    </div>
+        <div class="filter-grid">
+          <div>
+            <label>Ort</label>
+            <div id="cityFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
+          </div>
+          <div>
+            <label>Distrikt</label>
+            <div id="districtFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
+          </div>
+        </div>
 
-    <div class="filter-grid">
-      <div>
-        <label>Veckodag</label>
-        <div id="dayFilter" class="checkbox-filter"></div>
-        <div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
+        <div class="filter-grid">
+          <div>
+            <label>Veckodag</label>
+            <div id="dayFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
+          </div>
+          <div>
+            <label>Mötestyp</label>
+            <div id="meetingTypeFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+          </div>
+        </div>
       </div>
-      <div>
-        <label>Mötestyp</label>
-        <div id="meetingTypeFilter" class="checkbox-filter"></div>
-        <div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
-      </div>
-    </div>
+    </details>
 
-    <div class="filter-grid view-distance-grid">
-      <div>
-        <label for="typeFilter">Visning</label>
-        <select id="typeFilter">
-          <option value="">Alla möten i listan</option>
-          <option value="physical">Endast fysiska möten</option>
-          <option value="online">Endast online i listan</option>
-        </select>
-      </div>
-      <div>
-        <label for="distanceFilter">Avstånd från mig</label>
-        <select id="distanceFilter">
-          <option value="">Alla avstånd</option>
-          <option value="5">Inom 5 km</option>
-          <option value="10">Inom 10 km</option>
-          <option value="25">Inom 25 km</option>
-          <option value="50">Inom 50 km</option>
-          <option value="100">Inom 100 km</option>
-          <option value="250">Inom 250 km</option>
-        </select>
-      </div>
-    </div>
+    <details id="mapFilterSection" class="filter-section">
+      <summary>Avstånd/karta</summary>
+      <div class="filter-section-body">
+        <div class="filter-grid view-distance-grid">
+          <div>
+            <label for="typeFilter">Visning</label>
+            <select id="typeFilter">
+              <option value="">Alla möten i listan</option>
+              <option value="physical">Endast fysiska möten</option>
+              <option value="online">Endast online i listan</option>
+            </select>
+          </div>
+          <div>
+            <label for="distanceFilter">Avstånd från mig</label>
+            <select id="distanceFilter">
+              <option value="">Alla avstånd</option>
+              <option value="5">Inom 5 km</option>
+              <option value="10">Inom 10 km</option>
+              <option value="25">Inom 25 km</option>
+              <option value="50">Inom 50 km</option>
+              <option value="100">Inom 100 km</option>
+              <option value="250">Inom 250 km</option>
+            </select>
+          </div>
+        </div>
 
-    <div class="map-sync-box">
-      <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
-        <input id="listFollowsMap" type="checkbox" checked style="width:auto;margin-top:2px">
-        <span>Listan följer kartans synliga område</span>
-      </label>
-      <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
-    </div>
+        <div class="map-sync-box">
+          <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
+            <input id="listFollowsMap" type="checkbox" checked style="width:auto;margin-top:2px">
+            <span>Listan följer kartans synliga område</span>
+          </label>
+          <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
+        </div>
+      </div>
+    </details>
 
     <div id="summary" class="muted"></div>
     <details id="statsFull" class="stats-details">
@@ -109,6 +120,7 @@
     <div id="desktopListWrapper"><div id="list"></div></div>
   </aside>
 
+  <button id="toggleMobileMapBtn" class="mobile-map-toggle secondary" type="button">Dölj karta</button>
   <div id="map"></div>
   <section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
 </main>

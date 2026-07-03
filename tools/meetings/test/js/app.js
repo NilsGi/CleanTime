@@ -1,3 +1,64 @@
+let lastMobilePanelMode = null;
+
+function renderActiveFilters(){
+  const el = $("activeFilters");
+  if (!el) return;
+
+  const tags = getActiveFilterTags();
+  if (!tags.length) {
+    el.classList.remove("has-active");
+    el.innerHTML = '<span class="active-filter-empty">Inga aktiva filter</span>';
+    return;
+  }
+
+  el.classList.add("has-active");
+  el.innerHTML =
+    '<span class="active-filter-title">Aktivt filter:</span>' +
+    tags.map(tag =>
+      '<span class="active-filter-chip"><b>' +
+      esc(tag.label) +
+      ':</b> ' +
+      esc(tag.value) +
+      '</span>'
+    ).join("");
+}
+
+function setMobileMapCollapsed(collapsed){
+  const panel = $("meetingsPanel");
+  const button = $("toggleMobileMapBtn");
+  if (!panel || !button) return;
+
+  panel.classList.toggle("map-collapsed", collapsed);
+  button.textContent = collapsed ? "Visa karta" : "Dölj karta";
+
+  if (!collapsed && map) {
+    setTimeout(() => map.invalidateSize(), 80);
+  }
+}
+
+function toggleMobileMap(){
+  const panel = $("meetingsPanel");
+  setMobileMapCollapsed(!panel?.classList.contains("map-collapsed"));
+}
+
+function syncResponsivePanels(){
+  const isMobile = window.matchMedia("(max-width: 900px)").matches;
+  if (lastMobilePanelMode === isMobile) return;
+  lastMobilePanelMode = isMobile;
+
+  ["filterSection", "mapFilterSection"].forEach(id => {
+    const details = $(id);
+    if (details) details.open = !isMobile;
+  });
+
+  const stats = $("statsFull");
+  if (stats) stats.open = false;
+
+  if (!isMobile) {
+    setMobileMapCollapsed(false);
+  }
+}
+
 async function fetchAllMeetings(){
   if (!map || !markersLayer) {
     if (!initMap()) return;
@@ -13,6 +74,7 @@ async function fetchAllMeetings(){
   if (listMobile) listMobile.innerHTML = "";
   const summary = $("summary");
   if (summary) summary.textContent = "";
+  renderActiveFilters();
 
   renderStats([]);
   setStatus("Hämtar möten...");
@@ -81,6 +143,7 @@ function renderAll(syncFromMap = false){
       mapGroups.length + " grupper finns på kartan efter filter." +
       distanceText;
   }
+  renderActiveFilters();
 
   renderMarkers(mapGroups);
   renderStats(meetingList);
@@ -102,13 +165,19 @@ function bindUi(){
   $("typeFilter")?.addEventListener("change", () => renderAll(false));
   $("distanceFilter")?.addEventListener("change", handleDistanceFilterChange);
   $("listFollowsMap")?.addEventListener("change", toggleListFollowsMap);
+  $("toggleMobileMapBtn")?.addEventListener("click", toggleMobileMap);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   bindUi();
+  syncResponsivePanels();
+  renderActiveFilters();
   updateLayoutHeight();
   initMap();
   fetchAllMeetings();
-  window.addEventListener("resize", updateLayoutHeight);
+  window.addEventListener("resize", () => {
+    syncResponsivePanels();
+    updateLayoutHeight();
+  });
   setTimeout(updateLayoutHeight, 250);
 });

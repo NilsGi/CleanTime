@@ -871,3 +871,38 @@ header{
     min-height:250px!important;
   }
 }
+
+/* Kompaktare sticky-knappar */
+.top-buttons{
+  gap:6px!important;
+  margin:-3px 0 8px!important;
+}
+.top-buttons button{
+  min-height:36px!important;
+  padding:7px 6px!important;
+  border-radius:8px!important;
+  font-size:12.5px!important;
+  line-height:1.08!important;
+  box-shadow:0 1px 4px rgba(10,25,129,.18)!important;
+}
+
+@media(min-width:901px){
+  .top-buttons{
+    top:-6px!important;
+    margin:-8px -2px 8px!important;
+    padding:6px 2px 7px!important;
+  }
+}
+
+@media(max-width:900px){
+  .top-buttons{
+    margin:-5px 0 7px!important;
+    gap:5px!important;
+  }
+
+  .top-buttons button{
+    min-height:34px!important;
+    padding:6px 5px!important;
+    font-size:11.5px!important;
+  }
+}

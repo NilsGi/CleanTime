@@ -209,27 +209,12 @@ function filteredMeetings(applyMapViewToFilters = false){
 }
 
 function getFilterLabelText(){
-  function selectedLabels(id){
-    const el = $(id);
-    if (!el) return [];
-    if (el.classList && el.classList.contains("checkbox-filter")) {
-      return [...el.querySelectorAll('input[type="checkbox"]:checked')]
-        .map(input => {
-          const label = input.closest("label")?.textContent || input.value;
-          return label.trim().replace(/\s*\(\d+\)$/, "");
-        })
-        .filter(Boolean);
-    }
-    if (el.multiple) return [...el.selectedOptions].map(o => o.textContent.trim().replace(/\s*\(\d+\)$/, "")).filter(Boolean);
-    return el.value ? [(el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : el.value)] : [];
-  }
-
   const rows = [];
-  const cities = selectedLabels("cityFilter");
-  const districts = selectedLabels("districtFilter");
-  const days = selectedLabels("dayFilter").map(cleanDay);
-  const meetingTypes = selectedLabels("meetingTypeFilter");
-  const view = selectedLabels("typeFilter");
+  const cities = selectedFilterLabels("cityFilter");
+  const districts = selectedFilterLabels("districtFilter");
+  const days = selectedFilterLabels("dayFilter").map(cleanDay);
+  const meetingTypes = selectedFilterLabels("meetingTypeFilter");
+  const view = selectedFilterLabels("typeFilter");
   const search = $("search")?.value?.trim();
   const distance = $("distanceFilter")?.value;
   rows.push(["Ort", cities.length ? cities.join(", ") : "Alla"]);
@@ -240,6 +225,58 @@ function getFilterLabelText(){
   if (search) rows.push(["Sökning", search]);
   if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
   return rows;
+}
+
+function selectedFilterLabels(id){
+  const el = $(id);
+  if (!el) return [];
+
+  function cleanLabel(label){
+    return String(label || "").trim().replace(/\s*\(\d+\)$/, "");
+  }
+
+  if (el.classList && el.classList.contains("checkbox-filter")) {
+    return [...el.querySelectorAll('input[type="checkbox"]:checked')]
+      .map(input => cleanLabel(input.closest("label")?.textContent || input.value))
+      .filter(Boolean);
+  }
+
+  if (el.multiple) {
+    return [...el.selectedOptions]
+      .map(option => cleanLabel(option.textContent))
+      .filter(Boolean);
+  }
+
+  return el.value && el.selectedOptions && el.selectedOptions[0]
+    ? [cleanLabel(el.selectedOptions[0].textContent)]
+    : [];
+}
+
+function summarizeFilterValues(values){
+  if (!values.length) return "";
+  if (values.length <= 2) return values.join(", ");
+  return values.slice(0, 2).join(", ") + " +" + (values.length - 2);
+}
+
+function getActiveFilterTags(){
+  const tags = [];
+  const search = $("search")?.value?.trim();
+  const cities = selectedFilterLabels("cityFilter");
+  const districts = selectedFilterLabels("districtFilter");
+  const days = selectedFilterLabels("dayFilter").map(cleanDay);
+  const meetingTypes = selectedFilterLabels("meetingTypeFilter");
+  const view = selectedFilterLabels("typeFilter");
+  const distance = $("distanceFilter")?.value;
+
+  if (search) tags.push({ label: "Sök", value: search });
+  if (cities.length) tags.push({ label: "Ort", value: summarizeFilterValues(cities) });
+  if (districts.length) tags.push({ label: "Distrikt", value: summarizeFilterValues(districts) });
+  if (days.length) tags.push({ label: "Dag", value: summarizeFilterValues(days) });
+  if (meetingTypes.length) tags.push({ label: "Typ", value: summarizeFilterValues(meetingTypes) });
+  if (view.length && $("typeFilter")?.value) tags.push({ label: "Visning", value: view[0] });
+  if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
+
+  return tags;
 }
 
 function toggleListFollowsMap(){
@@ -343,6 +380,7 @@ function handleDistanceFilterChange(){
   if (!navigator.geolocation) {
     setStatus('<span class="bad">Din webbläsare stödjer inte platsdelning.</span>');
     if (distanceEl) distanceEl.value = "";
+    renderActiveFilters();
     return;
   }
 
@@ -382,6 +420,7 @@ function handleDistanceFilterChange(){
       userPosition = null;
 
       if (distanceEl) distanceEl.value = "";
+      renderActiveFilters();
 
       let message = err.message || "Kunde inte hämta position.";
 
