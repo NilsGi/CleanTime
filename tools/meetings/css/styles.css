@@ -1059,13 +1059,14 @@ header{
   align-items:center;
   justify-content:center;
   margin:0;
-  padding:6px 10px;
+  padding:3px 8px;
   border-radius:9px;
   font-size:11px;
-  line-height:1.1;
+  line-height:1;
   box-shadow:none;
   text-decoration:none;
-  min-height:32px;
+  min-height:18px;
+  height:20px;
 }
 .meeting-action-link{
   background:#eef2ff;
