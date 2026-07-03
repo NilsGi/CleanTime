@@ -2512,7 +2512,7 @@ async function exportFolderPdf(){
         ? { day: 12.2, time: 9.2, title: 9.2, body: 8.2, type: 7.7, timeW: 28, maxTitle: 3, maxAddr: 5, maxType: 3 }
         : cols === 2
           ? { day: 11.0, time: 8.15, title: 8.15, body: 7.35, type: 6.8, timeW: 20, maxTitle: 3, maxAddr: 4, maxType: 5 }
-          : { day: 8.8, time: 6.25, title: 6.25, body: 5.7, type: 5.25, timeW: 16.5, maxTitle: 2, maxAddr: 3, maxType: 4 };
+          : { day: 9.4, time: 6.65, title: 6.65, body: 6.05, type: 5.45, timeW: 15.3, maxTitle: 2, maxAddr: 3, maxType: 4 };
 
     const s = Math.max(0.48, scale);
     return {
@@ -2522,10 +2522,10 @@ async function exportFolderPdf(){
       title: base.title * s,
       body: base.body * s,
       type: base.type * s,
-      rowH: base.body * s * 0.46,
-      titleH: base.title * s * 0.48,
-      typeH: base.type * s * 0.44,
-      gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : 0.55 * s,
+      rowH: base.body * s * (cols === 3 && meetingCountForLayout > 70 ? 0.40 : 0.46),
+      titleH: base.title * s * (cols === 3 && meetingCountForLayout > 70 ? 0.43 : 0.48),
+      typeH: base.type * s * (cols === 3 && meetingCountForLayout > 70 ? 0.38 : 0.44),
+      gap: cols === 1 ? 1.15 * s : cols === 2 ? 0.82 * s : (meetingCountForLayout > 70 ? 0.32 * s : 0.55 * s),
       timeW: base.timeW * Math.max(0.86, Math.min(1.08, s)),
       maxTitle: base.maxTitle,
       maxAddr: base.maxAddr,
@@ -2572,7 +2572,14 @@ async function exportFolderPdf(){
     const time = formatMeetingTimeForPdf(m);
     const title = String(m.title || "Okänt möte");
     const types = getTypes(m).filter(Boolean);
-    const typeText = types.filter(t => t !== "Virtuellt möte").join(", ");
+    let typeText = types.filter(t => t !== "Virtuellt möte").join(", ");
+    if (meetingCountForLayout > 70 && typeText.length > 42) {
+      typeText = types
+        .filter(t => t !== "Virtuellt möte")
+        .filter(t => !["Rullstolsvänlig lokal", "Djurfritt", "Barnfritt", "Barntillåtet"].includes(t))
+        .join(", ");
+      if (!typeText) typeText = types.filter(t => t !== "Virtuellt möte").slice(0,2).join(", ");
+    }
     const typeShort = isOnline(m) ? "Online" : typeText;
     const textWidth = colW - layoutStyle.timeW;
 
@@ -2705,7 +2712,7 @@ async function exportFolderPdf(){
   let bestLayout = null;
   let layoutStyle = null;
 
-  const maxScale = meetingCountForLayout > 70 ? 1.42 : meetingCountForLayout > 45 ? 1.34 : 1.28;
+  const maxScale = meetingCountForLayout > 70 ? 1.62 : meetingCountForLayout > 45 ? 1.42 : 1.30;
 
   for (let scale = maxScale; scale >= 0.48; scale -= 0.02) {
     const candidateStyle = makeLayoutStyle(scale);
