@@ -1,3 +1,34 @@
+const DISTRICT_COLORS = [
+  "#1976d2", "#00a6a6", "#6c5ce7", "#2e7d32", "#f57c00",
+  "#c2185b", "#455a64", "#00897b", "#5e35b1", "#ef6c00",
+  "#0277bd", "#7cb342", "#ad1457", "#546e7a", "#3949ab",
+  "#0097a7", "#8e24aa", "#6d4c41", "#1565c0", "#00838f"
+];
+
+let districtColorMap = {};
+
+function getMeetingDistrict(m){
+  return m.meetingDistrict?.district || "Okänt distrikt";
+}
+
+function updateDistrictColorMap(meetings){
+  const districts = [...new Set((meetings || []).map(getMeetingDistrict).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "sv"));
+
+  districtColorMap = {};
+  districts.forEach((district, index) => {
+    districtColorMap[district] = DISTRICT_COLORS[index % DISTRICT_COLORS.length];
+  });
+}
+
+function getDistrictColor(district){
+  if (!districtColorMap[district]) {
+    const index = Object.keys(districtColorMap).length;
+    districtColorMap[district] = DISTRICT_COLORS[index % DISTRICT_COLORS.length];
+  }
+  return districtColorMap[district];
+}
+
 function meetingPrimaryKey(m){
   if (m.documentId) return "documentId:" + String(m.documentId);
   if (m.id !== undefined && m.id !== null) return "id:" + String(m.id);
@@ -46,7 +77,7 @@ function meetingText(m){
   return [
     m.title,
     getCity(m),
-    m.meetingDistrict?.district,
+    getMeetingDistrict(m),
     m.location,
     m.address,
     m.zip,
@@ -61,7 +92,7 @@ function groupMeetingsForDisplay(meetings){
   const selectedCities = selectedValues("cityFilter");
 
   meetings.forEach(m => {
-    const district = m.meetingDistrict?.district || "Okänt distrikt";
+    const district = getMeetingDistrict(m);
     const cities = getCities(m);
     const cityList = cities.length ? [cities.join(", ")] : ["Okänd ort"];
 
@@ -75,6 +106,7 @@ function groupMeetingsForDisplay(meetings){
       if (!groups[key]) {
         groups[key] = {
           key, district, city,
+          color: getDistrictColor(district),
           title: displayGroupName(m.title),
           meetings: [],
           latitude: null,

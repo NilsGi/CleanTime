@@ -49,7 +49,7 @@ function getActiveFilterState(){
 function meetingMatchesState(m, state, ignore = new Set()){
   if (!ignore.has("search") && state.q && !meetingText(m).includes(state.q)) return false;
   if (!ignore.has("city") && state.cities.length && !state.cities.some(city => getCities(m).includes(city))) return false;
-  if (!ignore.has("district") && state.districts.length && !state.districts.includes(m.meetingDistrict?.district)) return false;
+  if (!ignore.has("district") && state.districts.length && !state.districts.includes(getMeetingDistrict(m))) return false;
   if (!ignore.has("day") && state.days.length && !state.days.includes(m.days)) return false;
   if (!ignore.has("meetingType") && state.meetingTypes.length && !state.meetingTypes.some(t => getTypes(m).includes(t))) return false;
   if (!ignore.has("type")) {
@@ -142,6 +142,12 @@ function fillDynamicSelect(id, items){
 
       span.textContent = item.label || item.value;
       label.appendChild(checkbox);
+      if (id.toLowerCase().includes("district")) {
+        const swatch = document.createElement("span");
+        swatch.className = "filter-swatch";
+        swatch.style.background = getDistrictColor(item.value);
+        label.appendChild(swatch);
+      }
       label.appendChild(span);
       el.appendChild(label);
     });
@@ -173,7 +179,7 @@ function updateDynamicFilters(applyMapView = false){
   const meetingTypeMeetings = baseMeetings.filter(m => meetingMatchesState(m, state, new Set(["meetingType"])));
 
   fillDynamicSelect("cityFilter", countValues(cityMeetings, getCities));
-  fillDynamicSelect("districtFilter", countValues(districtMeetings, m => m.meetingDistrict?.district));
+  fillDynamicSelect("districtFilter", countValues(districtMeetings, getMeetingDistrict));
   fillDynamicSelect("dayFilter", countDays(dayMeetings));
   fillDynamicSelect("meetingTypeFilter", countValues(meetingTypeMeetings, getTypes));
 }

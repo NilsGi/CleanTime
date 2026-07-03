@@ -26,6 +26,7 @@ async function fetchAllMeetings(){
 
     rawMeetings = cleanMeetingsData(json.data);
     allMeetings = rawMeetings;
+    updateDistrictColorMap(allMeetings);
 
     populateFiltersFromSmartProxy(json);
     renderAll(false);

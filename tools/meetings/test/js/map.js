@@ -32,12 +32,22 @@ function initMap(){
       disableClusteringAtZoom:14,
       maxClusterRadius:45,
       iconCreateFunction: function(cluster){
-        const totalMeetings = cluster.getAllChildMarkers()
-          .reduce((sum, m) => sum + (m.meetingCount || 1), 0);
+        const childMarkers = cluster.getAllChildMarkers();
+        const totalMeetings = childMarkers.reduce((sum, m) => sum + (m.meetingCount || 1), 0);
+        const districtCounts = {};
+
+        childMarkers.forEach(marker => {
+          const district = marker.meetingGroup?.district || "Okänt distrikt";
+          districtCounts[district] = (districtCounts[district] || 0) + (marker.meetingCount || 1);
+        });
+
+        const dominantDistrict = Object.keys(districtCounts)
+          .sort((a,b) => districtCounts[b] - districtCounts[a])[0];
+        const color = getDistrictColor(dominantDistrict || "Okänt distrikt");
 
         return L.divIcon({
-          html: '<div><span>' + totalMeetings + '</span></div>',
-          className: 'marker-cluster marker-cluster-small',
+          html: '<div style="background:' + esc(color) + '!important"><span>' + totalMeetings + '</span></div>',
+          className: 'district-cluster-marker',
           iconSize: L.point(40, 40)
         });
       }
@@ -121,10 +131,11 @@ function renderMarkers(groups){
   const bounds = [];
 
   groups.forEach(g => {
+    const color = g.color || getDistrictColor(g.district);
     const marker = L.marker([g.latitude, g.longitude], {
       icon: L.divIcon({
         className: 'meeting-count-marker',
-        html: '<div>' + g.meetings.length + '</div>',
+        html: '<div style="background:' + esc(color) + '">' + g.meetings.length + '</div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
@@ -166,7 +177,7 @@ function clusterPopupHtml(groups){
     return `
       <div class="cluster-popup-group">
         <div class="cluster-popup-group-title">${esc(g.title)}</div>
-        <div class="muted">${esc(g.city)} · ${esc(g.district)}</div>
+        <div class="muted"><span class="district-swatch" style="background:${esc(g.color || getDistrictColor(g.district))}"></span>${esc(g.city)} · ${esc(g.district)}</div>
         ${meetingsHtml}
       </div>
     `;
@@ -238,11 +249,12 @@ function groupPopupHtml(g){
   }).join("");
 
   const dist = g.distance != null ? "<br><b>Avstånd:</b> " + g.distance.toFixed(1) + " km" : "";
+  const color = g.color || getDistrictColor(g.district);
 
   return `
     <div style="min-width:260px">
       <b>${esc(g.title)}</b><br>
-      ${esc(g.city)} · ${esc(g.district)}<br>
+      <span class="district-swatch" style="background:${esc(color)}"></span>${esc(g.city)} · ${esc(g.district)}<br>
       <b>${g.meetings.length} möte${g.meetings.length === 1 ? "" : "n"}</b>${dist}
       <div>${times}</div>
     </div>
@@ -290,7 +302,7 @@ function buildListHtml(groups){
       <div class="meeting" data-lat="${esc(m._groupLat ?? "")}" data-lng="${esc(m._groupLng ?? "")}" data-popup-key="${esc(m._groupKey)}">
         <h3>${esc(m.title || m._groupTitle || "Okänt möte")}</h3>
         <div class="meeting-time-main"><b>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</b></div>
-        <div class="muted">${esc(getCity(m) || m._groupCity || "")} · ${esc(m.meetingDistrict?.district || m._groupDistrict || "")}</div>
+        <div class="muted"><span class="district-swatch" style="background:${esc(getDistrictColor(getMeetingDistrict(m) || m._groupDistrict || "Okänt distrikt"))}"></span>${esc(getCity(m) || m._groupCity || "")} · ${esc(getMeetingDistrict(m) || m._groupDistrict || "")}</div>
         ${address ? `<div>${esc(address)}</div>` : ""}
         ${station}
         ${dist}

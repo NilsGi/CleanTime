@@ -4,7 +4,7 @@ function buildStats(meetings){
   const uniqueGroupsAll = new Set();
 
   meetings.forEach(m => {
-    const district = m.meetingDistrict?.district || "Okänt distrikt";
+    const district = getMeetingDistrict(m);
     const city = getCity(m) || "Okänd ort";
     const cityKey = normalizeText(city);
     const groupKey = normalizeGroupName(m.title);
@@ -83,7 +83,7 @@ function renderStats(meetings){
 
   const districtCards = stats.districts.map(d => `
     <div class="stats-district-card">
-      <div class="stats-district-title">${esc(d.district)}</div>
+      <div class="stats-district-title"><span class="district-swatch" style="background:${esc(getDistrictColor(d.district))}"></span>${esc(d.district)}</div>
       <div class="stats-count-line">${esc(formatStatsLine(d.meetings, d.physical, d.online))}</div>
       <div class="stats-muted-line">${d.groups} grupper/ort</div>
     </div>
@@ -101,6 +101,7 @@ function renderStats(meetings){
     const rows = groups.map(g => `
       <div class="stats-group-card">
         <div class="stats-group-main">
+          <span class="district-swatch" style="background:${esc(getDistrictColor(g.district))}"></span>
           <span class="group-name">${esc(g.group)}</span>
           <span class="group-city">${esc(g.city)}</span>
         </div>
