@@ -1,36 +1,203 @@
-# NA Sverige Kalender
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NA Sverige - Kalender</title>
+  <meta name="description" content="Kalender för event, distriktsmöten, UKSAM och regionsmöten inom NA Sverige.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
 
-Refaktorerad kalenderapp med publik kalender och inbyggd lösenordsskyddad admin i samma app.
+<body>
+<header>
+  <div class="header-inner">
+    <a class="brand" href="#kalender" aria-label="Visa kalender">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+      <h1>Kalender</h1>
+    </a>
 
-## Filer
+    <div class="header-actions">
+      <a id="calendarNav" class="header-link is-active" href="#kalender">Kalender</a>
+      <a id="adminNav" class="header-link" href="#admin">Admin</a>
+      <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
+    </div>
+  </div>
+</header>
 
-- `index.html` - publik kalender och adminvy via `#admin`.
-- `admin.html` - vidarekoppling till `index.html#admin` för gamla länkar.
-- `css/styles.css` - gemensam styling inspirerad av möteslistans layout.
-- `js/app.js` - växlar mellan kalender- och adminvy.
-- `js/config.js` - Supabase-konfiguration, adminlösenord i base64 och importintervall.
-- `js/api.js` - gemensam Supabase-klient.
-- `js/calendar.js` - publik kalenderlogik.
-- `js/admin.js` - lösenord, manuell hantering och importlogik.
+<main id="calendarView" class="calendar-shell">
+  <aside>
+    <div class="top-buttons">
+      <button id="refreshCalendarBtn" type="button">Uppdatera kalender</button>
+      <button class="secondary" type="button" onclick="downloadAllIcs()">Prenumerera / ICS</button>
+    </div>
 
-## Viktigt
+    <div class="beta-notice">Beta-version: kalendern uppdateras och förbättras löpande.</div>
 
-Importen använder `/event?page=...` precis som tidigare. Den endpointen behöver därför finnas kvar i Cloudflare/Pages.
+    <div class="service-credit">
+      Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+    </div>
 
-Importerade event uppdateras med `source,external_slug` som nyckel. Manuella event kan skapas, redigeras, döljas och tas bort i admin.
+    <div id="status" class="muted"><span class="muted">Startar...</span></div>
+    <div id="lastUpdated" class="last-updated">Senast uppdaterad/importerad: okänt</div>
 
-Kalendern visar `Senast uppdaterad/importerad` baserat på nyaste `updated_at` i hämtade kalenderposter. Importen sätter `updated_at` när poster uppdateras.
+    <details class="filter-section" open>
+      <summary>Filter</summary>
+      <div class="filter-section-body">
+        <label for="search">Sök</label>
+        <input id="search" placeholder="Sök evenemang, ort, arrangör...">
 
-Kostnad visas i kalenderkort och kan anges på manuella händelser i admin. Om kostnaden bara är en siffra visas den med `kr` efter beloppet. Beskrivning och ingress renderas med bevarade stycken, punktlistor, numrerade listor och enkel fetmarkering med `**text**`.
+        <div class="filter-grid">
+          <div>
+            <label for="typeFilter">Typ</label>
+            <select id="typeFilter">
+              <option value="">Alla typer</option>
+              <option value="event">Event</option>
+              <option value="distrikt">Distrikt</option>
+              <option value="uksam">UKSAM</option>
+              <option value="region">Region</option>
+            </select>
+          </div>
+          <div>
+            <label for="monthFilter">Månad</label>
+            <select id="monthFilter"></select>
+          </div>
+        </div>
+      </div>
+    </details>
 
-Admininloggning sparas i `sessionStorage`, vilket betyder att den normalt gäller i samma webbläsarflik tills fliken stängs.
+    <details class="filter-section" open>
+      <summary>Vy</summary>
+      <div class="filter-section-body">
+        <div class="view-buttons">
+          <button type="button" data-view="list" onclick="setView('list')">Lista</button>
+          <button type="button" data-view="week" onclick="setView('week')">Vecka</button>
+          <button type="button" data-view="month" onclick="setView('month')">Månad</button>
+        </div>
+      </div>
+    </details>
+  </aside>
 
-Manuella händelser i admin kan kopieras. Kopiering fyller formuläret med samma uppgifter men sparar som en ny händelse.
+  <section class="content-panel" aria-labelledby="pageTitle">
+    <div class="page-head">
+      <div>
+        <h2 id="pageTitle">Kommande händelser</h2>
+        <p>Event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.</p>
+      </div>
+    </div>
 
-Importerade händelser som har `image_url` visar en liten bild i kalenderkortet samt en länk till originalbilden.
+    <div id="calendar"></div>
+  </section>
+</main>
 
-Plats/adress i kalenderkort länkar till Google Maps. Tillbaka-knappen går till `https://www.nasverige.org/`.
+<main id="adminView" class="admin-shell is-hidden">
+  <aside>
+    <div class="beta-notice">Beta-version: kalendern uppdateras och förbättras löpande.</div>
 
-Headern är låst/sticky vid scroll. Textfält som innehåller markdown-länkar, till exempel `[Teams](https://...)`, och vanliga `https://...`-adresser blir klickbara länkar.
+    <div class="service-credit">
+      Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+    </div>
 
-Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.
+    <section id="adminAuth" class="auth-box" aria-labelledby="authTitle">
+      <form id="authForm">
+        <h2 id="authTitle">Kalenderadmin</h2>
+        <p class="muted">Ange lösenord för att importera och hantera kalenderposter.</p>
+
+        <label for="adminPassword">Lösenord</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+        <div class="auth-error" id="authError" aria-live="polite"></div>
+
+        <button type="submit">Logga in</button>
+      </form>
+    </section>
+
+    <section id="adminTools" class="is-hidden">
+      <div class="top-buttons">
+        <button type="button" onclick="importFromNasverige()">Importera från nasverige.org</button>
+        <button id="autoImportNow" type="button" class="secondary">Kör import nu</button>
+      </div>
+
+      <div class="auto-import-box">
+        <label>
+          <input id="autoImportToggle" type="checkbox">
+          Automatisk import när admin öppnas
+        </label>
+        <p id="autoImportStatus" class="muted">Automatisk import är avstängd.</p>
+      </div>
+
+      <pre id="log"></pre>
+    </section>
+  </aside>
+
+  <section id="adminContent" class="content-panel is-hidden" aria-labelledby="adminTitle">
+    <div class="page-head">
+      <div>
+        <h2 id="adminTitle">Kalenderadmin</h2>
+        <p>Importera från nasverige.org och skapa, redigera, dölj eller ta bort manuella händelser.</p>
+      </div>
+    </div>
+
+    <h3 class="form-section-title" id="formTitle">Lägg till manuell händelse</h3>
+
+    <label>Typ</label>
+    <select id="event_type">
+      <option value="event">Event</option>
+      <option value="distrikt">Distrikt</option>
+      <option value="uksam">UKSAM</option>
+      <option value="region">Region</option>
+    </select>
+
+    <label>Titel</label>
+    <input id="title">
+
+    <label>Organisatör</label>
+    <input id="organizer">
+
+    <label>Adress</label>
+    <input id="address">
+
+    <label>Kostnad</label>
+    <input id="price" placeholder="Ex. 100 kr, frivillig sjunde traditionen eller gratis">
+
+    <div class="form-grid">
+      <div>
+        <label>Startdatum</label>
+        <input id="start_date" type="date">
+      </div>
+      <div>
+        <label>Starttid</label>
+        <input id="start_time" type="time">
+      </div>
+      <div>
+        <label>Slutdatum</label>
+        <input id="end_date" type="date">
+      </div>
+      <div>
+        <label>Sluttid</label>
+        <input id="end_time" type="time">
+      </div>
+    </div>
+
+    <label>Länk</label>
+    <input id="web_url" type="url">
+
+    <label>Ingress</label>
+    <textarea id="excerpt"></textarea>
+
+    <label>Beskrivning</label>
+    <textarea id="description"></textarea>
+
+    <div class="button-row">
+      <button onclick="saveEvent()" id="saveBtn">Spara händelse</button>
+      <button onclick="resetForm()" type="button" class="secondary">Avbryt/rensa</button>
+    </div>
+
+    <h3 class="form-section-title">Manuella händelser</h3>
+    <div id="manualEvents">Laddar...</div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/calendar.js"></script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

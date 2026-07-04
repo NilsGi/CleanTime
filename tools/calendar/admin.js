@@ -1,20 +1,5 @@
-const calendarView = document.getElementById("calendarView");
-const adminView = document.getElementById("adminView");
-const calendarNav = document.getElementById("calendarNav");
-const adminNav = document.getElementById("adminNav");
-
-function showView() {
-  const isAdmin = window.location.hash === "#admin";
-
-  calendarView?.classList.toggle("is-hidden", isAdmin);
-  adminView?.classList.toggle("is-hidden", !isAdmin);
-  calendarNav?.classList.toggle("is-active", !isAdmin);
-  adminNav?.classList.toggle("is-active", isAdmin);
-
-  if (isAdmin) {
-    window.dispatchEvent(new CustomEvent("calendar-admin-view"));
-  }
-}
-
-window.addEventListener("hashchange", showView);
-showView();
+export const SUPABASE_URL = "https://kycekthmuiqcqegpqugi.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_6ciJsZubiknj8wjbVzb2HQ_q1TJscdo";
+export const ENCODED_ADMIN_PASSWORD = "ZXZlbnQ=";
+export const AUTH_SESSION_KEY = "naCalendarAdminUnlocked";
+export const AUTO_IMPORT_INTERVAL_HOURS = 6;
