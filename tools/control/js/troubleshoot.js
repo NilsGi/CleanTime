@@ -49,6 +49,7 @@ const DIAGNOSTIC_TYPES = [
 let diagnosticMeetings = [];
 let diagnosticIssues = [];
 let geocodeRunning = false;
+let serverMapCheckAvailable = null;
 const GEOCODE_CACHE_PREFIX = "moteslistaGeocode:v1:";
 
 function getDiagnosticThreshold(id, fallback){
@@ -206,6 +207,32 @@ function setCachedGeocode(query, value){
   }
 }
 
+function getCachedMapCheck(m){
+  const key = [
+    "mapcheck",
+    m.linkMap,
+    m.location,
+    m.address,
+    m.zip,
+    getCity(m)
+  ].join("|");
+
+  return getCachedGeocode(key);
+}
+
+function setCachedMapCheck(m, value){
+  const key = [
+    "mapcheck",
+    m.linkMap,
+    m.location,
+    m.address,
+    m.zip,
+    getCity(m)
+  ].join("|");
+
+  setCachedGeocode(key, value);
+}
+
 function isCoordinateQuery(value){
   const text = String(value || "").trim();
   return /^loc:\s*-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?$/i.test(text) ||
@@ -309,6 +336,9 @@ async function geocodeQuery(query){
 }
 
 async function geocodeMeeting(m){
+  const mapCheck = await checkMeetingViaServerMap(m);
+  if (mapCheck) return mapCheck;
+
   const candidates = geocodeCandidatesForMeeting(m);
 
   for (const query of candidates) {
@@ -317,6 +347,62 @@ async function geocodeMeeting(m){
   }
 
   return null;
+}
+
+async function checkMeetingViaServerMap(m){
+  if (serverMapCheckAvailable === false) return null;
+
+  const cached = getCachedMapCheck(m);
+  if (cached) return cached.found ? cached : null;
+
+  try {
+    const response = await fetch("/kartkoll", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        linkMap: m.linkMap || "",
+        location: m.location || "",
+        address: m.address || "",
+        zip: m.zip || "",
+        city: getCity(m) || "",
+        title: m.title || ""
+      })
+    });
+
+    if (response.status === 404) {
+      serverMapCheckAvailable = false;
+      return null;
+    }
+
+    serverMapCheckAvailable = response.ok;
+    if (!response.ok) return null;
+
+    const json = await response.json();
+    const result = json?.result;
+    if (!json?.ok || !result || !validLatLng(Number(result.lat), Number(result.lng))) {
+      setCachedMapCheck(m, { found: false, source: result?.source || "unresolved" });
+      return null;
+    }
+
+    const normalized = {
+      found: true,
+      lat: Number(result.lat),
+      lng: Number(result.lng),
+      displayName: result.displayName || result.finalUrl || "",
+      query: result.query || result.finalUrl || "kartlänk",
+      source: result.source || "kartkoll",
+      finalUrl: result.finalUrl || ""
+    };
+
+    setCachedMapCheck(m, normalized);
+    return normalized;
+  } catch {
+    serverMapCheckAvailable = false;
+    return null;
+  }
 }
 
 function makeIssue(type, data){
@@ -331,6 +417,10 @@ function makeIssue(type, data){
     distanceKm: data.distanceKm ?? null,
     searchText: ""
   };
+}
+
+function sameMeeting(a, b){
+  return meetingPrimaryKey(a) === meetingPrimaryKey(b);
 }
 
 function findGroupCoordinateIssues(groups, thresholdKm){
@@ -662,6 +752,13 @@ async function runGeocodeDiagnostics(){
         continue;
       }
 
+      if (result.source && result.source.startsWith("map-link")) {
+        diagnosticIssues = diagnosticIssues.filter(issue =>
+          issue.type !== "map-link-unchecked" ||
+          !(issue.meetings || []).some(issueMeeting => sameMeeting(issueMeeting, m))
+        );
+      }
+
       const meetingWithGeocode = {
         ...m,
         _geocodeLat: result.lat,
@@ -682,12 +779,15 @@ async function runGeocodeDiagnostics(){
 
       const distance = haversine(Number(m.latitude), Number(m.longitude), result.lat, result.lng);
       if (distance > threshold) {
+        const sourceText = result.source && result.source.startsWith("map-link")
+          ? "Koordinater hämtades från kartlänken. "
+          : "";
         newIssues.push(makeIssue("geocode-mismatch", {
           title: displayGroupName(m.title),
           group: displayGroupName(m.title),
           city: getCity(m) || "Okänd ort",
           district: getMeetingDistrict(m),
-          details: "Mötets koordinater och kartträffen skiljer " + formatMeters(distance) + ". Sökning: " + result.query + ". Träff: " + result.displayName + ".",
+          details: sourceText + "Mötets koordinater och kartträffen skiljer " + formatMeters(distance) + ". Sökning/källa: " + result.query + ". Träff: " + result.displayName + ".",
           meetings: [meetingWithGeocode],
           distanceKm: distance
         }));
