@@ -1109,7 +1109,7 @@ body.troubleshoot-page .troubleshoot-shell{
 
 .diagnostic-summary{
   display:grid;
-  grid-template-columns:repeat(6,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:8px;
   margin:12px 0 16px;
 }

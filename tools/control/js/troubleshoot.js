@@ -15,6 +15,11 @@ const DIAGNOSTIC_TYPES = [
     empty: "Inga avvikande kartlänkar med läsbara koordinater hittades."
   },
   {
+    id: "geocode-mismatch",
+    title: "Adress/kartträff matchar inte koordinater",
+    empty: "Inga avvikande adress- eller kartträffar hittades."
+  },
+  {
     id: "map-link-unchecked",
     title: "Kartlänk behöver manuell kontroll",
     empty: "Inga kartlänkar med oläsbara koordinater hittades."
@@ -25,6 +30,16 @@ const DIAGNOSTIC_TYPES = [
     empty: "Inga fysiska möten utan koordinater hittades."
   },
   {
+    id: "geocode-suggestion",
+    title: "Kartträff finns för möten utan koordinater",
+    empty: "Inga kartträffar för möten utan koordinater har hämtats."
+  },
+  {
+    id: "geocode-unresolved",
+    title: "Adress/kartlänk kunde inte hittas",
+    empty: "Inga misslyckade adress- eller kartuppslag finns."
+  },
+  {
     id: "spelling",
     title: "Möjliga stavningsvarianter",
     empty: "Inga tydliga stavningsvarianter hittades."
@@ -33,6 +48,8 @@ const DIAGNOSTIC_TYPES = [
 
 let diagnosticMeetings = [];
 let diagnosticIssues = [];
+let geocodeRunning = false;
+const GEOCODE_CACHE_PREFIX = "moteslistaGeocode:v1:";
 
 function getDiagnosticThreshold(id, fallback){
   const value = Number($(id)?.value);
@@ -139,6 +156,10 @@ function formatCoords(lat, lng){
   return Number(lat).toFixed(6) + ", " + Number(lng).toFixed(6);
 }
 
+function sleep(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function meetingLabel(m){
   return [
     cleanDay(m.days),
@@ -166,6 +187,136 @@ function issueSearchText(issue){
       m.linkMap
     ].join(" "))
   ].join(" ").toLowerCase();
+}
+
+function getCachedGeocode(query){
+  try {
+    const cached = localStorage.getItem(GEOCODE_CACHE_PREFIX + simplifySpelling(query));
+    return cached ? JSON.parse(cached) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedGeocode(query, value){
+  try {
+    localStorage.setItem(GEOCODE_CACHE_PREFIX + simplifySpelling(query), JSON.stringify(value));
+  } catch {
+    // Cache är bara en hastighetsbonus. Sidan ska fungera även om den saknas.
+  }
+}
+
+function isCoordinateQuery(value){
+  const text = String(value || "").trim();
+  return /^loc:\s*-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?$/i.test(text) ||
+    /^-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?$/.test(text);
+}
+
+function cleanMapSearchText(value){
+  const text = String(value || "")
+    .replace(/\+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text || isCoordinateQuery(text)) return "";
+  return text;
+}
+
+function extractSearchTextFromMapLink(url){
+  const safe = safeUrl(url);
+  if (!safe) return "";
+
+  try {
+    const parsed = new URL(safe);
+    const params = ["q", "query", "destination", "daddr"];
+
+    for (const param of params) {
+      const value = cleanMapSearchText(parsed.searchParams.get(param));
+      if (value) return value;
+    }
+
+    const decodedPath = decodeURIComponent(parsed.pathname || "");
+    const pathMatch = decodedPath.match(/\/maps\/(?:place|search|dir)\/([^/@?]+)/i);
+    if (pathMatch) {
+      const value = cleanMapSearchText(pathMatch[1]);
+      if (value) return value;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function buildMeetingAddressQuery(m){
+  const city = getCity(m);
+  return [
+    m.address,
+    m.zip,
+    city && city !== "Online" ? city : "",
+    "Sverige"
+  ].map(value => String(value || "").trim()).filter(Boolean).join(", ");
+}
+
+function geocodeCandidatesForMeeting(m){
+  const candidates = [
+    extractSearchTextFromMapLink(m.linkMap),
+    buildMeetingAddressQuery(m)
+  ].map(value => String(value || "").trim()).filter(Boolean);
+
+  const seen = new Set();
+  return candidates.filter(value => {
+    const key = simplifySpelling(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function geocodeQuery(query){
+  const cached = getCachedGeocode(query);
+  if (cached) return cached.found ? cached : null;
+
+  const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=se&q=" +
+    encodeURIComponent(query);
+
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Karttjänsten svarade HTTP " + response.status + ".");
+  }
+
+  const rows = await response.json();
+  const first = Array.isArray(rows) ? rows[0] : null;
+  const result = first && parseCoordPair(first.lat, first.lon)
+    ? {
+      found: true,
+      lat: Number(first.lat),
+      lng: Number(first.lon),
+      displayName: first.display_name || "",
+      query
+    }
+    : { found: false, query };
+
+  setCachedGeocode(query, result);
+  await sleep(1100);
+
+  return result.found ? result : null;
+}
+
+async function geocodeMeeting(m){
+  const candidates = geocodeCandidatesForMeeting(m);
+
+  for (const query of candidates) {
+    const result = await geocodeQuery(query);
+    if (result) return result;
+  }
+
+  return null;
 }
 
 function makeIssue(type, data){
@@ -377,6 +528,7 @@ function renderMeetingRows(issue){
           <span>${esc(meetingLabel(m) || "Ingen tid/adress angiven")}</span>
           <span class="muted">Koordinater: ${esc(formatCoords(m.latitude, m.longitude))}</span>
           ${linkCoords}
+          ${validLatLng(Number(m._geocodeLat), Number(m._geocodeLng)) ? '<br><span class="muted">Kartträff: ' + esc(formatCoords(m._geocodeLat, m._geocodeLng)) + '</span>' : ""}
         </div>
         <div>${mapLink}</div>
       </div>
@@ -455,6 +607,116 @@ function exportDiagnosticsCsv(){
   URL.revokeObjectURL(url);
 }
 
+async function runGeocodeDiagnostics(){
+  if (geocodeRunning || !diagnosticMeetings.length) return;
+
+  geocodeRunning = true;
+  const button = $("geocodeDiagnosticsBtn");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Kontrollerar...";
+  }
+
+  diagnosticIssues = diagnosticIssues.filter(issue => !String(issue.type).startsWith("geocode-"));
+  renderDiagnostics();
+
+  const physicalMeetings = diagnosticMeetings.filter(m => !isOnline(m));
+  const threshold = getDiagnosticThreshold("mapLinkThreshold", 0.25);
+  const newIssues = [];
+
+  try {
+    for (let i = 0; i < physicalMeetings.length; i++) {
+      const m = physicalMeetings[i];
+      const candidates = geocodeCandidatesForMeeting(m);
+
+      setStatus(
+        '<span class="ok">Kartkontroll:</span> ' +
+        (i + 1) +
+        " av " +
+        physicalMeetings.length +
+        " fysiska möten."
+      );
+
+      if (!candidates.length) {
+        newIssues.push(makeIssue("geocode-unresolved", {
+          title: displayGroupName(m.title),
+          group: displayGroupName(m.title),
+          city: getCity(m) || "Okänd ort",
+          district: getMeetingDistrict(m),
+          details: "Mötet saknar både tydlig adress och sökbar kartlänk.",
+          meetings: [m]
+        }));
+        continue;
+      }
+
+      const result = await geocodeMeeting(m);
+      if (!result) {
+        newIssues.push(makeIssue("geocode-unresolved", {
+          title: displayGroupName(m.title),
+          group: displayGroupName(m.title),
+          city: getCity(m) || "Okänd ort",
+          district: getMeetingDistrict(m),
+          details: "Karttjänsten hittade ingen träff för: " + candidates.join(" / ") + ".",
+          meetings: [m]
+        }));
+        continue;
+      }
+
+      const meetingWithGeocode = {
+        ...m,
+        _geocodeLat: result.lat,
+        _geocodeLng: result.lng
+      };
+
+      if (!hasCoords(m)) {
+        newIssues.push(makeIssue("geocode-suggestion", {
+          title: displayGroupName(m.title),
+          group: displayGroupName(m.title),
+          city: getCity(m) || "Okänd ort",
+          district: getMeetingDistrict(m),
+          details: "Mötet saknar koordinater, men karttjänsten hittade: " + result.displayName + ".",
+          meetings: [meetingWithGeocode]
+        }));
+        continue;
+      }
+
+      const distance = haversine(Number(m.latitude), Number(m.longitude), result.lat, result.lng);
+      if (distance > threshold) {
+        newIssues.push(makeIssue("geocode-mismatch", {
+          title: displayGroupName(m.title),
+          group: displayGroupName(m.title),
+          city: getCity(m) || "Okänd ort",
+          district: getMeetingDistrict(m),
+          details: "Mötets koordinater och kartträffen skiljer " + formatMeters(distance) + ". Sökning: " + result.query + ". Träff: " + result.displayName + ".",
+          meetings: [meetingWithGeocode],
+          distanceKm: distance
+        }));
+      }
+    }
+
+    diagnosticIssues = [...diagnosticIssues, ...newIssues].map(issue => ({
+      ...issue,
+      searchText: issueSearchText(issue)
+    }));
+
+    renderDiagnostics();
+    setStatus(
+      '<span class="ok">Klart.</span> Adress/kartkontrollen hittade ' +
+      newIssues.length +
+      " punkter att granska."
+    );
+  } catch (error) {
+    setStatus('<span class="bad">Fel vid kartkontroll:</span> ' + esc(error.message));
+    console.error(error);
+  } finally {
+    geocodeRunning = false;
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Kontrollera adress/karta";
+    }
+  }
+}
+
 async function fetchDiagnostics(){
   setStatus("Hämtar möten...");
   $("diagnosticSections").innerHTML = "";
@@ -486,6 +748,7 @@ async function fetchDiagnostics(){
 
 document.addEventListener("DOMContentLoaded", () => {
   $("refreshDiagnosticsBtn")?.addEventListener("click", fetchDiagnostics);
+  $("geocodeDiagnosticsBtn")?.addEventListener("click", runGeocodeDiagnostics);
   $("exportDiagnosticsCsvBtn")?.addEventListener("click", exportDiagnosticsCsv);
   $("diagnosticSearch")?.addEventListener("input", renderDiagnostics);
   $("groupCoordThreshold")?.addEventListener("change", buildDiagnostics);
