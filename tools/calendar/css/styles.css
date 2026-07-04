@@ -430,11 +430,10 @@ label {
 .rich-text .inline-image-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   width: auto;
   margin: 2px 0;
   vertical-align: middle;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .rich-text .inline-image {
@@ -449,12 +448,6 @@ label {
   background: transparent;
   padding: 0;
   flex: 0 0 auto;
-}
-
-.rich-text .inline-image-link span {
-  font-size: inherit;
-  text-align: left;
-  text-decoration: underline;
 }
 
 .meta {

@@ -596,14 +596,21 @@ function renderFormattedText(text) {
 
 function formatInline(text) {
   const source = String(text || "");
-  const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi;
+  const markdownLinkPattern = /(!?)\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/gi;
   let html = "";
   let lastIndex = 0;
   let match;
 
   while ((match = markdownLinkPattern.exec(source)) !== null) {
     html += formatPlainInline(source.slice(lastIndex, match.index));
-    html += safeLink(match[2], match[1]);
+    const href = match[3];
+    const label = match[2];
+    const isMarkdownImage = match[1] === "!";
+
+    html += isMarkdownImage || isImageUrl(cleanUrlMatch(href).url)
+      ? imageLink(href)
+      : safeLink(href, label);
+
     lastIndex = match.index + match[0].length;
   }
 
@@ -640,19 +647,20 @@ function safeLink(href, label) {
   }
 
   if (isImageUrl(url)) {
-    const linkText = label && label !== href && label !== url
-      ? label
-      : "Bild";
-
-    return `
-      <a class="inline-image-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">
-        <img class="inline-image" src="${escapeAttr(url)}" alt="" loading="lazy">
-        <span>${formatStrong(escapeHtml(linkText))}</span>
-      </a>
-    `;
+    return imageLink(url);
   }
 
   return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${formatStrong(escapeHtml(label || url))}</a>`;
+}
+
+function imageLink(href) {
+  const url = cleanUrlMatch(href).url;
+
+  return `
+    <a class="inline-image-link" href="${escapeAttr(url)}" target="_blank" rel="noopener" aria-label="Öppna bild">
+      <img class="inline-image" src="${escapeAttr(url)}" alt="" loading="lazy">
+    </a>
+  `;
 }
 
 function isImageUrl(url) {
