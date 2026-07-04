@@ -26,6 +26,7 @@
   };
 
   const scriptBase = new URL(".", document.currentScript.src);
+  const routeNames = new Set(Object.values(routes));
 
   const state = {
     pages: Object.create(null),
@@ -47,16 +48,39 @@
 
   function getPageName() {
     const path = normalizePath(window.location.pathname);
-    return routes[path] || "menu";
+    if (routes[path]) return routes[path];
+
+    const parts = path.split("/").filter(Boolean);
+    const lastPart = parts[parts.length - 1] || "";
+    return routeNames.has(lastPart) ? lastPart : "menu";
   }
 
-  function resolvePageScript(src) {
-    return new URL(src, scriptBase).href;
+  function getBasePath() {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const lastPart = parts[parts.length - 1] || "";
+
+    if (routeNames.has(lastPart) || lastPart === "index.html") {
+      parts.pop();
+    }
+
+    return "/" + (parts.length ? parts.join("/") + "/" : "");
   }
 
-  function loadScript(src) {
+  function unique(items) {
+    return [...new Set(items.filter(Boolean))];
+  }
+
+  function resolvePageScripts(src) {
+    const basePath = getBasePath();
+    return unique([
+      new URL(src, scriptBase).href,
+      new URL("assets/js/" + src, window.location.origin + basePath).href,
+      new URL("/assets/js/" + src, window.location.origin).href
+    ]);
+  }
+
+  function loadScriptUrl(resolvedSrc) {
     return new Promise((resolve, reject) => {
-      const resolvedSrc = resolvePageScript(src);
       const existing = document.querySelector(`script[data-page-src="${resolvedSrc}"]`);
       if (existing) {
         resolve();
@@ -67,9 +91,29 @@
       script.src = resolvedSrc;
       script.dataset.pageSrc = resolvedSrc;
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Kunde inte ladda " + src));
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("Kunde inte ladda " + resolvedSrc));
+      };
       document.head.appendChild(script);
     });
+  }
+
+  async function loadPageDefinition(name, src) {
+    const urls = resolvePageScripts(src);
+    const errors = [];
+
+    for (const url of urls) {
+      try {
+        await loadScriptUrl(url);
+        if (state.pages[name]) return;
+        errors.push("Ingen siddefinition i " + url);
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+
+    throw new Error(errors.join(" | "));
   }
 
   function renderPage(name) {
@@ -110,12 +154,12 @@
     const file = pageFiles[name] || pageFiles.menu;
 
     try {
-      await loadScript(file);
+      await loadPageDefinition(name, file);
       renderPage(name);
     } catch (error) {
       const app = document.getElementById("app");
       if (app) {
-        app.innerHTML = '<main style="padding:24px;font-family:Segoe UI,Arial,sans-serif"><h1>Clean Time</h1><p>Kunde inte ladda sidan.</p></main>';
+        app.innerHTML = '<main style="padding:24px;font-family:Segoe UI,Arial,sans-serif"><h1>Clean Time</h1><p>Kunde inte ladda sidan.</p><p style="color:#64748b;font-size:14px">Kontrollera att mappen <code>assets/js/pages</code> ligger bredvid <code>index.html</code>.</p></main>';
       }
       console.error(error);
     }
