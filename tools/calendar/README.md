@@ -29,4 +29,6 @@ Manuella händelser i admin kan kopieras. Kopiering fyller formuläret med samma
 
 Importerade händelser som har `image_url` visar en liten bild i kalenderkortet samt en länk till originalbilden.
 
+Plats/adress i kalenderkort länkar till Google Maps. Tillbaka-knappen går till `https://www.nasverige.org/`.
+
 Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.
