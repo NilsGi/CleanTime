@@ -33,6 +33,9 @@ header {
   color: #fff;
   padding: 14px 20px;
   box-shadow: 0 2px 12px rgba(0,0,0,.18);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .header-inner {
@@ -416,6 +419,14 @@ label {
   font-weight: 500;
 }
 
+.rich-text a {
+  color: var(--na-blue);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .meta {
   color: var(--muted);
   margin-bottom: 7px;
@@ -432,6 +443,14 @@ label {
 
 .meta a:hover {
   text-decoration: underline;
+}
+
+.map-link-secondary {
+  display: inline-flex;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--na-blue-soft);
 }
 
 .type,

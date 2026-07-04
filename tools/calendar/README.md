@@ -31,4 +31,6 @@ Importerade händelser som har `image_url` visar en liten bild i kalenderkortet 
 
 Plats/adress i kalenderkort länkar till Google Maps. Tillbaka-knappen går till `https://www.nasverige.org/`.
 
+Headern är låst/sticky vid scroll. Textfält som innehåller markdown-länkar, till exempel `[Teams](https://...)`, och vanliga `https://...`-adresser blir klickbara länkar.
+
 Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.
