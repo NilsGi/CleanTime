@@ -36,6 +36,21 @@
   window.CleanTime = {
     registerPage(name, definition) {
       state.pages[name] = definition;
+    },
+    getBasePath() {
+      return getBasePath();
+    },
+    routePath(route, params) {
+      const basePath = getBasePath();
+      const cleanRoute = String(route || "").replace(/^\/+|\/+$/g, "");
+      const path = basePath + (cleanRoute ? cleanRoute + "/" : "");
+      const query = params instanceof URLSearchParams
+        ? params.toString()
+        : new URLSearchParams(params || {}).toString();
+      return query ? path + "?" + query : path;
+    },
+    routeUrl(route, params) {
+      return window.location.origin + this.routePath(route, params);
     }
   };
 
@@ -64,6 +79,39 @@
     }
 
     return "/" + (parts.length ? parts.join("/") + "/" : "");
+  }
+
+  function routePath(route, params) {
+    return window.CleanTime.routePath(route, params);
+  }
+
+  function rewriteInternalLinks(root) {
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    root.querySelectorAll("a[href]").forEach((anchor) => {
+      const rawHref = anchor.getAttribute("href");
+      if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
+
+      let url;
+      try {
+        url = new URL(rawHref, window.location.origin);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin) return;
+
+      const parts = url.pathname.split("/").filter(Boolean);
+      const route = parts[parts.length - 1] || "";
+
+      if (!routeAliases.has(route)) {
+        if (url.pathname === "/" || url.pathname.endsWith("/index.html")) {
+          anchor.href = routePath("", url.searchParams);
+        }
+        return;
+      }
+
+      anchor.href = routePath(route, url.searchParams);
+    });
   }
 
   function unique(items) {
@@ -135,10 +183,12 @@
 
     style.textContent = page.style || "";
     app.innerHTML = page.html || "";
+    rewriteInternalLinks(app);
 
     if (typeof page.init === "function") {
       try {
         page.init();
+        rewriteInternalLinks(app);
       } catch (error) {
         console.error(error);
         const warning = document.createElement("div");
@@ -164,6 +214,36 @@
       console.error(error);
     }
   }
+
+  document.addEventListener("click", (event) => {
+    const anchor = event.target.closest && event.target.closest("a[href]");
+    if (!anchor) return;
+
+    const rawHref = anchor.getAttribute("href");
+    if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
+
+    let url;
+    try {
+      url = new URL(rawHref, window.location.origin);
+    } catch {
+      return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const route = parts[parts.length - 1] || "";
+
+    if (!routeAliases.has(route) && url.pathname !== "/" && !url.pathname.endsWith("/index.html")) return;
+
+    const nextPath = routeAliases.has(route) ? routePath(route, url.searchParams) : routePath("", url.searchParams);
+
+    if (nextPath !== url.pathname + url.search) {
+      event.preventDefault();
+      window.location.href = nextPath;
+    }
+  });
 
   document.addEventListener("DOMContentLoaded", boot);
 })();

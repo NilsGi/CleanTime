@@ -188,11 +188,9 @@ window.CleanTime.registerPage("create", {
         document.getElementById("loadSelectedEventButton").addEventListener("click", loadSelectedExistingEvent);
     
         function buildEventAssets(event) {
-          const origin = window.location.origin;
-    
-          const registerUrl = origin + "/register/?event=" + encodeURIComponent(event.slug);
-          const totalUrl = origin + "/total/?event=" + encodeURIComponent(event.slug);
-          const statisticsUrl = origin + "/statistics/?event=" + encodeURIComponent(event.slug);
+          const registerUrl = window.CleanTime.routeUrl("register", { event: event.slug });
+              const totalUrl = window.CleanTime.routeUrl("total", { event: event.slug });
+              const statisticsUrl = window.CleanTime.routeUrl("statistics", { event: event.slug });
     
           currentLinks = { registerUrl, totalUrl, statisticsUrl };
     

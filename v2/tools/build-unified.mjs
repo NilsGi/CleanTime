@@ -51,6 +51,29 @@ function normalizeLinks(markup) {
     .replaceAll('href="/index.html"', 'href="/"');
 }
 
+function transformRuntimeScript(script) {
+  return script
+    .replace(
+      'return path + "?event=" + encodeURIComponent(selectedSlug);',
+      'const route = String(path || "").replace(/^\\/+|\\/+$/g, "");\n          return window.CleanTime.routePath(route, { event: selectedSlug });'
+    )
+    .replace('buildUrl("/register/")', 'buildUrl("register")')
+    .replace('buildUrl("/total/")', 'buildUrl("total")')
+    .replace('buildUrl("/manual/")', 'buildUrl("manual")')
+    .replace('buildUrl("/statistics/")', 'buildUrl("statistics")')
+    .replace('document.getElementById("historyButton").href = "/history/";', 'document.getElementById("historyButton").href = window.CleanTime.routePath("history");')
+    .replace('document.getElementById("createButton").href = "/create/";', 'document.getElementById("createButton").href = window.CleanTime.routePath("create");')
+    .replace('document.getElementById("adminButton").href = "/admin/";', 'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");')
+    .replace(
+      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");',
+      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");\n          document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");'
+    )
+    .replace(
+      /const origin = window\.location\.origin;\s+const registerUrl = origin \+ "\/register\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const totalUrl = origin \+ "\/total\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const statisticsUrl = origin \+ "\/statistics\/\?event=" \+ encodeURIComponent\(event\.slug\);/,
+      'const registerUrl = window.CleanTime.routeUrl("register", { event: event.slug });\n          const totalUrl = window.CleanTime.routeUrl("total", { event: event.slug });\n          const statisticsUrl = window.CleanTime.routeUrl("statistics", { event: event.slug });'
+    );
+}
+
 function injectServiceCredit(markup, highlight = false) {
   const creditMarkup =
     `<div class="service-credit${highlight ? " service-credit-statistics" : ""}">${serviceCredit}</div>`;
@@ -79,7 +102,7 @@ function buildPageFile(page) {
   const body = extractFirst(source, /<body[^>]*>([\s\S]*?)<\/body>/i)
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .trim();
-  const scripts = normalizeLinks(extractInlineScripts(source));
+  const scripts = transformRuntimeScript(normalizeLinks(extractInlineScripts(source)));
   const markup = injectServiceCredit(normalizeLinks(body), page.highlightCredit);
   const exposeCode = buildExposeCode(page.expose);
   const initBody = [scripts, exposeCode].filter(Boolean).join("\n\n");
@@ -134,7 +157,15 @@ utan skriftligt tillstånd från upphovsmannen.
 
   fs.writeFileSync(
     path.join(root, "_redirects"),
-    `/register/* /index.html 200
+    `/v2/register/* /v2/index.html 200
+/v2/total/* /v2/index.html 200
+/v2/statistics/* /v2/index.html 200
+/v2/manual/* /v2/index.html 200
+/v2/history/* /v2/index.html 200
+/v2/create/* /v2/index.html 200
+/v2/admin/* /v2/index.html 200
+/v2/changelog/* /v2/index.html 200
+/register/* /index.html 200
 /total/* /index.html 200
 /statistics/* /index.html 200
 /manual/* /index.html 200
@@ -214,6 +245,21 @@ utan skriftligt tillstånd från upphovsmannen.
   window.CleanTime = {
     registerPage(name, definition) {
       state.pages[name] = definition;
+    },
+    getBasePath() {
+      return getBasePath();
+    },
+    routePath(route, params) {
+      const basePath = getBasePath();
+      const cleanRoute = String(route || "").replace(/^\\/+|\\/+$/g, "");
+      const path = basePath + (cleanRoute ? cleanRoute + "/" : "");
+      const query = params instanceof URLSearchParams
+        ? params.toString()
+        : new URLSearchParams(params || {}).toString();
+      return query ? path + "?" + query : path;
+    },
+    routeUrl(route, params) {
+      return window.location.origin + this.routePath(route, params);
     }
   };
 
@@ -242,6 +288,39 @@ utan skriftligt tillstånd från upphovsmannen.
     }
 
     return "/" + (parts.length ? parts.join("/") + "/" : "");
+  }
+
+  function routePath(route, params) {
+    return window.CleanTime.routePath(route, params);
+  }
+
+  function rewriteInternalLinks(root) {
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    root.querySelectorAll("a[href]").forEach((anchor) => {
+      const rawHref = anchor.getAttribute("href");
+      if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
+
+      let url;
+      try {
+        url = new URL(rawHref, window.location.origin);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin) return;
+
+      const parts = url.pathname.split("/").filter(Boolean);
+      const route = parts[parts.length - 1] || "";
+
+      if (!routeAliases.has(route)) {
+        if (url.pathname === "/" || url.pathname.endsWith("/index.html")) {
+          anchor.href = routePath("", url.searchParams);
+        }
+        return;
+      }
+
+      anchor.href = routePath(route, url.searchParams);
+    });
   }
 
   function unique(items) {
@@ -313,10 +392,12 @@ utan skriftligt tillstånd från upphovsmannen.
 
     style.textContent = page.style || "";
     app.innerHTML = page.html || "";
+    rewriteInternalLinks(app);
 
     if (typeof page.init === "function") {
       try {
         page.init();
+        rewriteInternalLinks(app);
       } catch (error) {
         console.error(error);
         const warning = document.createElement("div");
@@ -342,6 +423,36 @@ utan skriftligt tillstånd från upphovsmannen.
       console.error(error);
     }
   }
+
+  document.addEventListener("click", (event) => {
+    const anchor = event.target.closest && event.target.closest("a[href]");
+    if (!anchor) return;
+
+    const rawHref = anchor.getAttribute("href");
+    if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
+
+    let url;
+    try {
+      url = new URL(rawHref, window.location.origin);
+    } catch {
+      return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const route = parts[parts.length - 1] || "";
+
+    if (!routeAliases.has(route) && url.pathname !== "/" && !url.pathname.endsWith("/index.html")) return;
+
+    const nextPath = routeAliases.has(route) ? routePath(route, url.searchParams) : routePath("", url.searchParams);
+
+    if (nextPath !== url.pathname + url.search) {
+      event.preventDefault();
+      window.location.href = nextPath;
+    }
+  });
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
