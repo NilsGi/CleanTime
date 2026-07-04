@@ -214,7 +214,7 @@ async function loadManualEvents() {
       ${formatDate(e.start_datetime)}<br>
       ${escapeHtml(e.event_type || "")}
       ${e.address ? " • " + escapeHtml(e.address) : ""}
-      ${e.price ? "<br>Kostnad: " + escapeHtml(e.price) : ""}
+      ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
       <div class="actions">
         <button onclick="editEventById('${e.id}')">Redigera</button>
         <button onclick='hideEvent("${e.id}")'>Dölj</button>
@@ -487,6 +487,14 @@ function getImageUrl(event) {
   return url.startsWith("http")
     ? url
     : "https://cms.nasverige.org" + url;
+}
+
+function formatPrice(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/\bkr\b|kron|gratis|fri|valfri|sjunde tradition/i.test(text)) return text;
+  if (/^\d+([,.]\d+)?$/.test(text)) return `${text} kr`;
+  return text;
 }
 
 function getEventPrice(event) {

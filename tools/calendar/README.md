@@ -21,6 +21,8 @@ Importerade event uppdateras med `source,external_slug` som nyckel. Manuella eve
 
 Kalendern visar `Senast uppdaterad/importerad` baserat på nyaste `updated_at` i hämtade kalenderposter. Importen sätter `updated_at` när poster uppdateras.
 
-Kostnad visas i kalenderkort och kan anges på manuella händelser i admin. Beskrivning och ingress renderas med bevarade stycken, punktlistor, numrerade listor och enkel fetmarkering med `**text**`.
+Kostnad visas i kalenderkort och kan anges på manuella händelser i admin. Om kostnaden bara är en siffra visas den med `kr` efter beloppet. Beskrivning och ingress renderas med bevarade stycken, punktlistor, numrerade listor och enkel fetmarkering med `**text**`.
+
+Admininloggning sparas i `sessionStorage`, vilket betyder att den normalt gäller i samma webbläsarflik tills fliken stängs.
 
 Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.

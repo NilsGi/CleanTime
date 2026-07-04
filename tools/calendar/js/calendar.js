@@ -275,7 +275,7 @@ function eventCard(e) {
         ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
         ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
         ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
-        ${e.price ? "<br>Kostnad: " + escapeHtml(e.price) : ""}
+        ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
       </div>
 
       ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
@@ -335,7 +335,7 @@ function createIcs(events) {
       e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
       `SUMMARY:${icsEscape(e.title)}`,
       e.address ? `LOCATION:${icsEscape(e.address)}` : "",
-      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + e.price : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
+      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
       e.web_url ? `URL:${e.web_url}` : "",
       "END:VEVENT"
     ].filter(Boolean)),
@@ -353,7 +353,7 @@ function googleCalendarUrl(e) {
     action: "TEMPLATE",
     text: e.title || "",
     dates: `${start}/${end}`,
-    details: [e.excerpt, e.description, e.price ? "Kostnad: " + e.price : "", e.web_url].filter(Boolean).join("\n\n"),
+    details: [e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\n\n"),
     location: e.address || ""
   });
 
@@ -477,6 +477,14 @@ function icsDate(date) {
 
 function googleDate(date) {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function formatPrice(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/\bkr\b|kron|gratis|fri|valfri|sjunde tradition/i.test(text)) return text;
+  if (/^\d+([,.]\d+)?$/.test(text)) return `${text} kr`;
+  return text;
 }
 
 function renderFormattedText(text) {
