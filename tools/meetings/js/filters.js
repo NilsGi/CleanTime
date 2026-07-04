@@ -91,6 +91,10 @@ function countDays(meetings){
 }
 
 function meetingMatchesCurrentMapView(m){
+  const isMobile = window.matchMedia("(max-width: 900px)").matches;
+  const mapCollapsed = $("meetingsPanel")?.classList.contains("map-collapsed");
+
+  if (isMobile && mapCollapsed) return true;
   if (!listFollowsMap || !map || hasActiveTextSearch()) return true;
 
   // Listan behåller online-möten och möten utan koordinater även när kartan styr urvalet.
