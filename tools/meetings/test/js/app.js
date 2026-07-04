@@ -249,3 +249,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   setTimeout(updateLayoutHeight, 250);
 });
+
+document.addEventListener('click',function(e){
+ const b=e.target.closest('button,.action-btn,.filter-btn');
+ if(b){ setTimeout(()=>b.blur(),50); }
+});

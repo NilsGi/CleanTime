@@ -1277,3 +1277,15 @@ button:hover{
     border-radius:4px!important;
   }
 }
+
+@media (hover: hover) {
+  .action-btn:hover, .filter-btn:hover, button:hover {
+    background:#17248f !important;
+    color:#fff !important;
+  }
+}
+.action-btn:focus:not(:focus-visible),
+.filter-btn:focus:not(:focus-visible),
+button:focus:not(:focus-visible){
+  background:inherit;
+}
