@@ -427,6 +427,32 @@ label {
   text-underline-offset: 2px;
 }
 
+.rich-text .inline-image-link {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  width: min(100%, 260px);
+  margin: 8px 0;
+  text-decoration: none;
+}
+
+.rich-text .inline-image {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 6px;
+}
+
+.rich-text .inline-image-link span {
+  font-size: 12px;
+  text-align: center;
+  text-decoration: underline;
+}
+
 .meta {
   color: var(--muted);
   margin-bottom: 7px;

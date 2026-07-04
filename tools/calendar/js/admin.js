@@ -37,9 +37,14 @@ function syncAdminAuthState() {
     return;
   }
 
-  if (window.location.hash === "#admin") {
+  if (isAdminView()) {
     authPassword.focus();
   }
+}
+
+function isAdminView() {
+  return new URLSearchParams(window.location.search).get("view") === "admin" ||
+    window.location.hash === "#admin";
 }
 
 window.addEventListener("calendar-admin-view", syncAdminAuthState);

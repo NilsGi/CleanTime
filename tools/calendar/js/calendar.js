@@ -619,7 +619,9 @@ function formatPlainInline(text) {
 
   while ((match = urlPattern.exec(text)) !== null) {
     html += formatStrong(escapeHtml(text.slice(lastIndex, match.index)));
-    html += safeLink(match[0], match[0]);
+    const { url, suffix } = cleanUrlMatch(match[0]);
+    html += safeLink(url, url);
+    html += formatStrong(escapeHtml(suffix));
     lastIndex = match.index + match[0].length;
   }
 
@@ -632,12 +634,37 @@ function formatStrong(html) {
 }
 
 function safeLink(href, label) {
-  const url = String(href || "").trim();
+  const url = cleanUrlMatch(href).url;
   if (!/^https?:\/\//i.test(url)) {
     return formatStrong(escapeHtml(label || href));
   }
 
+  if (isImageUrl(url)) {
+    return `
+      <a class="inline-image-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+        <img class="inline-image" src="${escapeAttr(url)}" alt="${escapeAttr(label || "Bild")}" loading="lazy">
+        <span>Öppna stor bild</span>
+      </a>
+    `;
+  }
+
   return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${formatStrong(escapeHtml(label || url))}</a>`;
+}
+
+function isImageUrl(url) {
+  return /\.(svg|png|jpe?g|gif|webp|avif)(\?.*)?$/i.test(url);
+}
+
+function cleanUrlMatch(value) {
+  let url = String(value || "").trim();
+  let suffix = "";
+
+  while (/[.,;:!?"'\]}]+$/.test(url)) {
+    suffix = url.slice(-1) + suffix;
+    url = url.slice(0, -1);
+  }
+
+  return { url, suffix };
 }
 
 function icsEscape(text) {
