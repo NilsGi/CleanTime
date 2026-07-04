@@ -37,4 +37,6 @@ Bildlänkar i textfält, till exempel `.svg`, `.png` och `.jpg`, visas som en li
 
 Admin öppnas via `?view=admin`. Gamla länkar med `#admin` stöds fortfarande men normaliseras automatiskt till `?view=admin`.
 
+Admin- och kalenderknapparna växlar vy internt utan sidladdning. Bildlänkar tolererar nu avslutande citattecken eller punkt efter URL:en.
+
 Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.
