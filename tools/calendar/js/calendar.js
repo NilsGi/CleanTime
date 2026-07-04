@@ -115,6 +115,7 @@ function getFilteredEvents(options = {}) {
       e.title,
       e.organizer,
       e.address,
+      e.price,
       e.excerpt,
       e.description
     ].join(" ").toLowerCase();
@@ -274,10 +275,11 @@ function eventCard(e) {
         ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
         ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
         ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
+        ${e.price ? "<br>Kostnad: " + escapeHtml(e.price) : ""}
       </div>
 
-      ${e.excerpt ? `<p>${escapeHtml(e.excerpt)}</p>` : ""}
-      ${e.description ? `<details><summary>Mer information</summary><p>${escapeHtml(e.description)}</p></details>` : ""}
+      ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
+      ${e.description ? `<details><summary>Mer information</summary><div class="rich-text">${renderFormattedText(e.description)}</div></details>` : ""}
 
       <div class="actions">
         ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
@@ -333,7 +335,7 @@ function createIcs(events) {
       e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
       `SUMMARY:${icsEscape(e.title)}`,
       e.address ? `LOCATION:${icsEscape(e.address)}` : "",
-      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.web_url].filter(Boolean).join("\\n\\n"))}`,
+      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + e.price : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
       e.web_url ? `URL:${e.web_url}` : "",
       "END:VEVENT"
     ].filter(Boolean)),
@@ -351,7 +353,7 @@ function googleCalendarUrl(e) {
     action: "TEMPLATE",
     text: e.title || "",
     dates: `${start}/${end}`,
-    details: [e.excerpt, e.description, e.web_url].filter(Boolean).join("\n\n"),
+    details: [e.excerpt, e.description, e.price ? "Kostnad: " + e.price : "", e.web_url].filter(Boolean).join("\n\n"),
     location: e.address || ""
   });
 
@@ -475,6 +477,82 @@ function icsDate(date) {
 
 function googleDate(date) {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function renderFormattedText(text) {
+  const lines = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n");
+
+  const html = [];
+  let listType = null;
+  let paragraph = [];
+
+  function flushParagraph() {
+    if (!paragraph.length) return;
+    html.push(`<p>${paragraph.map(formatInline).join("<br>")}</p>`);
+    paragraph = [];
+  }
+
+  function closeList() {
+    if (!listType) return;
+    html.push(`</${listType}>`);
+    listType = null;
+  }
+
+  function openList(type) {
+    if (listType === type) return;
+    closeList();
+    listType = type;
+    html.push(`<${type}>`);
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    const heading = line.match(/^\*\*(.+?)\*\*$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      html.push(`<h4>${formatInline(heading[1])}</h4>`);
+      continue;
+    }
+
+    const bullet = line.match(/^[-*•]\s+(.+)$/);
+    if (bullet) {
+      flushParagraph();
+      openList("ul");
+      html.push(`<li>${formatInline(bullet[1])}</li>`);
+      continue;
+    }
+
+    const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+    if (numbered) {
+      flushParagraph();
+      openList("ol");
+      html.push(`<li>${formatInline(numbered[1])}</li>`);
+      continue;
+    }
+
+    closeList();
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  closeList();
+
+  return html.join("");
+}
+
+function formatInline(text) {
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 function icsEscape(text) {

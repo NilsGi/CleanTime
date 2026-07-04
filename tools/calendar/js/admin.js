@@ -31,17 +31,21 @@ function unlockAdmin() {
   runAutoImportIfDue();
 }
 
-if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") {
-  unlockAdmin();
-} else if (window.location.hash === "#admin") {
-  authPassword.focus();
-}
+function syncAdminAuthState() {
+  if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") {
+    unlockAdmin();
+    return;
+  }
 
-window.addEventListener("calendar-admin-view", () => {
-  if (sessionStorage.getItem(AUTH_SESSION_KEY) !== "true") {
+  if (window.location.hash === "#admin") {
     authPassword.focus();
   }
-});
+}
+
+window.addEventListener("calendar-admin-view", syncAdminAuthState);
+window.addEventListener("hashchange", syncAdminAuthState);
+
+syncAdminAuthState();
 
 authForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -130,6 +134,7 @@ window.saveEvent = async function () {
     title,
     organizer: val("organizer") || null,
     address: val("address") || null,
+    price: val("price") || null,
 
     start_datetime: combine(startDate, startTime),
     end_datetime: val("end_date") && val("end_time")
@@ -209,6 +214,7 @@ async function loadManualEvents() {
       ${formatDate(e.start_datetime)}<br>
       ${escapeHtml(e.event_type || "")}
       ${e.address ? " • " + escapeHtml(e.address) : ""}
+      ${e.price ? "<br>Kostnad: " + escapeHtml(e.price) : ""}
       <div class="actions">
         <button onclick="editEventById('${e.id}')">Redigera</button>
         <button onclick='hideEvent("${e.id}")'>Dölj</button>
@@ -240,6 +246,7 @@ window.editEvent = function (e) {
   setVal("title", e.title || "");
   setVal("organizer", e.organizer || "");
   setVal("address", e.address || "");
+  setVal("price", e.price || "");
   setVal("web_url", e.web_url || "");
   setVal("excerpt", e.excerpt || "");
   setVal("description", e.description || "");
@@ -312,7 +319,7 @@ window.importFromNasverige = async function (options = {}) {
       title: event.title || "Namnlöst evenemang",
       organizer: event.organizer || null,
       address: event.address || null,
-      price: event.price || null,
+      price: getEventPrice(event),
 
       start_datetime: event.startDate || null,
       end_datetime: event.endDate || null,
@@ -411,6 +418,7 @@ window.resetForm = function () {
     "title",
     "organizer",
     "address",
+    "price",
     "start_date",
     "start_time",
     "end_date",
@@ -479,6 +487,16 @@ function getImageUrl(event) {
   return url.startsWith("http")
     ? url
     : "https://cms.nasverige.org" + url;
+}
+
+function getEventPrice(event) {
+  return event.price ||
+    event.cost ||
+    event.fee ||
+    event.registrationFee ||
+    event.attributes?.price ||
+    event.attributes?.cost ||
+    null;
 }
 
 function escapeHtml(str) {

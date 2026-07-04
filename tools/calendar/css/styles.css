@@ -334,6 +334,42 @@ label {
   line-height: 1.45;
 }
 
+.rich-text {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.rich-text p {
+  margin: 0 0 10px;
+}
+
+.rich-text p:last-child,
+.rich-text ul:last-child,
+.rich-text ol:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text ul,
+.rich-text ol {
+  margin: 6px 0 12px 22px;
+  padding: 0;
+}
+
+.rich-text li {
+  margin: 3px 0;
+}
+
+.rich-text h4 {
+  margin: 14px 0 6px;
+  color: var(--na-blue);
+  font-size: 16px;
+}
+
+.rich-text.excerpt {
+  color: #222222;
+  font-weight: 500;
+}
+
 .meta {
   color: var(--muted);
   margin-bottom: 7px;
