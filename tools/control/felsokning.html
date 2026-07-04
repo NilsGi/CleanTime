@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="sv" class="troubleshoot-html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NA Sverige - Felsökning möten</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="troubleshoot-page">
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+      <h1>Felsökning</h1>
+    </div>
+
+    <div class="header-actions">
+      <a class="back-link" href="index.html">Möteslista</a>
+      <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
+    </div>
+  </div>
+</header>
+
+<main class="troubleshoot-shell">
+  <section class="troubleshoot-hero">
+    <div>
+      <h2>Datakontroll för möteslistan</h2>
+      <p class="muted">Kontrollerar grupper enligt samma definition som möteslistan: distrikt + ort + gruppnamn.</p>
+    </div>
+    <div class="troubleshoot-actions">
+      <button id="refreshDiagnosticsBtn" type="button">Uppdatera kontroll</button>
+      <button id="exportDiagnosticsCsvBtn" class="secondary" type="button">Exportera CSV</button>
+    </div>
+  </section>
+
+  <section class="troubleshoot-controls">
+    <div>
+      <label for="diagnosticSearch">Sök i rapporten</label>
+      <input id="diagnosticSearch" placeholder="Sök grupp, ort, distrikt, adress...">
+    </div>
+    <div>
+      <label for="groupCoordThreshold">Olika koordinater inom grupp</label>
+      <select id="groupCoordThreshold">
+        <option value="0.05">Mer än 50 meter</option>
+        <option value="0.10">Mer än 100 meter</option>
+        <option value="0.15" selected>Mer än 150 meter</option>
+        <option value="0.25">Mer än 250 meter</option>
+      </select>
+    </div>
+    <div>
+      <label for="mapLinkThreshold">Kartlänk mot koordinater</label>
+      <select id="mapLinkThreshold">
+        <option value="0.10">Mer än 100 meter</option>
+        <option value="0.25" selected>Mer än 250 meter</option>
+        <option value="0.50">Mer än 500 meter</option>
+        <option value="1">Mer än 1 km</option>
+      </select>
+    </div>
+  </section>
+
+  <div id="status" class="muted"><span class="muted">Startar...</span></div>
+  <div id="diagnosticSummary" class="diagnostic-summary" aria-live="polite"></div>
+  <div id="diagnosticSections" class="diagnostic-sections"></div>
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/meetings.js"></script>
+<script src="js/troubleshoot.js"></script>
+</body>
+</html>

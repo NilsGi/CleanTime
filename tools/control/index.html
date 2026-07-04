@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NA Sverige - Möten</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+      <h1>Möteslista</h1>
+    </div>
+
+    <div class="header-actions">
+      <a class="back-link" href="felsokning.html">Felsökning</a>
+      <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
+    </div>
+  </div>
+</header>
+
+<main id="meetingsPanel" class="tab-panel">
+  <aside>
+    <div class="top-buttons">
+      <button id="refreshMeetingsBtn" type="button">Uppdatera möten</button>
+      <button id="exportFolderPdfBtn" class="secondary" type="button">Vikbar folder PDF</button>
+      <button id="clearFiltersBtn" class="secondary" type="button">Rensa filter</button>
+    </div>
+
+    <div class="beta-notice">Beta-version: möteslistan uppdateras och förbättras löpande.</div>
+
+    <div class="service-credit">
+      Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+    </div>
+
+    <div id="status" class="muted"><span class="muted">Startar...</span></div>
+    <div id="activeFilters" class="active-filters" aria-live="polite"></div>
+    <button id="toggleOnlineBtn" class="quick-online-toggle secondary" type="button">Visa online-möten</button>
+
+    <details id="filterSection" class="filter-section">
+      <summary>Filter</summary>
+      <div class="filter-section-body">
+        <label for="search">Sök grupp/ort</label>
+        <input id="search" placeholder="Sök möte, ort, adress, station, info...">
+
+        <div class="filter-grid">
+          <div>
+            <label>Ort</label>
+            <div id="cityFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara orter som finns i aktuellt urval.</div>
+          </div>
+          <div>
+            <label>Distrikt</label>
+            <div id="districtFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara distrikt som finns i aktuellt urval.</div>
+          </div>
+        </div>
+
+        <div class="filter-grid">
+          <div>
+            <label>Veckodag</label>
+            <div id="dayFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara dagar som finns i aktuellt urval.</div>
+          </div>
+          <div>
+            <label>Mötestyp</label>
+            <div id="meetingTypeFilter" class="checkbox-filter"></div>
+            <div class="filter-hint">Visar bara mötestyper som finns i aktuellt urval.</div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details id="mapFilterSection" class="filter-section">
+      <summary>Avstånd/karta</summary>
+      <div class="filter-section-body">
+        <div class="filter-grid view-distance-grid">
+          <div>
+            <label for="typeFilter">Visning</label>
+            <select id="typeFilter">
+              <option value="">Alla möten i listan</option>
+              <option value="physical" selected>Endast fysiska möten</option>
+              <option value="online">Endast online i listan</option>
+            </select>
+          </div>
+          <div>
+            <label for="distanceFilter">Avstånd från mig</label>
+            <select id="distanceFilter">
+              <option value="">Alla avstånd</option>
+              <option value="5">Inom 5 km</option>
+              <option value="10">Inom 10 km</option>
+              <option value="25">Inom 25 km</option>
+              <option value="50">Inom 50 km</option>
+              <option value="100">Inom 100 km</option>
+              <option value="250">Inom 250 km</option>
+            </select>
+          </div>
+        </div>
+
+	        <div class="map-sync-box">
+	          <label style="display:flex;gap:8px;align-items:flex-start;margin:0">
+	            <input id="listFollowsMap" type="checkbox" checked style="width:auto;margin-top:2px">
+	            <span>Listan följer kartans synliga område</span>
+	          </label>
+	          <div class="filter-hint">Zooma eller panorera kartan så uppdateras möteslistan.</div>
+	        </div>
+
+	        <div id="districtLegend" class="district-legend" aria-live="polite"></div>
+	      </div>
+	    </details>
+
+    <details id="statsFull" class="stats-details">
+      <summary>Detaljerad statistik</summary>
+      <div id="stats"><p class="muted">Hämtar möten...</p></div>
+    </details>
+    <div id="summary" class="muted"></div>
+    <div id="desktopListWrapper"><div id="list"></div></div>
+  </aside>
+
+  <button id="toggleMobileMapBtn" class="mobile-map-toggle secondary" type="button">Dölj karta</button>
+  <div id="map"></div>
+  <section id="mobileList"><h2 class="mobile-list-title">Möteslista</h2><div id="listMobile"></div></section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/meetings.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/map.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/pdf-folder.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
