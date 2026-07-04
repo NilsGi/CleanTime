@@ -640,10 +640,14 @@ function safeLink(href, label) {
   }
 
   if (isImageUrl(url)) {
+    const linkText = label && label !== href && label !== url
+      ? label
+      : "Bild";
+
     return `
       <a class="inline-image-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">
-        <img class="inline-image" src="${escapeAttr(url)}" alt="${escapeAttr(label || "Bild")}" loading="lazy">
-        <span>Öppna stor bild</span>
+        <img class="inline-image" src="${escapeAttr(url)}" alt="" loading="lazy">
+        <span>${formatStrong(escapeHtml(linkText))}</span>
       </a>
     `;
   }

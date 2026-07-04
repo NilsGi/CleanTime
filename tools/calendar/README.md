@@ -33,7 +33,7 @@ Plats/adress i kalenderkort länkar till Google Maps. Tillbaka-knappen går till
 
 Headern är låst/sticky vid scroll. Textfält som innehåller markdown-länkar, till exempel `[Teams](https://...)`, och vanliga `https://...`-adresser blir klickbara länkar.
 
-Bildlänkar i textfält, till exempel `.svg`, `.png` och `.jpg`, visas som en liten bildpreview med länk till originalbilden.
+Bildlänkar i textfält, till exempel `.svg`, `.png` och `.jpg`, visas som en liten inline-ikon med länktext, inte som stor bildpreview.
 
 Admin öppnas via `?view=admin`. Gamla länkar med `#admin` stöds fortfarande men normaliseras automatiskt till `?view=admin`.
 

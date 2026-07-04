@@ -429,27 +429,31 @@ label {
 
 .rich-text .inline-image-link {
   display: inline-flex;
-  flex-direction: column;
-  gap: 5px;
-  width: min(100%, 260px);
-  margin: 8px 0;
-  text-decoration: none;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  margin: 2px 0;
+  vertical-align: middle;
+  text-decoration: underline;
 }
 
 .rich-text .inline-image {
-  display: block;
-  width: 100%;
-  max-height: 180px;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
   object-fit: contain;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  flex: 0 0 auto;
 }
 
 .rich-text .inline-image-link span {
-  font-size: 12px;
-  text-align: center;
+  font-size: inherit;
+  text-align: left;
   text-decoration: underline;
 }
 
