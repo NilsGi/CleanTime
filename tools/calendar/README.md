@@ -25,4 +25,8 @@ Kostnad visas i kalenderkort och kan anges på manuella händelser i admin. Om k
 
 Admininloggning sparas i `sessionStorage`, vilket betyder att den normalt gäller i samma webbläsarflik tills fliken stängs.
 
+Manuella händelser i admin kan kopieras. Kopiering fyller formuläret med samma uppgifter men sparar som en ny händelse.
+
+Importerade händelser som har `image_url` visar en liten bild i kalenderkortet samt en länk till originalbilden.
+
 Automatisk import i denna version körs när admin öppnas, om funktionen är aktiverad och senaste importen är äldre än intervallet i `js/config.js`. För helt serverstyrd import utan att någon öppnar admin behövs en Cloudflare Scheduled Worker/Cron med serverhemligheter.

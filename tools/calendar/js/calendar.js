@@ -263,30 +263,48 @@ function monthEventPill(event, date) {
 function eventCard(e) {
   return `
     <article class="event-card" id="event-${e.id}">
-      <div class="event-card-top">
-        <span class="type">${labelType(e.event_type)}</span>
-        <span class="event-date-pill">${formatDateShort(e.start_datetime)}</span>
+      <div class="event-card-main">
+        <div class="event-card-top">
+          <span class="type">${labelType(e.event_type)}</span>
+          <span class="event-date-pill">${formatDateShort(e.start_datetime)}</span>
+        </div>
+
+        <h2>${escapeHtml(e.title)}</h2>
+
+        <div class="meta">
+          ${formatDate(e.start_datetime)}
+          ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
+          ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
+          ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
+          ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
+        </div>
+
+        ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
+        ${e.description ? `<details><summary>Mer information</summary><div class="rich-text">${renderFormattedText(e.description)}</div></details>` : ""}
+
+        <div class="actions">
+          ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
+          <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
+          <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
+        </div>
       </div>
-
-      <h2>${escapeHtml(e.title)}</h2>
-
-      <div class="meta">
-        ${formatDate(e.start_datetime)}
-        ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
-        ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
-        ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
-        ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
-      </div>
-
-      ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
-      ${e.description ? `<details><summary>Mer information</summary><div class="rich-text">${renderFormattedText(e.description)}</div></details>` : ""}
-
-      <div class="actions">
-        ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
-        <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
-        <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
-      </div>
+      ${eventImage(e)}
     </article>
+  `;
+}
+
+function eventImage(e) {
+  if (!e.image_url) return "";
+
+  const url = escapeAttr(e.image_url);
+
+  return `
+    <div class="event-image">
+      <a href="${url}" target="_blank" aria-label="Öppna stor bild för ${escapeAttr(e.title)}">
+        <img src="${url}" alt="" loading="lazy">
+      </a>
+      <a class="event-image-link" href="${url}" target="_blank">Hämta stor bild</a>
+    </div>
   `;
 }
 

@@ -217,6 +217,7 @@ async function loadManualEvents() {
       ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
       <div class="actions">
         <button onclick="editEventById('${e.id}')">Redigera</button>
+        <button onclick="duplicateEventById('${e.id}')">Kopiera</button>
         <button onclick='hideEvent("${e.id}")'>Dölj</button>
         <button onclick='deleteEvent("${e.id}")'>Ta bort</button>
       </div>
@@ -235,6 +236,24 @@ window.editEventById = function (id) {
   editEvent(event);
 };
 
+window.duplicateEventById = function (id) {
+  const event = manualEvents.find(e => e.id === id);
+
+  if (!event) {
+    log.textContent = "Kunde inte hitta händelsen.";
+    return;
+  }
+
+  editingId = null;
+  log.textContent = "Kopierar: " + (event.title || "") + ". Justera vid behov och spara som ny händelse.";
+
+  document.getElementById("formTitle").textContent = "Kopiera händelse";
+  document.getElementById("saveBtn").textContent = "Spara som ny händelse";
+
+  fillEventForm(event);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
 window.editEvent = function (e) {
   editingId = e.id;
   log.textContent = "Redigerar: " + (e.title || "");
@@ -242,6 +261,11 @@ window.editEvent = function (e) {
   document.getElementById("formTitle").textContent = "Redigera händelse";
   document.getElementById("saveBtn").textContent = "Uppdatera händelse";
 
+  fillEventForm(e);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+function fillEventForm(e) {
   setVal("event_type", e.event_type || "distrikt");
   setVal("title", e.title || "");
   setVal("organizer", e.organizer || "");
@@ -253,9 +277,7 @@ window.editEvent = function (e) {
 
   fillDateTime("start", e.start_datetime);
   fillDateTime("end", e.end_datetime);
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+}
 
 window.hideEvent = async function (id) {
   if (!confirm("Dölja händelsen?")) return;
