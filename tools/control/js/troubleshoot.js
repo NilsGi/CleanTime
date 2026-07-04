@@ -157,6 +157,33 @@ function formatCoords(lat, lng){
   return Number(lat).toFixed(6) + ", " + Number(lng).toFixed(6);
 }
 
+function googleMapsSearchUrl(lat, lng){
+  if (!validLatLng(Number(lat), Number(lng))) return "";
+  return "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(Number(lat).toFixed(6) + "," + Number(lng).toFixed(6));
+}
+
+function googleMapsDirectionsUrl(lat, lng){
+  if (!validLatLng(Number(lat), Number(lng))) return "";
+  return "https://www.google.com/maps/dir/?api=1&destination=" +
+    encodeURIComponent(Number(lat).toFixed(6) + "," + Number(lng).toFixed(6));
+}
+
+function suggestedMapLinkForMeeting(m){
+  if (hasCoords(m)) return googleMapsSearchUrl(m.latitude, m.longitude);
+  if (validLatLng(Number(m._geocodeLat), Number(m._geocodeLng))) {
+    return googleMapsSearchUrl(m._geocodeLat, m._geocodeLng);
+  }
+  return "";
+}
+
+function cmsMeetingUrl(m){
+  const documentId = String(m?.documentId || "").trim();
+  if (!documentId) return "";
+  return "https://cms.nasverige.org/admin/content-manager/collection-types/api::meeting.meeting/" +
+    encodeURIComponent(documentId);
+}
+
 function sleep(ms){
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -185,7 +212,8 @@ function issueSearchText(issue){
       m.address,
       m.zip,
       m.station,
-      m.linkMap
+      m.linkMap,
+      cmsMeetingUrl(m)
     ].join(" "))
   ].join(" ").toLowerCase();
 }
@@ -469,7 +497,9 @@ function findMeetingMapIssues(meetings, mapLinkThresholdKm){
         group: displayGroupName(m.title),
         city,
         district,
-        details: "Fysiskt möte saknar kartlänk.",
+        details: hasCoords(m)
+          ? "Fysiskt möte saknar kartlänk. Föreslagen Google Maps-länk byggs från mötets koordinater."
+          : "Fysiskt möte saknar kartlänk.",
         meetings: [m]
       }));
     }
@@ -495,7 +525,7 @@ function findMeetingMapIssues(meetings, mapLinkThresholdKm){
         group: displayGroupName(m.title),
         city,
         district,
-        details: "Kartlänken innehåller inte koordinater som kan jämföras automatiskt.",
+        details: "Kartlänken innehåller inte koordinater som kan jämföras automatiskt. Föreslagen Google Maps-länk byggs från mötets koordinater.",
         meetings: [m]
       }));
       return;
@@ -604,9 +634,20 @@ function renderDiagnosticSummary(filteredIssues){
 
 function renderMeetingRows(issue){
   return issue.meetings.map(m => {
+    const cmsLink = cmsMeetingUrl(m)
+      ? '<a href="' + esc(cmsMeetingUrl(m)) + '" target="_blank" rel="noopener noreferrer">Öppna i CMS</a>'
+      : '<span class="muted">CMS-länk saknas</span>';
     const mapLink = safeUrl(m.linkMap)
       ? '<a href="' + esc(safeUrl(m.linkMap)) + '" target="_blank" rel="noopener noreferrer">Öppna kartlänk</a>'
       : '<span class="muted">Ingen kartlänk</span>';
+    const suggestedMapLink = suggestedMapLinkForMeeting(m);
+    const suggestedDirectionsLink = hasCoords(m)
+      ? googleMapsDirectionsUrl(m.latitude, m.longitude)
+      : googleMapsDirectionsUrl(m._geocodeLat, m._geocodeLng);
+    const suggestedLinks = suggestedMapLink
+      ? '<br><a href="' + esc(suggestedMapLink) + '" target="_blank" rel="noopener noreferrer">Föreslagen Google Maps-länk</a>' +
+        (suggestedDirectionsLink ? '<br><a href="' + esc(suggestedDirectionsLink) + '" target="_blank" rel="noopener noreferrer">Föreslagen vägbeskrivning</a>' : "")
+      : "";
     const linkCoords = validLatLng(Number(m._linkLat), Number(m._linkLng))
       ? '<br><span class="muted">Kartlänk: ' + esc(formatCoords(m._linkLat, m._linkLng)) + '</span>'
       : "";
@@ -620,7 +661,7 @@ function renderMeetingRows(issue){
           ${linkCoords}
           ${validLatLng(Number(m._geocodeLat), Number(m._geocodeLng)) ? '<br><span class="muted">Kartträff: ' + esc(formatCoords(m._geocodeLat, m._geocodeLng)) + '</span>' : ""}
         </div>
-        <div>${mapLink}</div>
+        <div>${cmsLink}<br>${mapLink}${suggestedLinks}</div>
       </div>
     `;
   }).join("");
@@ -674,14 +715,22 @@ function renderDiagnostics(){
 function exportDiagnosticsCsv(){
   if (!diagnosticIssues.length) return;
 
-  const header = ["typ", "grupp", "ort", "distrikt", "detalj", "möten"];
+  const header = ["typ", "grupp", "ort", "distrikt", "detalj", "möten", "cms-länkar", "föreslagna kartlänkar"];
   const rows = diagnosticIssues.map(issue => [
     DIAGNOSTIC_TYPES.find(type => type.id === issue.type)?.title || issue.type,
     issue.group,
     issue.city,
     issue.district,
     issue.details,
-    issue.meetings.map(m => displayGroupName(m.title) + " - " + meetingLabel(m)).join(" | ")
+    issue.meetings.map(m => displayGroupName(m.title) + " - " + meetingLabel(m)).join(" | "),
+    issue.meetings
+      .map(m => cmsMeetingUrl(m))
+      .filter(Boolean)
+      .join(" | "),
+    issue.meetings
+      .map(m => suggestedMapLinkForMeeting(m))
+      .filter(Boolean)
+      .join(" | ")
   ]);
 
   const csv = [header, ...rows].map(row =>
