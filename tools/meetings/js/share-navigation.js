@@ -6,7 +6,9 @@ function meetingDisplayTime(m){
 }
 
 function meetingAddressParts(m){
-  return [m.location, m.address, m.zip, getCity(m)].filter(Boolean).map(cleanSingleLineField).filter(Boolean);
+  const location = cleanSingleLineField(m.location || "");
+  const streetAndZip = [m.address, m.zip].filter(Boolean).map(cleanSingleLineField).filter(Boolean).join(", ");
+  return [location, streetAndZip].filter(Boolean);
 }
 
 function meetingAddressText(m){
@@ -24,7 +26,6 @@ function meetingShareText(m){
 
   const types = getTypes(m).filter(Boolean).join(", ");
   if (types) rows.push("Mötestyp: " + types);
-  if (m.station && !isOnline(m)) rows.push("Närmaste hållplats: " + cleanSingleLineField(m.station));
   if (safeUrl(m.onlineMeeting?.url)) rows.push("Online-länk: " + safeUrl(m.onlineMeeting.url));
 
   rows.push("", "Hitta fler möten:", "https://www.nasverige.org/");
@@ -78,13 +79,18 @@ function findMeetingByKey(key){
 }
 
 function directionsUrl(m, service){
+  const mapLink = safeUrl(m.linkMap);
   const hasPosition = hasCoords(m);
   const lat = hasPosition ? Number(m.latitude) : null;
   const lng = hasPosition ? Number(m.longitude) : null;
   const address = meetingAddressText(m);
   const query = hasPosition ? (lat + "," + lng) : address;
 
-  if (!query) return "";
+  if (service === "google" && mapLink) {
+    return mapLink;
+  }
+
+  if (!query) return mapLink || "";
 
   if (service === "google") {
     return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(query);
@@ -178,7 +184,7 @@ function meetingActionButtonsHtml(m){
   const key = esc(meetingUniqueKey(m));
   const quickLinks = meetingQuickLinksHtml(m);
   const share = `<button type="button" class="meeting-action-btn share-meeting-btn" data-meeting-key="${key}">Dela</button>`;
-  const directions = !isOnline(m) && (hasCoords(m) || meetingAddressText(m))
+  const directions = !isOnline(m) && (safeUrl(m.linkMap) || hasCoords(m) || meetingAddressText(m))
     ? `<button type="button" class="meeting-action-btn directions-meeting-btn secondary" data-meeting-key="${key}">Vägbeskrivning</button>`
     : "";
   return `<div class="meeting-actions">${quickLinks}${share}${directions}</div>`;
