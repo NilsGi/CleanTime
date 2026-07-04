@@ -275,7 +275,7 @@ function eventCard(e) {
           ${formatDate(e.start_datetime)}
           ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
           ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
-          ${e.address ? "<br>Plats: " + escapeHtml(e.address) : ""}
+          ${e.address ? addressMeta(e.address) : ""}
           ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
         </div>
 
@@ -305,6 +305,16 @@ function eventImage(e) {
       </a>
       <a class="event-image-link" href="${url}" target="_blank">Hämta stor bild</a>
     </div>
+  `;
+}
+
+function addressMeta(address) {
+  const url = escapeAttr(googleMapsUrl(address));
+
+  return `
+    <br>Plats:
+    <a class="map-link" href="${url}" target="_blank" rel="noopener">${escapeHtml(address)}</a>
+    <a class="map-link map-link-secondary" href="${url}" target="_blank" rel="noopener">Visa karta</a>
   `;
 }
 
@@ -376,6 +386,13 @@ function googleCalendarUrl(e) {
   });
 
   return "https://calendar.google.com/calendar/render?" + params.toString();
+}
+
+function googleMapsUrl(address) {
+  return "https://www.google.com/maps/search/?" + new URLSearchParams({
+    api: "1",
+    query: address || ""
+  }).toString();
 }
 
 function startOfWeek(date) {
@@ -578,7 +595,49 @@ function renderFormattedText(text) {
 }
 
 function formatInline(text) {
-  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  const source = String(text || "");
+  const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi;
+  let html = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = markdownLinkPattern.exec(source)) !== null) {
+    html += formatPlainInline(source.slice(lastIndex, match.index));
+    html += safeLink(match[2], match[1]);
+    lastIndex = match.index + match[0].length;
+  }
+
+  html += formatPlainInline(source.slice(lastIndex));
+  return html;
+}
+
+function formatPlainInline(text) {
+  const urlPattern = /https?:\/\/[^\s<>()]+/gi;
+  let html = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlPattern.exec(text)) !== null) {
+    html += formatStrong(escapeHtml(text.slice(lastIndex, match.index)));
+    html += safeLink(match[0], match[0]);
+    lastIndex = match.index + match[0].length;
+  }
+
+  html += formatStrong(escapeHtml(text.slice(lastIndex)));
+  return html;
+}
+
+function formatStrong(html) {
+  return html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+function safeLink(href, label) {
+  const url = String(href || "").trim();
+  if (!/^https?:\/\//i.test(url)) {
+    return formatStrong(escapeHtml(label || href));
+  }
+
+  return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${formatStrong(escapeHtml(label || url))}</a>`;
 }
 
 function icsEscape(text) {
