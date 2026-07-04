@@ -284,6 +284,7 @@ function eventCard(e) {
 
         <div class="actions">
           ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
+          <button type="button" onclick="shareEvent('${e.id}')">Dela event</button>
           <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
           <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
         </div>
@@ -340,6 +341,62 @@ window.downloadEventIcs = function(id) {
   );
 };
 
+window.shareEvent = async function(id) {
+  const event = allEvents.find(e => e.id === id);
+  if (!event) return;
+
+  const shareUrl = event.web_url || "";
+  const shareText = buildShareText(event);
+  const payload = {
+    title: event.title || "NA Sverige event",
+    text: shareText
+  };
+
+  if (shareUrl) {
+    payload.url = shareUrl;
+  }
+
+  try {
+    if (navigator.share) {
+      await navigator.share(payload);
+      return;
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") return;
+  }
+
+  await copyShareText(event);
+};
+
+async function copyShareText(event) {
+  const text = buildShareText(event, { includePrimaryUrl: true });
+
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("Eventet är kopierat och kan klistras in.");
+  } catch {
+    window.prompt("Kopiera eventet:", text);
+  }
+}
+
+function buildShareText(event, options = {}) {
+  const lines = [
+    event.title || "NA Sverige event",
+    labelType(event.event_type),
+    "",
+    "Tid: " + formatDate(event.start_datetime) + (event.end_datetime ? " - " + formatDate(event.end_datetime) : ""),
+    event.organizer ? "Arrangör: " + event.organizer : "",
+    event.address ? "Plats: " + event.address : "",
+    event.address ? "Karta: " + googleMapsUrl(event.address) : "",
+    event.price ? "Kostnad: " + formatPrice(event.price) : "",
+    event.excerpt ? "\n" + plainText(event.excerpt) : "",
+    event.image_url ? "\nBild: " + event.image_url : "",
+    options.includePrimaryUrl && event.web_url ? "\nLänk: " + event.web_url : ""
+  ];
+
+  return lines.filter(Boolean).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 window.downloadAllIcs = function() {
   downloadFile(
     "na-sverige-kalender.ics",
@@ -393,6 +450,16 @@ function googleMapsUrl(address) {
     api: "1",
     query: address || ""
   }).toString();
+}
+
+function plainText(value) {
+  return String(value || "")
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/gi, "$2")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi, "$1: $2")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
 }
 
 function startOfWeek(date) {

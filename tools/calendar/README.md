@@ -35,6 +35,8 @@ Headern är låst/sticky vid scroll. Textfält som innehåller markdown-länkar,
 
 Bildlänkar i textfält, till exempel `.svg`, `.png` och `.jpg`, visas som en liten inline-ikon utan filnamn/länktext. Markdown-bilder med `![](...)` lämnar inte kvar utropstecknet.
 
+Varje kalenderkort har en `Dela event`-knapp. Om eventet har `web_url`, till exempel en sida på nasverige.org, används den som delningslänk. Annars delas en sammanfattning med titel, tid, arrangör, plats, kartlänk, kostnad, ingress och bildlänk, men utan texten under `Mer information`.
+
 Admin öppnas via `?view=admin`. Gamla länkar med `#admin` stöds fortfarande men normaliseras automatiskt till `?view=admin`.
 
 Admin- och kalenderknapparna växlar vy internt utan sidladdning. Bildlänkar tolererar nu avslutande citattecken eller punkt efter URL:en.
