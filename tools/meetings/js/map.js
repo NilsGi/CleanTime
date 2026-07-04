@@ -1,4 +1,5 @@
 function isGroupInMapView(g){
+  if (isMobileMapCollapsed()) return true;
   if (!listFollowsMap || !map || !groupMatchesMap(g)) return true;
   const bounds = map.getBounds();
   return bounds.contains([g.latitude, g.longitude]);
@@ -19,7 +20,7 @@ function initMap(){
   }).addTo(map);
 
   map.on("moveend zoomend", () => {
-    if (!suppressMapMoveRender && listFollowsMap) {
+    if (!suppressMapMoveRender && listFollowsMap && !isMobileMapCollapsed()) {
       renderAll(true);
     }
   });
@@ -121,7 +122,7 @@ function fitGroupsOnMap(groups){
 
   setTimeout(() => {
     suppressMapMoveRender = false;
-    if (listFollowsMap) {
+    if (listFollowsMap && !isMobileMapCollapsed()) {
       renderAll(true);
     }
   }, 250);
@@ -387,7 +388,7 @@ function fitVisible(){
     map.fitBounds(groups.map(g=>[g.latitude,g.longitude]), {padding:[30,30]});
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(true);
+      if (!isMobileMapCollapsed()) renderAll(true);
     }, 250);
   }
 }

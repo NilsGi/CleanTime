@@ -90,7 +90,12 @@ function setMobileMapCollapsed(collapsed){
   button.textContent = collapsed ? "Visa karta" : "Dölj karta";
 
   if (!collapsed && map) {
-    setTimeout(() => map.invalidateSize(), 80);
+    setTimeout(() => {
+      map.invalidateSize();
+      renderAll(true);
+    }, 80);
+  } else {
+    renderAll(false);
   }
 }
 
@@ -180,13 +185,14 @@ function renderAll(syncFromMap = false){
     !syncFromMap &&
     map &&
     mapGroups.length &&
-    !suppressMapMoveRender;
+    !suppressMapMoveRender &&
+    !isMobileMapCollapsed();
 
   if (shouldFitMapToFilters) {
     fitGroupsOnMap(mapGroups);
   }
 
-  const visibleGroupList = listFollowsMap && map && !searchActive && syncFromMap
+  const visibleGroupList = shouldUseMapViewForList(syncFromMap)
     ? groupList.filter(isGroupInMapView)
     : groupList;
 

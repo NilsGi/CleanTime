@@ -90,11 +90,16 @@ function countDays(meetings){
     .map(([value,count]) => ({ value, label: cleanDay(value) + " (" + count + ")" }));
 }
 
-function meetingMatchesCurrentMapView(m){
-  const isMobile = window.matchMedia("(max-width: 900px)").matches;
-  const mapCollapsed = $("meetingsPanel")?.classList.contains("map-collapsed");
+function isMobileMapCollapsed(){
+  return window.matchMedia("(max-width: 900px)").matches && !!$("meetingsPanel")?.classList.contains("map-collapsed");
+}
 
-  if (isMobile && mapCollapsed) return true;
+function shouldUseMapViewForList(syncFromMap = false){
+  return !!(syncFromMap && listFollowsMap && map && !hasActiveTextSearch() && !isMobileMapCollapsed());
+}
+
+function meetingMatchesCurrentMapView(m){
+  if (isMobileMapCollapsed()) return true;
   if (!listFollowsMap || !map || hasActiveTextSearch()) return true;
 
   // Listan behåller online-möten och möten utan koordinater även när kartan styr urvalet.
@@ -363,14 +368,14 @@ function fitDistanceFilteredMeetings(){
     });
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(true);
+      if (!isMobileMapCollapsed()) renderAll(true);
     }, 250);
   } else if (points.length === 1) {
     suppressMapMoveRender = true;
     map.setView(points[0], 13);
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(true);
+      if (!isMobileMapCollapsed()) renderAll(true);
     }, 250);
   }
 }
