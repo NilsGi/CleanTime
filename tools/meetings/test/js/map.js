@@ -1,4 +1,5 @@
 function isGroupInMapView(g){
+  if (isMobileMapCollapsed()) return true;
   if (!listFollowsMap || !map || !groupMatchesMap(g)) return true;
   const bounds = map.getBounds();
   return bounds.contains([g.latitude, g.longitude]);
@@ -19,7 +20,7 @@ function initMap(){
   }).addTo(map);
 
   map.on("moveend zoomend", () => {
-    if (!suppressMapMoveRender && listFollowsMap) {
+    if (!suppressMapMoveRender && listFollowsMap && !isMobileMapCollapsed()) {
       renderAll(true);
     }
   });
@@ -121,7 +122,7 @@ function fitGroupsOnMap(groups){
 
   setTimeout(() => {
     suppressMapMoveRender = false;
-    if (listFollowsMap) {
+    if (listFollowsMap && !isMobileMapCollapsed()) {
       renderAll(true);
     }
   }, 250);
@@ -184,15 +185,12 @@ function clusterPopupHtml(groups){
           .filter(Boolean)
           .map(esc);
         const address = addressRows.join("<br>");
-        const mapLink = externalLinkHtml(m.linkMap, "Karta");
-
         return `
           <div class="meeting-time">
             ${esc(cleanDay(m.days))} ${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}
             ${isOnline(m) ? " · Online" : " · Fysiskt"}
             ${address ? "<br>" + address : ""}
             ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
-            ${mapLink ? " · " + mapLink : ""}
             ${meetingActionButtonsHtml(m)}
           </div>
         `;
@@ -259,7 +257,6 @@ function groupPopupHtml(g){
   const times = g.meetings.map(m => {
     const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join(" ");
     const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
-    const mapLink = externalLinkHtml(m.linkMap, "Karta");
     return `
       <div class="meeting-time">
         ${esc(cleanDay(m.days))} ${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}
@@ -267,7 +264,7 @@ function groupPopupHtml(g){
         ${address ? "<br>" + esc(address) : ""}
         ${m.station ? "<br><span class=\"muted\">Närmaste hållplats: " + esc(m.station) + "</span>" : ""}
         ${m.information ? "<div class=\"meeting-info\">" + formatInformation(m.information) + "</div>" : ""}
-        ${mapLink ? " · " + mapLink : ""}<br>${types}
+        <br>${types}
         ${meetingActionButtonsHtml(m)}
       </div>
     `;
@@ -317,8 +314,6 @@ function buildListHtml(groups){
 
     const types = getTypes(m).map(t=>'<span class="pill">'+esc(t)+'</span>').join("");
     const address = [m.location,m.address,m.zip].filter(Boolean).join(", ");
-    const online = externalLinkHtml(m.onlineMeeting?.url, "Online-länk");
-    const mapLink = externalLinkHtml(m.linkMap, "Karta");
     const dist = m._groupDistance != null ? "<br><b>" + m._groupDistance.toFixed(1) + " km bort</b>" : "";
     const station = m.station ? `<br><span class="muted">Närmaste hållplats: ${esc(m.station)}</span>` : "";
     const info = m.information ? `<div class="meeting-info">${formatInformation(m.information)}</div>` : "";
@@ -332,7 +327,6 @@ function buildListHtml(groups){
         ${station}
         ${dist}
         ${info}
-        <div>${online} ${mapLink}</div>
         <div>${types}</div>
         ${meetingActionButtonsHtml(m)}
       </div>
@@ -356,7 +350,7 @@ function bindListClicks(groups, containerId){
       el.style.cursor = "pointer";
       el.onclick = event => {
         // Knapparna inne i möteskortet ska inte öppna kartpopup/bottom sheet.
-        if (event && event.target && event.target.closest(".meeting-actions, .share-meeting-btn, .directions-meeting-btn, .copy-address, .directions-dialog")) {
+        if (event && event.target && event.target.closest(".meeting-actions, .meeting-action-link, .share-meeting-btn, .directions-meeting-btn, .copy-address, .directions-dialog")) {
           return;
         }
         map.setView([lat, lng], 15);
@@ -394,7 +388,7 @@ function fitVisible(){
     map.fitBounds(groups.map(g=>[g.latitude,g.longitude]), {padding:[30,30]});
     setTimeout(() => {
       suppressMapMoveRender = false;
-      renderAll(true);
+      if (!isMobileMapCollapsed()) renderAll(true);
     }, 250);
   }
 }
