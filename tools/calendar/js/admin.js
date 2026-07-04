@@ -6,6 +6,9 @@ import {
 } from "./config.js";
 
 const log = document.getElementById("log");
+const adminAuth = document.getElementById("adminAuth");
+const adminTools = document.getElementById("adminTools");
+const adminContent = document.getElementById("adminContent");
 const authForm = document.getElementById("authForm");
 const authPassword = document.getElementById("adminPassword");
 const authError = document.getElementById("authError");
@@ -20,8 +23,9 @@ let manualEvents = [];
 let autoImportControlsInitialized = false;
 
 function unlockAdmin() {
-  document.body.classList.remove("auth-locked");
-  document.body.classList.add("is-authenticated");
+  adminAuth?.classList.add("is-hidden");
+  adminTools?.classList.remove("is-hidden");
+  adminContent?.classList.remove("is-hidden");
   initAutoImportControls();
   loadManualEvents();
   runAutoImportIfDue();
@@ -29,9 +33,15 @@ function unlockAdmin() {
 
 if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") {
   unlockAdmin();
-} else {
+} else if (window.location.hash === "#admin") {
   authPassword.focus();
 }
+
+window.addEventListener("calendar-admin-view", () => {
+  if (sessionStorage.getItem(AUTH_SESSION_KEY) !== "true") {
+    authPassword.focus();
+  }
+});
 
 authForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -168,6 +178,7 @@ window.saveEvent = async function () {
 
   resetForm();
   await loadManualEvents();
+  window.refreshCalendar?.();
 };
 
 async function loadManualEvents() {
@@ -254,7 +265,8 @@ window.hideEvent = async function (id) {
   }
 
   log.textContent = "Händelsen dold.";
-  loadManualEvents();
+  await loadManualEvents();
+  window.refreshCalendar?.();
 };
 
 window.deleteEvent = async function (id) {
@@ -272,7 +284,8 @@ window.deleteEvent = async function (id) {
   }
 
   log.textContent = "Händelsen borttagen.";
-  loadManualEvents();
+  await loadManualEvents();
+  window.refreshCalendar?.();
 };
 
 window.importFromNasverige = async function (options = {}) {
@@ -313,7 +326,8 @@ window.importFromNasverige = async function (options = {}) {
       raw_data: event,
 
       is_published: true,
-      is_hidden: false
+      is_hidden: false,
+      updated_at: new Date().toISOString()
     }));
 
     const skippedWithoutSlug = events.length - rows.length;
@@ -345,6 +359,7 @@ window.importFromNasverige = async function (options = {}) {
 
     markAutoImportRun();
     await loadManualEvents();
+    window.refreshCalendar?.();
 
   } catch (e) {
     log.textContent += "\nFEL:\n" + e.message;

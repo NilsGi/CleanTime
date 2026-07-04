@@ -6,6 +6,8 @@ let selectedMonth = new Date();
 
 const calendar = document.getElementById("calendar");
 const status = document.getElementById("status");
+const lastUpdated = document.getElementById("lastUpdated");
+const refreshCalendarBtn = document.getElementById("refreshCalendarBtn");
 
 document.getElementById("search").addEventListener("input", render);
 document.getElementById("typeFilter").addEventListener("change", render);
@@ -15,11 +17,13 @@ document.getElementById("monthFilter").addEventListener("change", e => {
   currentView = "month";
   render();
 });
+refreshCalendarBtn?.addEventListener("click", init);
 
 init();
 
 async function init() {
   buildMonthFilter();
+  status.textContent = "Hämtar kalender...";
 
   const { data, error } = await supabase
     .from("calendar_events")
@@ -36,12 +40,14 @@ async function init() {
   allEvents = data || [];
   const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
   status.textContent = `${upcomingCount} kommande händelser`;
+  updateLastUpdated();
   render();
 }
 
 function buildMonthFilter() {
   const select = document.getElementById("monthFilter");
   const now = new Date();
+  select.innerHTML = "";
 
   for (let i = 0; i < 18; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
@@ -55,6 +61,29 @@ function buildMonthFilter() {
     select.innerHTML += `<option value="${value}">${label}</option>`;
   }
 }
+
+function updateLastUpdated() {
+  if (!lastUpdated) return;
+
+  const newest = allEvents
+    .map(e => e.updated_at || e.created_at)
+    .filter(Boolean)
+    .map(value => new Date(value))
+    .filter(date => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b - a)[0];
+
+  lastUpdated.textContent = newest
+    ? "Senast uppdaterad/importerad: " + newest.toLocaleString("sv-SE", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+    : "Senast uppdaterad/importerad: okänt";
+}
+
+window.refreshCalendar = init;
 
 window.setView = function(view) {
   currentView = view;
