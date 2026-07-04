@@ -32,46 +32,22 @@ function formatMeetingTimeForPdf(m){
   return start && end ? start + "–" + end : (start || end || "");
 }
 
-function drawNaPdfLogo(doc, cx, y, size, blue){
-  // Skarp vektorritad PDF-logga. Den ersätter lågupplösta PNG-filer i PDF-exporten.
-  // cx = centrum x, y = överkant, size = total bredd/höjd i mm.
-  const cy = y + size / 2;
-  const r = size / 2;
+async function loadPdfImageDataUrl(src){
+  const response = await fetch(src, { cache: "force-cache" });
+  if (!response.ok) throw new Error("Kunde inte ladda PDF-logga: " + src);
+  const blob = await response.blob();
 
-  doc.setDrawColor(...blue);
-  doc.setTextColor(...blue);
-  doc.setLineCap('round');
-  doc.setLineJoin('round');
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
-  // Dubbel cirkel
-  doc.setLineWidth(size * 0.035);
-  doc.circle(cx, cy, r * 0.94, 'S');
-  doc.setLineWidth(size * 0.020);
-  doc.circle(cx, cy, r * 0.80, 'S');
-
-  // Stiliserat NA-märke ritat som vektorer för att bli skarpt i PDF/utskrift.
-  const left = cx - size * 0.30;
-  const right = cx + size * 0.30;
-  const top = cy - size * 0.28;
-  const bottom = cy + size * 0.28;
-  const mid = cx;
-
-  doc.setLineWidth(size * 0.095);
-  // N
-  doc.line(left, bottom, left, top);
-  doc.line(left, top, mid - size * 0.04, bottom);
-  doc.line(mid - size * 0.04, bottom, mid - size * 0.04, top);
-
-  // A
-  doc.line(mid + size * 0.07, bottom, right - size * 0.09, top);
-  doc.line(right - size * 0.09, top, right, bottom);
-  doc.setLineWidth(size * 0.075);
-  doc.line(mid + size * 0.17, cy + size * 0.03, right - size * 0.02, cy + size * 0.03);
-
-  // Liten registreringsmarkering
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(size * 0.14);
-  doc.text('®', cx + r * 0.86, cy + r * 0.74, { align: 'center' });
+function addPdfLogoPng(doc, logoDataUrl, cx, y, size){
+  if (!logoDataUrl) return;
+  doc.addImage(logoDataUrl, "PNG", cx - size / 2, y, size, size);
 }
 
 async function exportFolderPdf(){
@@ -103,6 +79,12 @@ async function exportFolderPdf(){
   const siteUrl = "https://www.nasverige.org";
   const serviceCreditText = "Denna lista är skapad från ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. NA® och NA-logotyper används inom NA:s servicestruktur.";
   const qrDataUrl = await makeQrDataUrl(siteUrl);
+  let pdfLogoDataUrl = null;
+  try {
+    pdfLogoDataUrl = await loadPdfImageDataUrl("/assets/NA_logo_blue.png");
+  } catch (e) {
+    console.warn("PDF-loggan kunde inte laddas från /assets/NA_logo_blue.png", e);
+  }
 
   function setBlue(){ doc.setTextColor(...blue); }
   function setBlack(){ doc.setTextColor(20,20,20); }
@@ -176,7 +158,7 @@ async function exportFolderPdf(){
   x = panelW*2 + margin;
   y = 14;
   const logoW = 40;
-  drawNaPdfLogo(doc, x + (panelW - margin*2) / 2, y, logoW, blue);
+  try { addPdfLogoPng(doc, pdfLogoDataUrl, x + (panelW - margin*2) / 2, y, logoW); } catch(e) {}
   y += logoW + 9;
   setBlue();
   doc.setFont("helvetica", "bold");
