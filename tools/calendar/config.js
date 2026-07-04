@@ -1,20 +1,4 @@
-const calendarView = document.getElementById("calendarView");
-const adminView = document.getElementById("adminView");
-const calendarNav = document.getElementById("calendarNav");
-const adminNav = document.getElementById("adminNav");
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config.js";
 
-function showView() {
-  const isAdmin = window.location.hash === "#admin";
-
-  calendarView?.classList.toggle("is-hidden", isAdmin);
-  adminView?.classList.toggle("is-hidden", !isAdmin);
-  calendarNav?.classList.toggle("is-active", !isAdmin);
-  adminNav?.classList.toggle("is-active", isAdmin);
-
-  if (isAdmin) {
-    window.dispatchEvent(new CustomEvent("calendar-admin-view"));
-  }
-}
-
-window.addEventListener("hashchange", showView);
-showView();
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

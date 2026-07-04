@@ -1,517 +1,519 @@
 import { supabase } from "./api.js";
+import {
+  AUTH_SESSION_KEY,
+  AUTO_IMPORT_INTERVAL_HOURS,
+  ENCODED_ADMIN_PASSWORD
+} from "./config.js";
 
-let allEvents = [];
-let currentView = "list";
-let selectedMonth = new Date();
+const log = document.getElementById("log");
+const adminAuth = document.getElementById("adminAuth");
+const adminTools = document.getElementById("adminTools");
+const adminContent = document.getElementById("adminContent");
+const authForm = document.getElementById("authForm");
+const authPassword = document.getElementById("adminPassword");
+const authError = document.getElementById("authError");
+const autoImportToggle = document.getElementById("autoImportToggle");
+const autoImportStatus = document.getElementById("autoImportStatus");
+const autoImportNow = document.getElementById("autoImportNow");
+const autoImportEnabledKey = "naCalendarAutoImportEnabled";
+const autoImportLastRunKey = "naCalendarAutoImportLastRun";
 
-const calendar = document.getElementById("calendar");
-const status = document.getElementById("status");
-const lastUpdated = document.getElementById("lastUpdated");
-const refreshCalendarBtn = document.getElementById("refreshCalendarBtn");
+let editingId = null;
+let manualEvents = [];
+let autoImportControlsInitialized = false;
 
-document.getElementById("search").addEventListener("input", render);
-document.getElementById("typeFilter").addEventListener("change", render);
-document.getElementById("monthFilter").addEventListener("change", e => {
-  const [year, month] = e.target.value.split("-").map(Number);
-  selectedMonth = new Date(year, month - 1, 1);
-  currentView = "month";
-  render();
+function unlockAdmin() {
+  adminAuth?.classList.add("is-hidden");
+  adminTools?.classList.remove("is-hidden");
+  adminContent?.classList.remove("is-hidden");
+  initAutoImportControls();
+  loadManualEvents();
+  runAutoImportIfDue();
+}
+
+function syncAdminAuthState() {
+  if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") {
+    unlockAdmin();
+    return;
+  }
+
+  if (isAdminView()) {
+    authPassword.focus();
+  }
+}
+
+function isAdminView() {
+  return new URLSearchParams(window.location.search).get("view") === "admin" ||
+    window.location.hash === "#admin";
+}
+
+window.addEventListener("calendar-admin-view", syncAdminAuthState);
+window.addEventListener("hashchange", syncAdminAuthState);
+
+syncAdminAuthState();
+
+authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  if (authPassword.value === atob(ENCODED_ADMIN_PASSWORD)) {
+    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+    authError.textContent = "";
+    unlockAdmin();
+    return;
+  }
+
+  authError.textContent = "Fel lösenord.";
+  authPassword.select();
 });
-refreshCalendarBtn?.addEventListener("click", init);
 
-init();
+function initAutoImportControls() {
+  if (!autoImportToggle || autoImportControlsInitialized) return;
 
-async function init() {
-  buildMonthFilter();
-  status.textContent = "Hämtar kalender...";
+  autoImportControlsInitialized = true;
+  autoImportToggle.checked = localStorage.getItem(autoImportEnabledKey) === "true";
+  updateAutoImportStatus();
+
+  autoImportToggle.addEventListener("change", () => {
+    localStorage.setItem(autoImportEnabledKey, autoImportToggle.checked ? "true" : "false");
+    updateAutoImportStatus();
+
+    if (autoImportToggle.checked) {
+      runAutoImportIfDue();
+    }
+  });
+
+  autoImportNow?.addEventListener("click", () => {
+    window.importFromNasverige({ manualRun: true });
+  });
+}
+
+async function runAutoImportIfDue() {
+  if (!autoImportToggle?.checked) return;
+
+  const lastRun = Number(localStorage.getItem(autoImportLastRunKey) || 0);
+  const intervalMs = AUTO_IMPORT_INTERVAL_HOURS * 60 * 60 * 1000;
+
+  if (lastRun && Date.now() - lastRun < intervalMs) {
+    updateAutoImportStatus();
+    return;
+  }
+
+  await window.importFromNasverige({ automatic: true });
+}
+
+function markAutoImportRun() {
+  localStorage.setItem(autoImportLastRunKey, String(Date.now()));
+  updateAutoImportStatus();
+}
+
+function updateAutoImportStatus() {
+  if (!autoImportStatus) return;
+
+  const enabled = localStorage.getItem(autoImportEnabledKey) === "true";
+  const lastRun = Number(localStorage.getItem(autoImportLastRunKey) || 0);
+
+  if (!enabled) {
+    autoImportStatus.textContent = "Automatisk import är avstängd.";
+    return;
+  }
+
+  autoImportStatus.textContent = lastRun
+    ? "Automatisk import är på. Senast körd: " + new Date(lastRun).toLocaleString("sv-SE") + "."
+    : "Automatisk import är på. Import körs nästa gång admin öppnas.";
+}
+
+window.saveEvent = async function () {
+  const title = val("title");
+  const startDate = val("start_date");
+  const startTime = val("start_time");
+
+  if (!title || !startDate || !startTime) {
+    log.textContent = "Titel, startdatum och starttid krävs.";
+    return;
+  }
+
+  const row = {
+    source: "manual",
+    event_type: val("event_type"),
+
+    title,
+    organizer: val("organizer") || null,
+    address: val("address") || null,
+    price: val("price") || null,
+
+    start_datetime: combine(startDate, startTime),
+    end_datetime: val("end_date") && val("end_time")
+      ? combine(val("end_date"), val("end_time"))
+      : null,
+
+    web_url: val("web_url") || null,
+    excerpt: val("excerpt") || null,
+    description: val("description") || null,
+
+    is_published: true,
+    is_hidden: false,
+    updated_at: new Date().toISOString()
+  };
+
+  let result;
+
+  if (editingId) {
+    result = await supabase
+      .from("calendar_events")
+      .update(row)
+      .eq("id", editingId)
+      .eq("source", "manual")
+      .select("*");
+  } else {
+    result = await supabase
+      .from("calendar_events")
+      .insert(row)
+      .select("*");
+  }
+
+  if (result.error) {
+    log.textContent = "FEL vid sparning:\n" + JSON.stringify(result.error, null, 2);
+    return;
+  }
+
+  if (!result.data || result.data.length === 0) {
+    log.textContent =
+      "Ingen rad uppdaterades. Trolig orsak: RLS-policy saknas för UPDATE i Supabase, eller så hittades inte eventet.";
+    return;
+  }
+
+  log.textContent = editingId
+    ? "Händelsen uppdaterad."
+    : "Händelsen sparad.";
+
+  resetForm();
+  await loadManualEvents();
+  window.refreshCalendar?.();
+};
+
+async function loadManualEvents() {
+  const container = document.getElementById("manualEvents");
 
   const { data, error } = await supabase
     .from("calendar_events")
     .select("*")
-    .eq("is_published", true)
+    .eq("source", "manual")
     .eq("is_hidden", false)
     .order("start_datetime", { ascending: true });
 
   if (error) {
-    status.textContent = "Kunde inte hämta kalendern.";
+    container.innerHTML = "Kunde inte hämta manuella event.";
     return;
   }
 
-  allEvents = data || [];
-  const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
-  status.textContent = `${upcomingCount} kommande händelser`;
-  updateLastUpdated();
-  render();
-}
+  manualEvents = data || [];
 
-function buildMonthFilter() {
-  const select = document.getElementById("monthFilter");
-  const now = new Date();
-  select.innerHTML = "";
-
-  for (let i = 0; i < 18; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const value =
-      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-    const label = d.toLocaleDateString("sv-SE", {
-      year: "numeric",
-      month: "long"
-    });
-
-    select.innerHTML += `<option value="${value}">${label}</option>`;
-  }
-}
-
-function updateLastUpdated() {
-  if (!lastUpdated) return;
-
-  const newest = allEvents
-    .map(e => e.updated_at || e.created_at)
-    .filter(Boolean)
-    .map(value => new Date(value))
-    .filter(date => !Number.isNaN(date.getTime()))
-    .sort((a, b) => b - a)[0];
-
-  lastUpdated.textContent = newest
-    ? "Senast uppdaterad/importerad: " + newest.toLocaleString("sv-SE", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    })
-    : "Senast uppdaterad/importerad: okänt";
-}
-
-window.refreshCalendar = init;
-
-window.setView = function(view) {
-  currentView = view;
-  render();
-};
-
-function updateViewButtons() {
-  document.querySelectorAll("[data-view]").forEach(button => {
-    const active = button.dataset.view === currentView;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-pressed", active ? "true" : "false");
-  });
-}
-
-function getFilteredEvents(options = {}) {
-  const search = document.getElementById("search").value.toLowerCase();
-  const type = document.getElementById("typeFilter").value;
-  const includePast = options.includePast === true;
-  const now = new Date();
-
-  return allEvents.filter(e => {
-    // Listvy och veckovy visar bara aktuella/kommande event.
-    // Månadsvyn kan visa historiska månader när man väljer dem i filtret.
-    if (!includePast && isPastEvent(e, now)) {
-      return false;
-    }
-
-    const text = [
-      e.title,
-      e.organizer,
-      e.address,
-      e.price,
-      e.excerpt,
-      e.description
-    ].join(" ").toLowerCase();
-
-    if (search && !text.includes(search)) return false;
-    if (type && e.event_type !== type) return false;
-
-    return true;
-  });
-}
-
-function render() {
-  updateViewButtons();
-
-  // Månadsvy får visa vald månad även om den ligger bakåt i tiden.
-  // Listvy och veckovy visar bara pågående/kommande event.
-  const events = getFilteredEvents({
-    includePast: currentView === "month"
-  });
-
-  if (currentView === "month") renderMonth(events);
-  else if (currentView === "week") renderWeek(events);
-  else renderList(events);
-}
-
-function renderList(events) {
-  calendar.className = "event-list";
-
-  if (!events.length) {
-    calendar.innerHTML = `
-      <div class="empty-state">
-        <b>Inga händelser hittades</b>
-        Prova att ändra sökningen, typen eller månadsvyn.
-      </div>
-    `;
+  if (!manualEvents.length) {
+    container.innerHTML = "Inga manuella händelser.";
     return;
   }
 
-  calendar.innerHTML = events.map(eventCard).join("");
+  container.innerHTML = manualEvents.map(e => `
+    <div class="event-row">
+      <strong>${escapeHtml(e.title)}</strong><br>
+      ${formatDate(e.start_datetime)}<br>
+      ${escapeHtml(e.event_type || "")}
+      ${e.address ? " • " + escapeHtml(e.address) : ""}
+      ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
+      <div class="actions">
+        <button onclick="editEventById('${e.id}')">Redigera</button>
+        <button onclick="duplicateEventById('${e.id}')">Kopiera</button>
+        <button onclick='hideEvent("${e.id}")'>Dölj</button>
+        <button onclick='deleteEvent("${e.id}")'>Ta bort</button>
+      </div>
+    </div>
+  `).join("");
 }
 
-function renderWeek(events) {
-  calendar.className = "week-list";
+window.editEventById = function (id) {
+  const event = manualEvents.find(e => e.id === id);
 
-  const start = startOfWeek(new Date());
-  const days = [];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    days.push(d);
+  if (!event) {
+    log.textContent = "Kunde inte hitta händelsen.";
+    return;
   }
 
-  calendar.innerHTML = days.map(day => {
-    const dayEvents = events.filter(e => eventOccursOnDate(e, day));
+  editEvent(event);
+};
 
-    return `
-      <div class="week-day">
-        <h3>${day.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" })}</h3>
-        ${dayEvents.length ? dayEvents.map(eventCard).join("") : "<p>Inga händelser.</p>"}
-      </div>
-    `;
-  }).join("");
+window.duplicateEventById = function (id) {
+  const event = manualEvents.find(e => e.id === id);
+
+  if (!event) {
+    log.textContent = "Kunde inte hitta händelsen.";
+    return;
+  }
+
+  editingId = null;
+  log.textContent = "Kopierar: " + (event.title || "") + ". Justera vid behov och spara som ny händelse.";
+
+  document.getElementById("formTitle").textContent = "Kopiera händelse";
+  document.getElementById("saveBtn").textContent = "Spara som ny händelse";
+
+  fillEventForm(event);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+window.editEvent = function (e) {
+  editingId = e.id;
+  log.textContent = "Redigerar: " + (e.title || "");
+
+  document.getElementById("formTitle").textContent = "Redigera händelse";
+  document.getElementById("saveBtn").textContent = "Uppdatera händelse";
+
+  fillEventForm(e);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+function fillEventForm(e) {
+  setVal("event_type", e.event_type || "distrikt");
+  setVal("title", e.title || "");
+  setVal("organizer", e.organizer || "");
+  setVal("address", e.address || "");
+  setVal("price", e.price || "");
+  setVal("web_url", e.web_url || "");
+  setVal("excerpt", e.excerpt || "");
+  setVal("description", e.description || "");
+
+  fillDateTime("start", e.start_datetime);
+  fillDateTime("end", e.end_datetime);
 }
 
-function renderMonth(events) {
-  calendar.className = "calendar-grid";
+window.hideEvent = async function (id) {
+  if (!confirm("Dölja händelsen?")) return;
 
-  const year = selectedMonth.getFullYear();
-  const month = selectedMonth.getMonth();
+  const { error } = await supabase
+    .from("calendar_events")
+    .update({ is_hidden: true })
+    .eq("id", id)
+    .eq("source", "manual");
 
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
 
-  const startOffset = (first.getDay() + 6) % 7;
-  const totalDays = startOffset + last.getDate();
+  log.textContent = "Händelsen dold.";
+  await loadManualEvents();
+  window.refreshCalendar?.();
+};
 
-  const dayNames = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
-  const monthLabel = selectedMonth.toLocaleDateString("sv-SE", {
-    year: "numeric",
-    month: "long"
-  });
+window.deleteEvent = async function (id) {
+  if (!confirm("Ta bort händelsen permanent?")) return;
 
-  let html = `<div class="month-heading">${monthLabel}</div>`;
-  html += dayNames.map(d => `<div class="day-name">${d}</div>`).join("");
+  const { error } = await supabase
+    .from("calendar_events")
+    .delete()
+    .eq("id", id)
+    .eq("source", "manual");
 
-  for (let i = 0; i < totalDays; i++) {
-    if (i < startOffset) {
-      html += `<div class="day empty"></div>`;
-      continue;
+  if (error) {
+    log.textContent = "FEL:\n" + JSON.stringify(error, null, 2);
+    return;
+  }
+
+  log.textContent = "Händelsen borttagen.";
+  await loadManualEvents();
+  window.refreshCalendar?.();
+};
+
+window.importFromNasverige = async function (options = {}) {
+  try {
+    const automatic = options.automatic === true;
+    log.textContent = automatic
+      ? "Startar automatisk import från nasverige.org...\n"
+      : "Startar import från nasverige.org...\n";
+
+    const events = await fetchAllEvents();
+
+    log.textContent += `\nTotalt hämtade: ${events.length} event\n`;
+    log.textContent += "Sparar till Supabase...\n";
+
+    const rows = events
+      .filter(event => event.slug)
+      .map(event => ({
+      source: "nasverige",
+      event_type: "event",
+
+      external_id: String(event.id),
+      external_slug: event.slug || null,
+
+      title: event.title || "Namnlöst evenemang",
+      organizer: event.organizer || null,
+      address: event.address || null,
+      price: getEventPrice(event),
+
+      start_datetime: event.startDate || null,
+      end_datetime: event.endDate || null,
+
+      web_url: event.web || null,
+      excerpt: event.excerpt || null,
+      description: event.description || null,
+
+      image_url: getImageUrl(event),
+
+      raw_data: event,
+
+      is_published: true,
+      is_hidden: false,
+      updated_at: new Date().toISOString()
+    }));
+
+    const skippedWithoutSlug = events.length - rows.length;
+    if (skippedWithoutSlug > 0) {
+      log.textContent +=
+        `Hoppar över ${skippedWithoutSlug} event utan slug, eftersom slug används som importnyckel.\n`;
     }
 
-    const dayNumber = i - startOffset + 1;
-    const date = new Date(year, month, dayNumber);
-    const todayClass = sameDay(date, new Date()) ? " is-today" : "";
+    if (!rows.length) {
+      log.textContent += "\nInga event med slug hittades att spara.";
+      return;
+    }
 
-    const dayEvents = events.filter(e =>
-      eventOccursOnDate(e, date)
-    );
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .upsert(rows, {
+        onConflict: "source,external_slug"
+      })
+      .select();
 
-    html += `
-      <div class="day${todayClass}">
-        <div class="day-number">${dayNumber}</div>
-        ${dayEvents.map(e => monthEventPill(e, date)).join("")}
-      </div>
-    `;
+    if (error) {
+      log.textContent += "\nFEL:\n" + JSON.stringify(error, null, 2);
+      return;
+    }
+
+    log.textContent +=
+      `\nKlart!\n` +
+      `Sparade/uppdaterade ${data.length} event.`;
+
+    markAutoImportRun();
+    await loadManualEvents();
+    window.refreshCalendar?.();
+
+  } catch (e) {
+    log.textContent += "\nFEL:\n" + e.message;
+  }
+};
+
+async function fetchAllEvents() {
+  let page = 1;
+  let allEvents = [];
+
+  while (true) {
+    log.textContent += `Hämtar sida ${page}...\n`;
+
+    const res = await fetch(`/event?page=${page}`);
+
+    if (!res.ok) {
+      throw new Error(`Fel ${res.status} på sida ${page}`);
+    }
+
+    const data = await res.json();
+
+    const events =
+      data.events ||
+      data.data ||
+      [];
+
+    log.textContent += `Sida ${page}: ${events.length} event\n`;
+
+    allEvents = allEvents.concat(events);
+
+    const pagination = data.meta?.pagination;
+
+    if (!pagination) break;
+    if (page >= pagination.pageCount) break;
+
+    page++;
   }
 
-  calendar.innerHTML = html;
+  return allEvents;
 }
 
-function monthEventPill(event, date) {
-  const placement = getEventDayPlacement(event, date);
-  const className = [
-    "day-event",
-    placement.isMultiDay ? "is-multiday" : "",
-    placement.isMultiDay ? `is-${placement.position}` : ""
-  ].filter(Boolean).join(" ");
+window.resetForm = function () {
+  editingId = null;
 
-  const startArrow = placement.showBackArrow
-    ? `<span class="event-flow" aria-hidden="true">&larr;</span>`
-    : "";
-  const endArrow = placement.showForwardArrow
-    ? `<span class="event-flow" aria-hidden="true">&rarr;</span>`
-    : "";
-  const displayTime = placement.showStartTime
-    ? `${time(event.start_datetime)} `
-    : placement.showEndTime
-      ? `${time(event.end_datetime)} `
-      : "";
+  document.getElementById("formTitle").textContent = "Lägg till manuell händelse";
+  document.getElementById("saveBtn").textContent = "Spara händelse";
 
-  const label = placement.isMultiDay
-    ? `${placement.dayLabel}. ${event.title}`
-    : event.title;
+  [
+    "title",
+    "organizer",
+    "address",
+    "price",
+    "start_date",
+    "start_time",
+    "end_date",
+    "end_time",
+    "web_url",
+    "excerpt",
+    "description"
+  ].forEach(id => setVal(id, ""));
 
-  return `
-    <div class="${className}" onclick="showEvent('${event.id}')" title="${escapeAttr(label)}">
-      ${startArrow}
-      <span class="event-title">${displayTime}${escapeHtml(event.title)}</span>
-      ${endArrow}
-    </div>
-  `;
-}
-
-function eventCard(e) {
-  return `
-    <article class="event-card" id="event-${e.id}">
-      <div class="event-card-main">
-        <div class="event-card-top">
-          <span class="type">${labelType(e.event_type)}</span>
-          <span class="event-date-pill">${formatDateShort(e.start_datetime)}</span>
-        </div>
-
-        <h2>${escapeHtml(e.title)}</h2>
-
-        <div class="meta">
-          ${formatDate(e.start_datetime)}
-          ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
-          ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
-          ${e.address ? addressMeta(e.address) : ""}
-          ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
-        </div>
-
-        ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
-        ${e.description ? `<details><summary>Mer information</summary><div class="rich-text">${renderFormattedText(e.description)}</div></details>` : ""}
-
-        <div class="actions">
-          ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
-          <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
-          <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
-        </div>
-      </div>
-      ${eventImage(e)}
-    </article>
-  `;
-}
-
-function eventImage(e) {
-  if (!e.image_url) return "";
-
-  const url = escapeAttr(e.image_url);
-
-  return `
-    <div class="event-image">
-      <a href="${url}" target="_blank" aria-label="Öppna stor bild för ${escapeAttr(e.title)}">
-        <img src="${url}" alt="" loading="lazy">
-      </a>
-      <a class="event-image-link" href="${url}" target="_blank">Hämta stor bild</a>
-    </div>
-  `;
-}
-
-function addressMeta(address) {
-  const url = escapeAttr(googleMapsUrl(address));
-
-  return `
-    <br>Plats:
-    <a class="map-link" href="${url}" target="_blank" rel="noopener">${escapeHtml(address)}</a>
-    <a class="map-link map-link-secondary" href="${url}" target="_blank" rel="noopener">Visa karta</a>
-  `;
-}
-
-window.showEvent = function(id) {
-  currentView = "list";
-  render();
-
-  setTimeout(() => {
-    document.getElementById("event-" + id)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-  }, 50);
+  setVal("event_type", "event");
 };
 
-window.downloadEventIcs = function(id) {
-  const event = allEvents.find(e => e.id === id);
-  if (!event) return;
-
-  downloadFile(
-    slug(event.title) + ".ics",
-    createIcs([event])
-  );
-};
-
-window.downloadAllIcs = function() {
-  downloadFile(
-    "na-sverige-kalender.ics",
-    createIcs(getFilteredEvents())
-  );
-};
-
-function createIcs(events) {
-  const now = icsDate(new Date());
-
-  return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//NA Sverige//Kalender//SV",
-    "CALSCALE:GREGORIAN",
-    ...events.flatMap(e => [
-      "BEGIN:VEVENT",
-      `UID:${e.id}@nasverige-kalender`,
-      `DTSTAMP:${now}`,
-      `DTSTART:${icsDate(new Date(e.start_datetime))}`,
-      e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
-      `SUMMARY:${icsEscape(e.title)}`,
-      e.address ? `LOCATION:${icsEscape(e.address)}` : "",
-      `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
-      e.web_url ? `URL:${e.web_url}` : "",
-      "END:VEVENT"
-    ].filter(Boolean)),
-    "END:VCALENDAR"
-  ].join("\r\n");
+function val(id) {
+  return document.getElementById(id).value.trim();
 }
 
-function googleCalendarUrl(e) {
-  const start = googleDate(new Date(e.start_datetime));
-  const end = e.end_datetime
-    ? googleDate(new Date(e.end_datetime))
-    : googleDate(new Date(new Date(e.start_datetime).getTime() + 60 * 60 * 1000));
-
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: e.title || "",
-    dates: `${start}/${end}`,
-    details: [e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\n\n"),
-    location: e.address || ""
-  });
-
-  return "https://calendar.google.com/calendar/render?" + params.toString();
+function setVal(id, value) {
+  document.getElementById(id).value = value || "";
 }
 
-function googleMapsUrl(address) {
-  return "https://www.google.com/maps/search/?" + new URLSearchParams({
-    api: "1",
-    query: address || ""
-  }).toString();
+function combine(date, time) {
+  // Inputfältens datum/tid är svensk lokal tid.
+  // Vi konverterar till ISO/UTC innan sparning i Supabase timestamptz.
+  const localDate = new Date(`${date}T${time}:00`);
+  return localDate.toISOString();
 }
 
-function startOfWeek(date) {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - day);
-  d.setHours(0,0,0,0);
-  return d;
-}
+function fillDateTime(prefix, value) {
+  if (!value) {
+    setVal(`${prefix}_date`, "");
+    setVal(`${prefix}_time`, "");
+    return;
+  }
 
-function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate();
-}
+  // Värdet från Supabase är en tidpunkt. Visa den som lokal tid i inputfälten.
+  // Använd INTE toISOString() här, då hoppar datumet till UTC.
+  const d = new Date(value);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
 
-function eventOccursOnDate(event, date) {
-  if (!event.start_datetime) return false;
-
-  const start = new Date(event.start_datetime);
-  const end = event.end_datetime
-    ? new Date(event.end_datetime)
-    : new Date(event.start_datetime);
-
-  const dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
-
-  const dayEnd = new Date(date);
-  dayEnd.setHours(23, 59, 59, 999);
-
-  return start <= dayEnd && end >= dayStart;
-}
-
-function getEventDayPlacement(event, date) {
-  const start = new Date(event.start_datetime);
-  const end = event.end_datetime
-    ? new Date(event.end_datetime)
-    : new Date(event.start_datetime);
-
-  const isStartDay = sameDay(start, date);
-  const isEndDay = sameDay(end, date);
-  const isMultiDay = !sameDay(start, end);
-
-  let position = "single";
-  if (isMultiDay && isStartDay) position = "start";
-  else if (isMultiDay && isEndDay) position = "end";
-  else if (isMultiDay) position = "middle";
-
-  return {
-    position,
-    isMultiDay,
-    showBackArrow: isMultiDay && !isStartDay,
-    showForwardArrow: isMultiDay && !isEndDay,
-    showStartTime: !isMultiDay || isStartDay,
-    showEndTime: isMultiDay && isEndDay,
-    dayLabel: getEventDayLabel(start, end, date)
-  };
-}
-
-function getEventDayLabel(start, end, date) {
-  const startDay = stripTime(start);
-  const endDay = stripTime(end);
-  const currentDay = stripTime(date);
-
-  const dayIndex = Math.round((currentDay - startDay) / 86400000) + 1;
-  const totalDays = Math.round((endDay - startDay) / 86400000) + 1;
-
-  return `Dag ${dayIndex} av ${totalDays}`;
-}
-
-function stripTime(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function isPastEvent(event, now = new Date()) {
-  if (!event.start_datetime) return true;
-
-  const end = event.end_datetime
-    ? new Date(event.end_datetime)
-    : new Date(event.start_datetime);
-
-  return end < now;
+  setVal(`${prefix}_date`, `${year}-${month}-${day}`);
+  setVal(`${prefix}_time`, `${hour}:${minute}`);
 }
 
 function formatDate(value) {
   if (!value) return "";
-  return new Date(value).toLocaleString("sv-SE", {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  return new Date(value).toLocaleString("sv-SE");
 }
 
-function formatDateShort(value) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("sv-SE", {
-    day: "numeric",
-    month: "short"
-  });
-}
+function getImageUrl(event) {
+  const image =
+    event.images?.[0] ||
+    event.images?.data?.[0];
 
-function time(value) {
-  return new Date(value).toLocaleTimeString("sv-SE", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
+  if (!image) return null;
 
-function icsDate(date) {
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-}
+  const url =
+    image.url ||
+    image.attributes?.url;
 
-function googleDate(date) {
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  if (!url) return null;
+
+  return url.startsWith("http")
+    ? url
+    : "https://cms.nasverige.org" + url;
 }
 
 function formatPrice(value) {
@@ -522,183 +524,22 @@ function formatPrice(value) {
   return text;
 }
 
-function renderFormattedText(text) {
-  const lines = String(text || "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .split("\n");
-
-  const html = [];
-  let listType = null;
-  let paragraph = [];
-
-  function flushParagraph() {
-    if (!paragraph.length) return;
-    html.push(`<p>${paragraph.map(formatInline).join("<br>")}</p>`);
-    paragraph = [];
-  }
-
-  function closeList() {
-    if (!listType) return;
-    html.push(`</${listType}>`);
-    listType = null;
-  }
-
-  function openList(type) {
-    if (listType === type) return;
-    closeList();
-    listType = type;
-    html.push(`<${type}>`);
-  }
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-
-    if (!line) {
-      flushParagraph();
-      closeList();
-      continue;
-    }
-
-    const heading = line.match(/^\*\*(.+?)\*\*$/);
-    if (heading) {
-      flushParagraph();
-      closeList();
-      html.push(`<h4>${formatInline(heading[1])}</h4>`);
-      continue;
-    }
-
-    const bullet = line.match(/^[-*•]\s+(.+)$/);
-    if (bullet) {
-      flushParagraph();
-      openList("ul");
-      html.push(`<li>${formatInline(bullet[1])}</li>`);
-      continue;
-    }
-
-    const numbered = line.match(/^\d+[.)]\s+(.+)$/);
-    if (numbered) {
-      flushParagraph();
-      openList("ol");
-      html.push(`<li>${formatInline(numbered[1])}</li>`);
-      continue;
-    }
-
-    closeList();
-    paragraph.push(line);
-  }
-
-  flushParagraph();
-  closeList();
-
-  return html.join("");
-}
-
-function formatInline(text) {
-  const source = String(text || "");
-  const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi;
-  let html = "";
-  let lastIndex = 0;
-  let match;
-
-  while ((match = markdownLinkPattern.exec(source)) !== null) {
-    html += formatPlainInline(source.slice(lastIndex, match.index));
-    html += safeLink(match[2], match[1]);
-    lastIndex = match.index + match[0].length;
-  }
-
-  html += formatPlainInline(source.slice(lastIndex));
-  return html;
-}
-
-function formatPlainInline(text) {
-  const urlPattern = /https?:\/\/[^\s<>()]+/gi;
-  let html = "";
-  let lastIndex = 0;
-  let match;
-
-  while ((match = urlPattern.exec(text)) !== null) {
-    html += formatStrong(escapeHtml(text.slice(lastIndex, match.index)));
-    html += safeLink(match[0], match[0]);
-    lastIndex = match.index + match[0].length;
-  }
-
-  html += formatStrong(escapeHtml(text.slice(lastIndex)));
-  return html;
-}
-
-function formatStrong(html) {
-  return html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-}
-
-function safeLink(href, label) {
-  const url = String(href || "").trim();
-  if (!/^https?:\/\//i.test(url)) {
-    return formatStrong(escapeHtml(label || href));
-  }
-
-  if (isImageUrl(url)) {
-    return `
-      <a class="inline-image-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">
-        <img class="inline-image" src="${escapeAttr(url)}" alt="${escapeAttr(label || "Bild")}" loading="lazy">
-        <span>Öppna stor bild</span>
-      </a>
-    `;
-  }
-
-  return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${formatStrong(escapeHtml(label || url))}</a>`;
-}
-
-function isImageUrl(url) {
-  return /\.(svg|png|jpe?g|gif|webp|avif)(\?.*)?$/i.test(url);
-}
-
-function icsEscape(text) {
-  return String(text || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
+function getEventPrice(event) {
+  return event.price ||
+    event.cost ||
+    event.fee ||
+    event.registrationFee ||
+    event.attributes?.price ||
+    event.attributes?.cost ||
+    null;
 }
 
 function escapeHtml(str) {
   return String(str || "").replace(/[&<>"']/g, m => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#039;"
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
   }[m]));
-}
-
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/"/g, "&quot;");
-}
-
-function labelType(type) {
-  return {
-    event: "Event",
-    distrikt: "Distrikt",
-    uksam: "UKSAM",
-    region: "Region"
-  }[type] || type || "Event";
-}
-
-function slug(text) {
-  return String(text || "event")
-    .toLowerCase()
-    .replace(/[^a-z0-9åäö]+/gi, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function downloadFile(filename, content) {
-  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-
-  URL.revokeObjectURL(url);
 }

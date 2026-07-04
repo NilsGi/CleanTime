@@ -3,11 +3,201 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Kalenderadmin</title>
-  <meta http-equiv="refresh" content="0; url=index.html#admin">
-  <link rel="canonical" href="index.html#admin">
+  <title>NA Sverige - Kalender</title>
+  <meta name="description" content="Kalender för event, distriktsmöten, UKSAM och regionsmöten inom NA Sverige.">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
-  <p><a href="index.html#admin">Öppna kalenderadmin</a></p>
+<header>
+  <div class="header-inner">
+    <a class="brand" href="./" aria-label="Visa kalender">
+      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+      <h1>Kalender</h1>
+    </a>
+
+    <div class="header-actions">
+      <a id="calendarNav" class="header-link is-active" href="./">Kalender</a>
+      <a id="adminNav" class="header-link" href="?view=admin">Admin</a>
+      <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
+    </div>
+  </div>
+</header>
+
+<main id="calendarView" class="calendar-shell">
+  <aside>
+    <div class="top-buttons">
+      <button id="refreshCalendarBtn" type="button">Uppdatera kalender</button>
+      <button class="secondary" type="button" onclick="downloadAllIcs()">Prenumerera / ICS</button>
+    </div>
+
+    <div class="beta-notice">Beta-version: kalendern uppdateras och förbättras löpande.</div>
+
+    <div class="service-credit">
+      Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+    </div>
+
+    <div id="status" class="muted"><span class="muted">Startar...</span></div>
+    <div id="lastUpdated" class="last-updated">Senast uppdaterad/importerad: okänt</div>
+
+    <details class="filter-section" open>
+      <summary>Filter</summary>
+      <div class="filter-section-body">
+        <label for="search">Sök</label>
+        <input id="search" placeholder="Sök evenemang, ort, arrangör...">
+
+        <div class="filter-grid">
+          <div>
+            <label for="typeFilter">Typ</label>
+            <select id="typeFilter">
+              <option value="">Alla typer</option>
+              <option value="event">Event</option>
+              <option value="distrikt">Distrikt</option>
+              <option value="uksam">UKSAM</option>
+              <option value="region">Region</option>
+            </select>
+          </div>
+          <div>
+            <label for="monthFilter">Månad</label>
+            <select id="monthFilter"></select>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="filter-section" open>
+      <summary>Vy</summary>
+      <div class="filter-section-body">
+        <div class="view-buttons">
+          <button type="button" data-view="list" onclick="setView('list')">Lista</button>
+          <button type="button" data-view="week" onclick="setView('week')">Vecka</button>
+          <button type="button" data-view="month" onclick="setView('month')">Månad</button>
+        </div>
+      </div>
+    </details>
+  </aside>
+
+  <section class="content-panel" aria-labelledby="pageTitle">
+    <div class="page-head">
+      <div>
+        <h2 id="pageTitle">Kommande händelser</h2>
+        <p>Event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.</p>
+      </div>
+    </div>
+
+    <div id="calendar"></div>
+  </section>
+</main>
+
+<main id="adminView" class="admin-shell is-hidden">
+  <aside>
+    <div class="beta-notice">Beta-version: kalendern uppdateras och förbättras löpande.</div>
+
+    <div class="service-credit">
+      Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.
+    </div>
+
+    <section id="adminAuth" class="auth-box" aria-labelledby="authTitle">
+      <form id="authForm">
+        <h2 id="authTitle">Kalenderadmin</h2>
+        <p class="muted">Ange lösenord för att importera och hantera kalenderposter.</p>
+
+        <label for="adminPassword">Lösenord</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+        <div class="auth-error" id="authError" aria-live="polite"></div>
+
+        <button type="submit">Logga in</button>
+      </form>
+    </section>
+
+    <section id="adminTools" class="is-hidden">
+      <div class="top-buttons">
+        <button type="button" onclick="importFromNasverige()">Importera från nasverige.org</button>
+        <button id="autoImportNow" type="button" class="secondary">Kör import nu</button>
+      </div>
+
+      <div class="auto-import-box">
+        <label>
+          <input id="autoImportToggle" type="checkbox">
+          Automatisk import när admin öppnas
+        </label>
+        <p id="autoImportStatus" class="muted">Automatisk import är avstängd.</p>
+      </div>
+
+      <pre id="log"></pre>
+    </section>
+  </aside>
+
+  <section id="adminContent" class="content-panel is-hidden" aria-labelledby="adminTitle">
+    <div class="page-head">
+      <div>
+        <h2 id="adminTitle">Kalenderadmin</h2>
+        <p>Importera från nasverige.org och skapa, redigera, dölj eller ta bort manuella händelser.</p>
+      </div>
+    </div>
+
+    <h3 class="form-section-title" id="formTitle">Lägg till manuell händelse</h3>
+
+    <label>Typ</label>
+    <select id="event_type">
+      <option value="event">Event</option>
+      <option value="distrikt">Distrikt</option>
+      <option value="uksam">UKSAM</option>
+      <option value="region">Region</option>
+    </select>
+
+    <label>Titel</label>
+    <input id="title">
+
+    <label>Organisatör</label>
+    <input id="organizer">
+
+    <label>Adress</label>
+    <input id="address">
+
+    <label>Kostnad</label>
+    <input id="price" placeholder="Ex. 100 kr, frivillig sjunde traditionen eller gratis">
+
+    <div class="form-grid">
+      <div>
+        <label>Startdatum</label>
+        <input id="start_date" type="date">
+      </div>
+      <div>
+        <label>Starttid</label>
+        <input id="start_time" type="time">
+      </div>
+      <div>
+        <label>Slutdatum</label>
+        <input id="end_date" type="date">
+      </div>
+      <div>
+        <label>Sluttid</label>
+        <input id="end_time" type="time">
+      </div>
+    </div>
+
+    <label>Länk</label>
+    <input id="web_url" type="url">
+
+    <label>Ingress</label>
+    <textarea id="excerpt"></textarea>
+
+    <label>Beskrivning</label>
+    <textarea id="description"></textarea>
+
+    <div class="button-row">
+      <button onclick="saveEvent()" id="saveBtn">Spara händelse</button>
+      <button onclick="resetForm()" type="button" class="secondary">Avbryt/rensa</button>
+    </div>
+
+    <h3 class="form-section-title">Manuella händelser</h3>
+    <div id="manualEvents">Laddar...</div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/calendar.js"></script>
+<script type="module" src="js/admin.js"></script>
 </body>
 </html>
