@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260705-004";
+  const APP_VERSION = "20260705-006";
 
   const routes = {
     "": "menu",
@@ -11,8 +11,7 @@
     "/manual": "manual",
     "/history": "history",
     "/create": "create",
-    "/admin": "admin",
-    "/changelog": "changelog"
+    "/admin": "admin"
   };
 
   const pageFiles = {
@@ -23,8 +22,7 @@
     manual: "pages/manual.js",
     history: "pages/history.js",
     create: "pages/create.js",
-    admin: "pages/admin.js",
-    changelog: "pages/changelog.js"
+    admin: "pages/admin.js"
   };
 
   const currentScriptUrl = document.currentScript && document.currentScript.src
@@ -95,7 +93,7 @@
   }
 
   function rewriteInternalLinks(root) {
-    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin"]);
     root.querySelectorAll("a[href]").forEach((anchor) => {
       const rawHref = anchor.getAttribute("href");
       if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
@@ -247,7 +245,7 @@
 
     if (url.origin !== window.location.origin) return;
 
-    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin"]);
     const parts = url.pathname.split("/").filter(Boolean);
     const route = parts[parts.length - 1] || "";
 
@@ -263,7 +261,7 @@
   });
 
   document.addEventListener("click", (event) => {
-    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton, #changelogButton");
+    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton");
     if (!menuButton) return;
 
     const routesById = {
@@ -273,8 +271,7 @@
       statisticsButton: "statistics",
       historyButton: "history",
       createButton: "create",
-      adminButton: "admin",
-      changelogButton: "changelog"
+      adminButton: "admin"
     };
 
     const route = routesById[menuButton.id];

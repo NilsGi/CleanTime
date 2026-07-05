@@ -12,12 +12,11 @@ const pages = [
   { name: "manual", src: "05-index-12-.html", expose: ["editManualEntry", "deleteManualEntry"] },
   { name: "history", src: "06-index-11-.html" },
   { name: "create", src: "07-index-10-.html" },
-  { name: "changelog", src: "08-index-9-.html" },
   { name: "admin", src: "09-index-8-.html", expose: ["saveEdit", "deleteEntry"] }
 ];
 
 const serviceCredit =
-  "Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.";
+  "Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige.<br>Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.";
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
@@ -47,7 +46,6 @@ function normalizeLinks(markup) {
     .replaceAll("/history/index.html", "history/")
     .replaceAll("/create/index.html", "create/")
     .replaceAll("/admin/index.html", "admin/")
-    .replaceAll("/changelog/index.html", "changelog/")
     .replaceAll('href="/index.html"', 'href="./"')
     .replaceAll('href="/"', 'href="./"');
 }
@@ -68,10 +66,8 @@ function transformRuntimeScript(script) {
     .replace('document.getElementById("historyButton").href = "history/";', 'document.getElementById("historyButton").href = window.CleanTime.routePath("history");')
     .replace('document.getElementById("createButton").href = "create/";', 'document.getElementById("createButton").href = window.CleanTime.routePath("create");')
     .replace('document.getElementById("adminButton").href = "admin/";', 'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");')
-    .replace(
-      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");',
-      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");\n          document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");'
-    )
+    .replace(/\n\s*setText\("changelogButton", t\("changelog"\)\);/g, "")
+    .replace(/\n\s*changelog: "[^"]*",/g, "")
     .replace(
       /const origin = window\.location\.origin;\s+const registerUrl = origin \+ "\/register\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const totalUrl = origin \+ "\/total\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const statisticsUrl = origin \+ "\/statistics\/\?event=" \+ encodeURIComponent\(event\.slug\);/,
       'const registerUrl = window.CleanTime.routeUrl("register", { event: event.slug });\n          const totalUrl = window.CleanTime.routeUrl("total", { event: event.slug });\n          const statisticsUrl = window.CleanTime.routeUrl("statistics", { event: event.slug });'
@@ -107,7 +103,10 @@ function buildPageFile(page) {
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .trim();
   const scripts = transformRuntimeScript(normalizeLinks(extractInlineScripts(source)));
-  const markup = injectServiceCredit(normalizeLinks(body), page.highlightCredit);
+  let markup = injectServiceCredit(normalizeLinks(body), page.highlightCredit);
+  if (page.name === "menu") {
+    markup = markup.replace(/\n?<a\b[^>]*\bid="changelogButton"[\s\S]*?<\/a>/, "");
+  }
   const exposeCode = buildExposeCode(page.expose);
   const initBody = [scripts, exposeCode].filter(Boolean).join("\n\n");
 
@@ -149,7 +148,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260705-004" defer></script>
+  <script src="assets/js/app.js?v=20260705-006" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -168,7 +167,6 @@ utan skriftligt tillstånd från upphovsmannen.
 /v2/history/* /v2/index.html 200
 /v2/create/* /v2/index.html 200
 /v2/admin/* /v2/index.html 200
-/v2/changelog/* /v2/index.html 200
 /register/* /index.html 200
 /total/* /index.html 200
 /statistics/* /index.html 200
@@ -176,7 +174,6 @@ utan skriftligt tillstånd från upphovsmannen.
 /history/* /index.html 200
 /create/* /index.html 200
 /admin/* /index.html 200
-/changelog/* /index.html 200
 /* /index.html 200
 `
   );
@@ -225,7 +222,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260705-004";
+  const APP_VERSION = "20260705-006";
 
   const routes = {
     "": "menu",
@@ -237,8 +234,7 @@ utan skriftligt tillstånd från upphovsmannen.
     "/manual": "manual",
     "/history": "history",
     "/create": "create",
-    "/admin": "admin",
-    "/changelog": "changelog"
+    "/admin": "admin"
   };
 
   const pageFiles = {
@@ -249,8 +245,7 @@ utan skriftligt tillstånd från upphovsmannen.
     manual: "pages/manual.js",
     history: "pages/history.js",
     create: "pages/create.js",
-    admin: "pages/admin.js",
-    changelog: "pages/changelog.js"
+    admin: "pages/admin.js"
   };
 
   const currentScriptUrl = document.currentScript && document.currentScript.src
@@ -321,7 +316,7 @@ utan skriftligt tillstånd från upphovsmannen.
   }
 
   function rewriteInternalLinks(root) {
-    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin"]);
     root.querySelectorAll("a[href]").forEach((anchor) => {
       const rawHref = anchor.getAttribute("href");
       if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
@@ -473,7 +468,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     if (url.origin !== window.location.origin) return;
 
-    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin", "changelog"]);
+    const routeAliases = new Set(["register", "total", "statistics", "manual", "history", "create", "admin"]);
     const parts = url.pathname.split("/").filter(Boolean);
     const route = parts[parts.length - 1] || "";
 
@@ -489,7 +484,7 @@ utan skriftligt tillstånd från upphovsmannen.
   });
 
   document.addEventListener("click", (event) => {
-    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton, #changelogButton");
+    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton");
     if (!menuButton) return;
 
     const routesById = {
@@ -499,8 +494,7 @@ utan skriftligt tillstånd från upphovsmannen.
       statisticsButton: "statistics",
       historyButton: "history",
       createButton: "create",
-      adminButton: "admin",
-      changelogButton: "changelog"
+      adminButton: "admin"
     };
 
     const route = routesById[menuButton.id];
