@@ -11,14 +11,17 @@ const calendar = document.getElementById("calendar");
 const status = document.getElementById("status");
 const lastUpdated = document.getElementById("lastUpdated");
 const refreshCalendarBtn = document.getElementById("refreshCalendarBtn");
+const searchInput = document.getElementById("search");
+const typeFilter = document.getElementById("typeFilter");
+const monthFilter = document.getElementById("monthFilter");
 const yearFilter = document.getElementById("yearFilter");
 const viewSection = document.getElementById("viewSection");
 const pageTitle = document.getElementById("pageTitle");
 const pageIntro = document.getElementById("pageIntro");
 
-document.getElementById("search").addEventListener("input", render);
-document.getElementById("typeFilter").addEventListener("change", render);
-document.getElementById("monthFilter").addEventListener("change", e => {
+searchInput.addEventListener("input", render);
+typeFilter.addEventListener("change", render);
+monthFilter.addEventListener("change", e => {
   if (calendarMode === "past") {
     render();
     return;
@@ -53,9 +56,8 @@ async function init() {
   }
 
   allEvents = data || [];
-  buildYearFilter();
+  buildYearFilter(calendarMode === "past");
   buildMonthFilter();
-  updateStatus();
   updateLastUpdated();
   render();
 }
@@ -66,24 +68,36 @@ function setCalendarMode(mode) {
   calendarMode = mode;
   currentView = "list";
   selectedMonth = new Date();
-  buildYearFilter();
+  resetFiltersForMode();
+  buildYearFilter(calendarMode === "past");
   buildMonthFilter();
   render();
 }
 
-function buildYearFilter() {
+function resetFiltersForMode() {
+  searchInput.value = "";
+  typeFilter.value = "";
+  monthFilter.value = "";
+  if (yearFilter) yearFilter.value = "";
+}
+
+function buildYearFilter(defaultToCurrentYear = false) {
   if (!yearFilter) return;
 
   const selected = yearFilter.value;
+  const currentYear = new Date().getFullYear();
   const years = [...new Set(modeBaseEvents()
     .map(e => e.start_datetime ? new Date(e.start_datetime).getFullYear() : null)
-    .filter(year => Number.isFinite(year)))]
+    .filter(year => Number.isFinite(year))
+    .concat(calendarMode === "past" ? [currentYear] : []))]
     .sort((a, b) => calendarMode === "past" ? b - a : a - b);
 
   yearFilter.innerHTML = `<option value="">Alla år</option>` +
     years.map(year => `<option value="${year}">${year}</option>`).join("");
 
-  yearFilter.value = years.includes(Number(selected)) ? selected : "";
+  yearFilter.value = defaultToCurrentYear
+    ? String(currentYear)
+    : (years.includes(Number(selected)) ? selected : "");
 }
 
 function buildMonthFilter() {
@@ -158,16 +172,18 @@ function updateLastUpdated() {
     : "Senast uppdaterad/importerad: okänt";
 }
 
-function updateStatus() {
+function updateStatus(filteredCount = null) {
   const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
   const pastCount = allEvents.length - upcomingCount;
 
   if (calendarMode === "past") {
-    status.textContent = `${pastCount} tidigare händelser`;
+    const count = Number.isFinite(filteredCount) ? filteredCount : pastCount;
+    status.textContent = `${count} tidigare händelser i urvalet`;
     return;
   }
 
-  status.textContent = `${upcomingCount} kommande händelser`;
+  const count = Number.isFinite(filteredCount) ? filteredCount : upcomingCount;
+  status.textContent = `${count} kommande händelser`;
 }
 
 function modeBaseEvents() {
@@ -207,10 +223,10 @@ function updatePageMode() {
 }
 
 function getFilteredEvents() {
-  const search = document.getElementById("search").value.toLowerCase();
-  const type = document.getElementById("typeFilter").value;
+  const search = searchInput.value.toLowerCase();
+  const type = typeFilter.value;
   const selectedYear = yearFilter?.value || "";
-  const selectedMonthValue = document.getElementById("monthFilter").value;
+  const selectedMonthValue = monthFilter.value;
   const now = new Date();
 
   return allEvents.filter(e => {
@@ -248,9 +264,9 @@ function getFilteredEvents() {
 function render() {
   updateViewButtons();
   updatePageMode();
-  updateStatus();
 
   const events = getFilteredEvents();
+  updateStatus(events.length);
 
   if (calendarMode === "past") renderList(events);
   else if (currentView === "month") renderMonth(events);
@@ -706,7 +722,7 @@ function sortUpcomingEvents(events) {
 }
 
 function sortPastEvents(events) {
-  return [...events].sort((a, b) => new Date(b.start_datetime) - new Date(a.start_datetime));
+  return [...events].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
 }
 
 function firstOfMonth(date) {
