@@ -142,7 +142,7 @@ function buildMonthFilter() {
 
   const values = [...select.options].map(option => option.value);
   select.value = calendarMode === "past"
-    ? (values.includes(selectedValue) ? selectedValue : "")
+    ? ""
     : (values.includes(selectedValue) ? selectedValue : currentValue);
 
   if (select.value) {
