@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260705-001";
+  const APP_VERSION = "20260705-002";
 
   const routes = {
     "": "menu",
@@ -95,7 +95,7 @@
 
       let url;
       try {
-        url = new URL(rawHref, window.location.origin);
+        url = new URL(rawHref, window.location.href);
       } catch {
         return;
       }
@@ -230,7 +230,7 @@
 
     let url;
     try {
-      url = new URL(rawHref, window.location.origin);
+      url = new URL(rawHref, window.location.href);
     } catch {
       return;
     }

@@ -40,33 +40,34 @@ function extractInlineScripts(source) {
 
 function normalizeLinks(markup) {
   return markup
-    .replaceAll("/register/index.html", "/register/")
-    .replaceAll("/total/index.html", "/total/")
-    .replaceAll("/manual/index.html", "/manual/")
-    .replaceAll("/statistics/index.html", "/statistics/")
-    .replaceAll("/history/index.html", "/history/")
-    .replaceAll("/create/index.html", "/create/")
-    .replaceAll("/admin/index.html", "/admin/")
-    .replaceAll("/changelog/index.html", "/changelog/")
-    .replaceAll('href="/index.html"', 'href="/"');
+    .replaceAll("/register/index.html", "register/")
+    .replaceAll("/total/index.html", "total/")
+    .replaceAll("/manual/index.html", "manual/")
+    .replaceAll("/statistics/index.html", "statistics/")
+    .replaceAll("/history/index.html", "history/")
+    .replaceAll("/create/index.html", "create/")
+    .replaceAll("/admin/index.html", "admin/")
+    .replaceAll("/changelog/index.html", "changelog/")
+    .replaceAll('href="/index.html"', 'href="./"')
+    .replaceAll('href="/"', 'href="./"');
 }
 
 function transformRuntimeScript(script) {
   return script
     .replace(
       'return path + "?event=" + encodeURIComponent(selectedSlug);',
-      'const route = String(path || "").replace(/^\\/+|\\/+$/g, "");\n          return window.CleanTime.routePath(route, { event: selectedSlug });'
+      'const route = String(path || "").replace(/^\\/+|\\/+$/g, "");\n          return route + "/?event=" + encodeURIComponent(selectedSlug);'
     )
     .replace('buildUrl("/register/")', 'buildUrl("register")')
     .replace('buildUrl("/total/")', 'buildUrl("total")')
     .replace('buildUrl("/manual/")', 'buildUrl("manual")')
     .replace('buildUrl("/statistics/")', 'buildUrl("statistics")')
-    .replace('document.getElementById("historyButton").href = "/history/";', 'document.getElementById("historyButton").href = window.CleanTime.routePath("history");')
-    .replace('document.getElementById("createButton").href = "/create/";', 'document.getElementById("createButton").href = window.CleanTime.routePath("create");')
-    .replace('document.getElementById("adminButton").href = "/admin/";', 'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");')
+    .replace('document.getElementById("historyButton").href = "/history/";', 'document.getElementById("historyButton").href = "history/";')
+    .replace('document.getElementById("createButton").href = "/create/";', 'document.getElementById("createButton").href = "create/";')
+    .replace('document.getElementById("adminButton").href = "/admin/";', 'document.getElementById("adminButton").href = "admin/";')
     .replace(
-      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");',
-      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");\n          document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");'
+      'document.getElementById("adminButton").href = "admin/";',
+      'document.getElementById("adminButton").href = "admin/";\n          document.getElementById("changelogButton").href = "changelog/";'
     )
     .replace(
       /const origin = window\.location\.origin;\s+const registerUrl = origin \+ "\/register\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const totalUrl = origin \+ "\/total\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const statisticsUrl = origin \+ "\/statistics\/\?event=" \+ encodeURIComponent\(event\.slug\);/,
@@ -145,7 +146,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260705-001" defer></script>
+  <script src="assets/js/app.js?v=20260705-002" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -221,7 +222,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260705-001";
+  const APP_VERSION = "20260705-002";
 
   const routes = {
     "": "menu",
@@ -317,7 +318,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
       let url;
       try {
-        url = new URL(rawHref, window.location.origin);
+        url = new URL(rawHref, window.location.href);
       } catch {
         return;
       }
@@ -452,7 +453,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     let url;
     try {
-      url = new URL(rawHref, window.location.origin);
+      url = new URL(rawHref, window.location.href);
     } catch {
       return;
     }
