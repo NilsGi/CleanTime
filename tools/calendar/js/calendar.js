@@ -3,23 +3,37 @@ import { supabase } from "./api.js";
 let allEvents = [];
 let currentView = "list";
 let selectedMonth = new Date();
-let showPastEvents = false;
+let calendarMode = new URLSearchParams(window.location.search).get("view") === "past"
+  ? "past"
+  : "upcoming";
 
 const calendar = document.getElementById("calendar");
 const status = document.getElementById("status");
 const lastUpdated = document.getElementById("lastUpdated");
 const refreshCalendarBtn = document.getElementById("refreshCalendarBtn");
-const showPastBtn = document.getElementById("showPastBtn");
+const yearFilter = document.getElementById("yearFilter");
+const viewSection = document.getElementById("viewSection");
+const pageTitle = document.getElementById("pageTitle");
+const pageIntro = document.getElementById("pageIntro");
 
 document.getElementById("search").addEventListener("input", render);
 document.getElementById("typeFilter").addEventListener("change", render);
 document.getElementById("monthFilter").addEventListener("change", e => {
+  if (calendarMode === "past") {
+    render();
+    return;
+  }
+
   const [year, month] = e.target.value.split("-").map(Number);
   selectedMonth = new Date(year, month - 1, 1);
   currentView = "month";
   render();
 });
+yearFilter?.addEventListener("change", render);
 refreshCalendarBtn?.addEventListener("click", init);
+window.addEventListener("calendar-mode-change", event => {
+  setCalendarMode(event.detail?.mode === "past" ? "past" : "upcoming");
+});
 
 init();
 
@@ -39,17 +53,44 @@ async function init() {
   }
 
   allEvents = data || [];
+  buildYearFilter();
   buildMonthFilter();
   updateStatus();
   updateLastUpdated();
   render();
 }
 
+function setCalendarMode(mode) {
+  if (calendarMode === mode) return;
+
+  calendarMode = mode;
+  currentView = "list";
+  selectedMonth = new Date();
+  buildYearFilter();
+  buildMonthFilter();
+  render();
+}
+
+function buildYearFilter() {
+  if (!yearFilter) return;
+
+  const selected = yearFilter.value;
+  const years = [...new Set(modeBaseEvents()
+    .map(e => e.start_datetime ? new Date(e.start_datetime).getFullYear() : null)
+    .filter(year => Number.isFinite(year)))]
+    .sort((a, b) => calendarMode === "past" ? b - a : a - b);
+
+  yearFilter.innerHTML = `<option value="">Alla år</option>` +
+    years.map(year => `<option value="${year}">${year}</option>`).join("");
+
+  yearFilter.value = years.includes(Number(selected)) ? selected : "";
+}
+
 function buildMonthFilter() {
   const select = document.getElementById("monthFilter");
   const now = new Date();
   const currentMonth = firstOfMonth(now);
-  const eventMonths = allEvents
+  const eventMonths = modeBaseEvents()
     .map(e => e.start_datetime)
     .filter(Boolean)
     .map(value => firstOfMonth(new Date(value)))
@@ -62,16 +103,18 @@ function buildMonthFilter() {
     ? new Date(Math.max(...eventMonths.map(date => date.getTime())))
     : currentMonth;
 
-  const startMonth = showPastEvents
-    ? new Date(Math.min(firstEventMonth.getTime(), currentMonth.getTime()))
-    : currentMonth;
-  const endMonth = new Date(Math.max(
-    lastEventMonth.getTime(),
-    firstOfMonth(new Date(now.getFullYear(), now.getMonth() + 17, 1)).getTime()
-  ));
+  const startMonth = calendarMode === "past" ? firstEventMonth : currentMonth;
+  const endMonth = calendarMode === "past"
+    ? new Date(Math.max(lastEventMonth.getTime(), firstEventMonth.getTime()))
+    : new Date(Math.max(
+      lastEventMonth.getTime(),
+      firstOfMonth(new Date(now.getFullYear(), now.getMonth() + 17, 1)).getTime()
+    ));
   const selectedValue = monthValue(selectedMonth);
   const currentValue = monthValue(currentMonth);
-  select.innerHTML = "";
+  select.innerHTML = calendarMode === "past"
+    ? `<option value="">Alla månader</option>`
+    : "";
 
   for (let d = new Date(startMonth); d <= endMonth; d.setMonth(d.getMonth() + 1)) {
     const value = monthValue(d);
@@ -84,9 +127,14 @@ function buildMonthFilter() {
   }
 
   const values = [...select.options].map(option => option.value);
-  select.value = values.includes(selectedValue) ? selectedValue : currentValue;
-  const [year, month] = select.value.split("-").map(Number);
-  selectedMonth = new Date(year, month - 1, 1);
+  select.value = calendarMode === "past"
+    ? (values.includes(selectedValue) ? selectedValue : "")
+    : (values.includes(selectedValue) ? selectedValue : currentValue);
+
+  if (select.value) {
+    const [year, month] = select.value.split("-").map(Number);
+    selectedMonth = new Date(year, month - 1, 1);
+  }
 }
 
 function updateLastUpdated() {
@@ -114,23 +162,22 @@ function updateStatus() {
   const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
   const pastCount = allEvents.length - upcomingCount;
 
-  if (showPastEvents) {
-    status.textContent = `${upcomingCount} kommande och ${pastCount} tidigare händelser`;
+  if (calendarMode === "past") {
+    status.textContent = `${pastCount} tidigare händelser`;
     return;
   }
 
-  status.textContent = pastCount
-    ? `${upcomingCount} kommande händelser (${pastCount} tidigare dolda)`
-    : `${upcomingCount} kommande händelser`;
+  status.textContent = `${upcomingCount} kommande händelser`;
+}
+
+function modeBaseEvents() {
+  return allEvents.filter(event => {
+    const past = isPastEvent(event);
+    return calendarMode === "past" ? past : !past;
+  });
 }
 
 window.refreshCalendar = init;
-
-window.togglePastEvents = function() {
-  showPastEvents = !showPastEvents;
-  buildMonthFilter();
-  render();
-};
 
 window.setView = function(view) {
   currentView = view;
@@ -145,22 +192,40 @@ function updateViewButtons() {
   });
 }
 
-function updatePastButton() {
-  if (!showPastBtn) return;
+function updatePageMode() {
+  if (pageTitle) {
+    pageTitle.textContent = calendarMode === "past" ? "Tidigare händelser" : "Kommande händelser";
+  }
 
-  showPastBtn.classList.toggle("is-active", showPastEvents);
-  showPastBtn.textContent = showPastEvents ? "Dölj tidigare event" : "Visa tidigare event";
-  showPastBtn.setAttribute("aria-pressed", showPastEvents ? "true" : "false");
+  if (pageIntro) {
+    pageIntro.textContent = calendarMode === "past"
+      ? "Tidigare event, distriktsmöten, UKSAM och regionsmöten. Filtrera på sökord, typ, månad och år."
+      : "Event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.";
+  }
+
+  viewSection?.classList.toggle("is-hidden", calendarMode === "past");
 }
 
-function getFilteredEvents(options = {}) {
+function getFilteredEvents() {
   const search = document.getElementById("search").value.toLowerCase();
   const type = document.getElementById("typeFilter").value;
-  const includePast = options.includePast === true || showPastEvents;
+  const selectedYear = yearFilter?.value || "";
+  const selectedMonthValue = document.getElementById("monthFilter").value;
   const now = new Date();
 
   return allEvents.filter(e => {
-    if (!includePast && isPastEvent(e, now)) {
+    const past = isPastEvent(e, now);
+    if (calendarMode === "past" && !past) return false;
+    if (calendarMode !== "past" && past) {
+      return false;
+    }
+
+    const eventStart = e.start_datetime ? new Date(e.start_datetime) : null;
+    if (selectedYear && (!eventStart || eventStart.getFullYear() !== Number(selectedYear))) {
+      return false;
+    }
+
+    if (calendarMode === "past" && selectedMonthValue && (!eventStart || monthValue(eventStart) !== selectedMonthValue)) {
       return false;
     }
 
@@ -182,14 +247,13 @@ function getFilteredEvents(options = {}) {
 
 function render() {
   updateViewButtons();
-  updatePastButton();
+  updatePageMode();
   updateStatus();
 
-  const events = getFilteredEvents({
-    includePast: showPastEvents
-  });
+  const events = getFilteredEvents();
 
-  if (currentView === "month") renderMonth(events);
+  if (calendarMode === "past") renderList(events);
+  else if (currentView === "month") renderMonth(events);
   else if (currentView === "week") renderWeek(events);
   else renderList(events);
 }
@@ -201,31 +265,20 @@ function renderList(events) {
     calendar.innerHTML = `
       <div class="empty-state">
         <b>Inga händelser hittades</b>
-        Prova att ändra sökningen, typen eller månadsvyn.
+        ${calendarMode === "past"
+          ? "Prova att ändra sökningen, typen, månaden eller året."
+          : "Prova att ändra sökningen, typen eller månadsvyn."}
       </div>
     `;
     return;
   }
 
-  if (!showPastEvents) {
-    calendar.innerHTML = sortUpcomingEvents(events).map(eventCard).join("");
+  if (calendarMode === "past") {
+    calendar.innerHTML = sortPastEvents(events).map(eventCard).join("");
     return;
   }
 
-  const { upcoming, past } = splitPastEvents(events);
-  const sections = [];
-
-  if (upcoming.length) {
-    sections.push(`<h3 class="event-section-heading">Kommande event</h3>`);
-    sections.push(sortUpcomingEvents(upcoming).map(eventCard).join(""));
-  }
-
-  if (past.length) {
-    sections.push(`<h3 class="event-section-heading">Tidigare event</h3>`);
-    sections.push(sortPastEvents(past).map(eventCard).join(""));
-  }
-
-  calendar.innerHTML = sections.join("");
+  calendar.innerHTML = sortUpcomingEvents(events).map(eventCard).join("");
 }
 
 function renderWeek(events) {
@@ -646,13 +699,6 @@ function isPastEvent(event, now = new Date()) {
     : new Date(event.start_datetime);
 
   return end < now;
-}
-
-function splitPastEvents(events) {
-  return events.reduce((groups, event) => {
-    groups[isPastEvent(event) ? "past" : "upcoming"].push(event);
-    return groups;
-  }, { upcoming: [], past: [] });
 }
 
 function sortUpcomingEvents(events) {

@@ -18,6 +18,7 @@
 
     <div class="header-actions">
       <a id="calendarNav" class="header-link is-active" href="./">Kalender</a>
+      <a id="pastNav" class="header-link" href="?view=past">Tidigare</a>
       <a id="adminNav" class="header-link" href="?view=admin">Admin</a>
       <a class="back-link" href="https://www.nasverige.org/">Tillbaka</a>
     </div>
@@ -29,7 +30,6 @@
     <div class="top-buttons">
       <button id="refreshCalendarBtn" type="button">Uppdatera kalender</button>
       <button class="secondary" type="button" onclick="downloadAllIcs()">Prenumerera / ICS</button>
-      <button id="showPastBtn" class="secondary" type="button" aria-pressed="false" onclick="togglePastEvents()">Visa tidigare event</button>
     </div>
 
     <div class="beta-notice">Beta-version: kalendern uppdateras och förbättras löpande.</div>
@@ -62,11 +62,15 @@
             <label for="monthFilter">Månad</label>
             <select id="monthFilter"></select>
           </div>
+          <div>
+            <label for="yearFilter">År</label>
+            <select id="yearFilter"></select>
+          </div>
         </div>
       </div>
     </details>
 
-    <details class="filter-section" open>
+    <details id="viewSection" class="filter-section" open>
       <summary>Vy</summary>
       <div class="filter-section-body">
         <div class="view-buttons">
@@ -82,7 +86,7 @@
     <div class="page-head">
       <div>
         <h2 id="pageTitle">Kommande händelser</h2>
-        <p>Event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.</p>
+        <p id="pageIntro">Event, distriktsmöten, UKSAM och regionsmöten. Filtrera, växla vy och lägg till händelser i din egen kalender.</p>
       </div>
     </div>
 
