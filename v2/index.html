@@ -14,8 +14,42 @@ utan skriftligt tillstånd från upphovsmannen.
   <link rel="apple-touch-icon" href="assets/favicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clean-time-build" content="20260705-standalone-001">
+  <meta name="clean-time-build" content="20260705-standalone-002">
   <title>Clean Time</title>
+  <script>
+    (function clearOldCleanTimeCache() {
+      var build = "20260705-standalone-002";
+      var key = "clean-time-cache-cleared-" + build;
+
+      function reloadOnce() {
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, "1");
+          window.location.replace(window.location.href);
+        }
+      }
+
+      if ("caches" in window) {
+        caches.keys()
+          .then(function(keys) {
+            return Promise.all(keys.map(function(cacheName) {
+              return caches.delete(cacheName);
+            }));
+          })
+          .catch(function() {});
+      }
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(function(registrations) {
+            if (!registrations.length) return;
+            return Promise.all(registrations.map(function(registration) {
+              return registration.unregister();
+            })).then(reloadOnce);
+          })
+          .catch(function() {});
+      }
+    })();
+  </script>
   <style>
 #app {
   min-height: 100vh;
