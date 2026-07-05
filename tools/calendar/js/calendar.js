@@ -3,11 +3,13 @@ import { supabase } from "./api.js";
 let allEvents = [];
 let currentView = "list";
 let selectedMonth = new Date();
+let showPastEvents = false;
 
 const calendar = document.getElementById("calendar");
 const status = document.getElementById("status");
 const lastUpdated = document.getElementById("lastUpdated");
 const refreshCalendarBtn = document.getElementById("refreshCalendarBtn");
+const showPastBtn = document.getElementById("showPastBtn");
 
 document.getElementById("search").addEventListener("input", render);
 document.getElementById("typeFilter").addEventListener("change", render);
@@ -18,11 +20,15 @@ document.getElementById("monthFilter").addEventListener("change", e => {
   render();
 });
 refreshCalendarBtn?.addEventListener("click", init);
+showPastBtn?.addEventListener("click", () => {
+  showPastEvents = !showPastEvents;
+  buildMonthFilter();
+  render();
+});
 
 init();
 
 async function init() {
-  buildMonthFilter();
   status.textContent = "Hämtar kalender...";
 
   const { data, error } = await supabase
@@ -38,8 +44,8 @@ async function init() {
   }
 
   allEvents = data || [];
-  const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
-  status.textContent = `${upcomingCount} kommande händelser`;
+  buildMonthFilter();
+  updateStatus();
   updateLastUpdated();
   render();
 }
@@ -47,12 +53,33 @@ async function init() {
 function buildMonthFilter() {
   const select = document.getElementById("monthFilter");
   const now = new Date();
+  const currentMonth = firstOfMonth(now);
+  const eventMonths = allEvents
+    .map(e => e.start_datetime)
+    .filter(Boolean)
+    .map(value => firstOfMonth(new Date(value)))
+    .filter(date => !Number.isNaN(date.getTime()));
+
+  const firstEventMonth = eventMonths.length
+    ? new Date(Math.min(...eventMonths.map(date => date.getTime())))
+    : currentMonth;
+  const lastEventMonth = eventMonths.length
+    ? new Date(Math.max(...eventMonths.map(date => date.getTime())))
+    : currentMonth;
+
+  const startMonth = showPastEvents
+    ? new Date(Math.min(firstEventMonth.getTime(), currentMonth.getTime()))
+    : currentMonth;
+  const endMonth = new Date(Math.max(
+    lastEventMonth.getTime(),
+    firstOfMonth(new Date(now.getFullYear(), now.getMonth() + 17, 1)).getTime()
+  ));
+  const selectedValue = monthValue(selectedMonth);
+  const currentValue = monthValue(currentMonth);
   select.innerHTML = "";
 
-  for (let i = 0; i < 18; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const value =
-      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  for (let d = new Date(startMonth); d <= endMonth; d.setMonth(d.getMonth() + 1)) {
+    const value = monthValue(d);
     const label = d.toLocaleDateString("sv-SE", {
       year: "numeric",
       month: "long"
@@ -60,6 +87,11 @@ function buildMonthFilter() {
 
     select.innerHTML += `<option value="${value}">${label}</option>`;
   }
+
+  const values = [...select.options].map(option => option.value);
+  select.value = values.includes(selectedValue) ? selectedValue : currentValue;
+  const [year, month] = select.value.split("-").map(Number);
+  selectedMonth = new Date(year, month - 1, 1);
 }
 
 function updateLastUpdated() {
@@ -83,6 +115,20 @@ function updateLastUpdated() {
     : "Senast uppdaterad/importerad: okänt";
 }
 
+function updateStatus() {
+  const upcomingCount = allEvents.filter(e => !isPastEvent(e)).length;
+  const pastCount = allEvents.length - upcomingCount;
+
+  if (showPastEvents) {
+    status.textContent = `${upcomingCount} kommande och ${pastCount} tidigare händelser`;
+    return;
+  }
+
+  status.textContent = pastCount
+    ? `${upcomingCount} kommande händelser (${pastCount} tidigare dolda)`
+    : `${upcomingCount} kommande händelser`;
+}
+
 window.refreshCalendar = init;
 
 window.setView = function(view) {
@@ -98,15 +144,21 @@ function updateViewButtons() {
   });
 }
 
+function updatePastButton() {
+  if (!showPastBtn) return;
+
+  showPastBtn.classList.toggle("is-active", showPastEvents);
+  showPastBtn.textContent = showPastEvents ? "Dölj tidigare event" : "Visa tidigare event";
+  showPastBtn.setAttribute("aria-pressed", showPastEvents ? "true" : "false");
+}
+
 function getFilteredEvents(options = {}) {
   const search = document.getElementById("search").value.toLowerCase();
   const type = document.getElementById("typeFilter").value;
-  const includePast = options.includePast === true;
+  const includePast = options.includePast === true || showPastEvents;
   const now = new Date();
 
   return allEvents.filter(e => {
-    // Listvy och veckovy visar bara aktuella/kommande event.
-    // Månadsvyn kan visa historiska månader när man väljer dem i filtret.
     if (!includePast && isPastEvent(e, now)) {
       return false;
     }
@@ -129,11 +181,11 @@ function getFilteredEvents(options = {}) {
 
 function render() {
   updateViewButtons();
+  updatePastButton();
+  updateStatus();
 
-  // Månadsvy får visa vald månad även om den ligger bakåt i tiden.
-  // Listvy och veckovy visar bara pågående/kommande event.
   const events = getFilteredEvents({
-    includePast: currentView === "month"
+    includePast: showPastEvents
   });
 
   if (currentView === "month") renderMonth(events);
@@ -231,6 +283,7 @@ function monthEventPill(event, date) {
   const placement = getEventDayPlacement(event, date);
   const className = [
     "day-event",
+    isPastEvent(event) ? "is-past" : "",
     placement.isMultiDay ? "is-multiday" : "",
     placement.isMultiDay ? `is-${placement.position}` : ""
   ].filter(Boolean).join(" ");
@@ -262,13 +315,15 @@ function monthEventPill(event, date) {
 
 function eventCard(e) {
   const address = displayAddress(e.address);
+  const past = isPastEvent(e);
 
   return `
-    <article class="event-card" id="event-${e.id}">
+    <article class="event-card${past ? " is-past" : ""}" id="event-${e.id}">
       <div class="event-card-main">
         <div class="event-card-top">
           <span class="type">${labelType(e.event_type)}</span>
           <span class="event-date-pill">${formatDateShort(e.start_datetime)}</span>
+          ${past ? `<span class="past-pill">Tidigare</span>` : ""}
         </div>
 
         <h2>${escapeHtml(e.title)}</h2>
@@ -572,6 +627,14 @@ function isPastEvent(event, now = new Date()) {
     : new Date(event.start_datetime);
 
   return end < now;
+}
+
+function firstOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function monthValue(date) {
+  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
 }
 
 function formatDate(value) {

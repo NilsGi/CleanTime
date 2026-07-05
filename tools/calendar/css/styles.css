@@ -178,6 +178,12 @@ button.secondary:hover {
   color: #ffffff;
 }
 
+button.is-active,
+button.secondary.is-active {
+  background: var(--na-blue);
+  color: #ffffff;
+}
+
 input,
 select,
 textarea {
@@ -333,6 +339,11 @@ label {
   grid-template-columns: minmax(0, 1fr) 156px;
   gap: 14px;
   align-items: start;
+}
+
+.event-card.is-past {
+  border-color: #cfd6e5;
+  background: #fbfcff;
 }
 
 .event-card-main {
@@ -503,6 +514,7 @@ label {
 
 .type,
 .event-date-pill,
+.past-pill,
 .pill {
   display: inline-flex;
   align-items: center;
@@ -517,6 +529,11 @@ label {
 .type {
   background: var(--na-blue-soft);
   color: var(--na-blue);
+}
+
+.past-pill {
+  background: #eef0f4;
+  color: var(--muted);
 }
 
 details {
@@ -640,6 +657,12 @@ summary {
   line-height: 1.25;
   cursor: pointer;
   font-weight: 750;
+}
+
+.day-event.is-past {
+  background: #f1f3f7;
+  border-color: #d9deea;
+  color: var(--muted);
 }
 
 .day-event.is-multiday {
