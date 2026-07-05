@@ -151,5 +151,18 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+<script>
+(function(){
+  function releasePressedState(event){
+    var el = event.target && event.target.closest ? event.target.closest('button, a.meeting-action-btn, .back-link') : null;
+    if (el && typeof el.blur === 'function') {
+      setTimeout(function(){ el.blur(); }, 0);
+    }
+  }
+  document.addEventListener('click', releasePressedState, true);
+  document.addEventListener('touchend', releasePressedState, true);
+})();
+</script>
 </body>
 </html>

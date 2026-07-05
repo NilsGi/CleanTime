@@ -1196,7 +1196,7 @@ header{
 
 header h1{
   color:var(--na-blue)!important;
-  text-transform:uppercase;
+  text-transform:none!important;
   letter-spacing:.01em;
 }
 
@@ -1288,4 +1288,54 @@ button:hover{
 .filter-btn:focus:not(:focus-visible),
 button:focus:not(:focus-visible){
   background:inherit;
+}
+
+
+/* v14.12 – mobilfix: hover/focus ska inte fastna, och rubriken ska inte vara versal */
+header h1{
+  text-transform:none!important;
+}
+
+@media (hover:none), (pointer:coarse){
+  button.secondary:hover,
+  button.secondary:active,
+  button.secondary:focus,
+  .quick-online-toggle.secondary:hover,
+  .quick-online-toggle.secondary:active,
+  .quick-online-toggle.secondary:focus,
+  .mobile-map-toggle.secondary:hover,
+  .mobile-map-toggle.secondary:active,
+  .mobile-map-toggle.secondary:focus,
+  .back-link:hover,
+  .back-link:active,
+  .back-link:focus{
+    background:#fff!important;
+    color:var(--na-blue)!important;
+    border-color:var(--na-blue)!important;
+    filter:none!important;
+  }
+
+  .meeting-actions .meeting-action-btn:hover,
+  .meeting-actions .meeting-action-btn:active,
+  .meeting-actions .meeting-action-btn:focus,
+  .meeting-actions a.meeting-action-btn:hover,
+  .meeting-actions a.meeting-action-btn:active,
+  .meeting-actions a.meeting-action-btn:focus,
+  .meeting-actions button.meeting-action-btn:hover,
+  .meeting-actions button.meeting-action-btn:active,
+  .meeting-actions button.meeting-action-btn:focus,
+  .meeting-actions button.meeting-action-btn.secondary:hover,
+  .meeting-actions button.meeting-action-btn.secondary:active,
+  .meeting-actions button.meeting-action-btn.secondary:focus{
+    background:var(--na-blue)!important;
+    color:#fff!important;
+    border-color:var(--na-blue)!important;
+    filter:none!important;
+  }
+}
+
+button:focus:not(:focus-visible),
+a.meeting-action-btn:focus:not(:focus-visible),
+.back-link:focus:not(:focus-visible){
+  outline:none!important;
 }
