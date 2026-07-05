@@ -14,11 +14,11 @@ utan skriftligt tillstånd från upphovsmannen.
   <link rel="apple-touch-icon" href="assets/favicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clean-time-build" content="20260705-standalone-003">
+  <meta name="clean-time-build" content="20260705-standalone-004">
   <title>Clean Time</title>
   <script>
     (function clearOldCleanTimeCache() {
-      var build = "20260705-standalone-003";
+      var build = "20260705-standalone-004";
       var key = "clean-time-cache-cleared-" + build;
       function reloadOnce() {
         if (!sessionStorage.getItem(key)) {
@@ -74,7 +74,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <noscript>JavaScript behövs för att använda Clean Time.</noscript>
   <script>
 (function () {
-  const APP_VERSION = "20260705-003";
+  const APP_VERSION = "20260705-004";
 
   const routes = {
     "": "menu",
@@ -123,11 +123,12 @@ utan skriftligt tillstånd från upphovsmannen.
     routePath(route, params) {
       const basePath = getBasePath();
       const cleanRoute = String(route || "").replace(/^\/+|\/+$/g, "");
-      const path = basePath + (cleanRoute ? cleanRoute + "/" : "");
-      const query = params instanceof URLSearchParams
-        ? params.toString()
-        : new URLSearchParams(params || {}).toString();
-      return query ? path + "?" + query : path;
+      const queryParams = params instanceof URLSearchParams
+        ? new URLSearchParams(params)
+        : new URLSearchParams(params || {});
+      if (cleanRoute) queryParams.set("page", cleanRoute);
+      const query = queryParams.toString();
+      return query ? basePath + "?" + query : basePath;
     },
     routeUrl(route, params) {
       return window.location.origin + this.routePath(route, params);
@@ -142,6 +143,9 @@ utan skriftligt tillstånd från upphovsmannen.
   }
 
   function getPageName() {
+    const pageParam = new URLSearchParams(window.location.search).get("page");
+    if (routeNames.has(pageParam)) return pageParam;
+
     const path = normalizePath(window.location.pathname);
     if (routes[path]) return routes[path];
 
@@ -190,6 +194,7 @@ utan skriftligt tillstånd från upphovsmannen.
         return;
       }
 
+      url.searchParams.delete("page");
       anchor.href = routePath(route, url.searchParams);
     });
   }
@@ -323,6 +328,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     if (!routeAliases.has(route) && url.pathname !== "/" && !url.pathname.endsWith("/index.html")) return;
 
+    url.searchParams.delete("page");
     const nextPath = routeAliases.has(route) ? routePath(route, url.searchParams) : routePath("", url.searchParams);
 
     if (nextPath !== url.pathname + url.search) {
@@ -512,7 +518,7 @@ window.CleanTime.registerPage("menu", {
         function buildUrl(path) {
           if (!selectedSlug) return "#";
           const route = String(path || "").replace(/^\/+|\/+$/g, "");
-              return route + "/?event=" + encodeURIComponent(selectedSlug);
+              return window.CleanTime.routePath(route, { event: selectedSlug });
         }
     
         function updateButtons() {
@@ -520,10 +526,10 @@ window.CleanTime.registerPage("menu", {
           document.getElementById("totalButton").href = buildUrl("total/");
           document.getElementById("manualButton").href = buildUrl("manual/");
           document.getElementById("statisticsButton").href = buildUrl("statistics/");
-          document.getElementById("historyButton").href = "history/";
-          document.getElementById("createButton").href = "create/";
-          document.getElementById("adminButton").href = "admin/";
-              document.getElementById("changelogButton").href = "changelog/";
+          document.getElementById("historyButton").href = window.CleanTime.routePath("history");
+          document.getElementById("createButton").href = window.CleanTime.routePath("create");
+          document.getElementById("adminButton").href = window.CleanTime.routePath("admin");
+              document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");
         }
     
         function handleNavClick(e) {

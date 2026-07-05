@@ -141,7 +141,7 @@ window.CleanTime.registerPage("menu", {
         function buildUrl(path) {
           if (!selectedSlug) return "#";
           const route = String(path || "").replace(/^\/+|\/+$/g, "");
-              return route + "/?event=" + encodeURIComponent(selectedSlug);
+              return window.CleanTime.routePath(route, { event: selectedSlug });
         }
     
         function updateButtons() {
@@ -149,10 +149,10 @@ window.CleanTime.registerPage("menu", {
           document.getElementById("totalButton").href = buildUrl("total/");
           document.getElementById("manualButton").href = buildUrl("manual/");
           document.getElementById("statisticsButton").href = buildUrl("statistics/");
-          document.getElementById("historyButton").href = "history/";
-          document.getElementById("createButton").href = "create/";
-          document.getElementById("adminButton").href = "admin/";
-              document.getElementById("changelogButton").href = "changelog/";
+          document.getElementById("historyButton").href = window.CleanTime.routePath("history");
+          document.getElementById("createButton").href = window.CleanTime.routePath("create");
+          document.getElementById("adminButton").href = window.CleanTime.routePath("admin");
+              document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");
         }
     
         function handleNavClick(e) {

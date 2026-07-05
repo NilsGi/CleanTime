@@ -56,18 +56,21 @@ function transformRuntimeScript(script) {
   return script
     .replace(
       'return path + "?event=" + encodeURIComponent(selectedSlug);',
-      'const route = String(path || "").replace(/^\\/+|\\/+$/g, "");\n          return route + "/?event=" + encodeURIComponent(selectedSlug);'
+      'const route = String(path || "").replace(/^\\/+|\\/+$/g, "");\n          return window.CleanTime.routePath(route, { event: selectedSlug });'
     )
     .replace('buildUrl("/register/")', 'buildUrl("register")')
     .replace('buildUrl("/total/")', 'buildUrl("total")')
     .replace('buildUrl("/manual/")', 'buildUrl("manual")')
     .replace('buildUrl("/statistics/")', 'buildUrl("statistics")')
-    .replace('document.getElementById("historyButton").href = "/history/";', 'document.getElementById("historyButton").href = "history/";')
-    .replace('document.getElementById("createButton").href = "/create/";', 'document.getElementById("createButton").href = "create/";')
-    .replace('document.getElementById("adminButton").href = "/admin/";', 'document.getElementById("adminButton").href = "admin/";')
+    .replace('document.getElementById("historyButton").href = "/history/";', 'document.getElementById("historyButton").href = window.CleanTime.routePath("history");')
+    .replace('document.getElementById("createButton").href = "/create/";', 'document.getElementById("createButton").href = window.CleanTime.routePath("create");')
+    .replace('document.getElementById("adminButton").href = "/admin/";', 'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");')
+    .replace('document.getElementById("historyButton").href = "history/";', 'document.getElementById("historyButton").href = window.CleanTime.routePath("history");')
+    .replace('document.getElementById("createButton").href = "create/";', 'document.getElementById("createButton").href = window.CleanTime.routePath("create");')
+    .replace('document.getElementById("adminButton").href = "admin/";', 'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");')
     .replace(
-      'document.getElementById("adminButton").href = "admin/";',
-      'document.getElementById("adminButton").href = "admin/";\n          document.getElementById("changelogButton").href = "changelog/";'
+      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");',
+      'document.getElementById("adminButton").href = window.CleanTime.routePath("admin");\n          document.getElementById("changelogButton").href = window.CleanTime.routePath("changelog");'
     )
     .replace(
       /const origin = window\.location\.origin;\s+const registerUrl = origin \+ "\/register\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const totalUrl = origin \+ "\/total\/\?event=" \+ encodeURIComponent\(event\.slug\);\s+const statisticsUrl = origin \+ "\/statistics\/\?event=" \+ encodeURIComponent\(event\.slug\);/,
@@ -146,7 +149,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260705-003" defer></script>
+  <script src="assets/js/app.js?v=20260705-004" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -222,7 +225,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260705-003";
+  const APP_VERSION = "20260705-004";
 
   const routes = {
     "": "menu",
@@ -271,11 +274,12 @@ utan skriftligt tillstånd från upphovsmannen.
     routePath(route, params) {
       const basePath = getBasePath();
       const cleanRoute = String(route || "").replace(/^\\/+|\\/+$/g, "");
-      const path = basePath + (cleanRoute ? cleanRoute + "/" : "");
-      const query = params instanceof URLSearchParams
-        ? params.toString()
-        : new URLSearchParams(params || {}).toString();
-      return query ? path + "?" + query : path;
+      const queryParams = params instanceof URLSearchParams
+        ? new URLSearchParams(params)
+        : new URLSearchParams(params || {});
+      if (cleanRoute) queryParams.set("page", cleanRoute);
+      const query = queryParams.toString();
+      return query ? basePath + "?" + query : basePath;
     },
     routeUrl(route, params) {
       return window.location.origin + this.routePath(route, params);
@@ -290,6 +294,9 @@ utan skriftligt tillstånd från upphovsmannen.
   }
 
   function getPageName() {
+    const pageParam = new URLSearchParams(window.location.search).get("page");
+    if (routeNames.has(pageParam)) return pageParam;
+
     const path = normalizePath(window.location.pathname);
     if (routes[path]) return routes[path];
 
@@ -338,6 +345,7 @@ utan skriftligt tillstånd från upphovsmannen.
         return;
       }
 
+      url.searchParams.delete("page");
       anchor.href = routePath(route, url.searchParams);
     });
   }
@@ -471,6 +479,7 @@ utan skriftligt tillstånd från upphovsmannen.
 
     if (!routeAliases.has(route) && url.pathname !== "/" && !url.pathname.endsWith("/index.html")) return;
 
+    url.searchParams.delete("page");
     const nextPath = routeAliases.has(route) ? routePath(route, url.searchParams) : routePath("", url.searchParams);
 
     if (nextPath !== url.pathname + url.search) {

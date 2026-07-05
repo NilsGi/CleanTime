@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260705-003";
+  const APP_VERSION = "20260705-004";
 
   const routes = {
     "": "menu",
@@ -48,11 +48,12 @@
     routePath(route, params) {
       const basePath = getBasePath();
       const cleanRoute = String(route || "").replace(/^\/+|\/+$/g, "");
-      const path = basePath + (cleanRoute ? cleanRoute + "/" : "");
-      const query = params instanceof URLSearchParams
-        ? params.toString()
-        : new URLSearchParams(params || {}).toString();
-      return query ? path + "?" + query : path;
+      const queryParams = params instanceof URLSearchParams
+        ? new URLSearchParams(params)
+        : new URLSearchParams(params || {});
+      if (cleanRoute) queryParams.set("page", cleanRoute);
+      const query = queryParams.toString();
+      return query ? basePath + "?" + query : basePath;
     },
     routeUrl(route, params) {
       return window.location.origin + this.routePath(route, params);
@@ -67,6 +68,9 @@
   }
 
   function getPageName() {
+    const pageParam = new URLSearchParams(window.location.search).get("page");
+    if (routeNames.has(pageParam)) return pageParam;
+
     const path = normalizePath(window.location.pathname);
     if (routes[path]) return routes[path];
 
@@ -115,6 +119,7 @@
         return;
       }
 
+      url.searchParams.delete("page");
       anchor.href = routePath(route, url.searchParams);
     });
   }
@@ -248,6 +253,7 @@
 
     if (!routeAliases.has(route) && url.pathname !== "/" && !url.pathname.endsWith("/index.html")) return;
 
+    url.searchParams.delete("page");
     const nextPath = routeAliases.has(route) ? routePath(route, url.searchParams) : routePath("", url.searchParams);
 
     if (nextPath !== url.pathname + url.search) {
