@@ -1,13 +1,13 @@
 :root {
-  --na-blue: #0a1981;
-  --na-blue-dark: #07105d;
-  --na-blue-soft: #d9e1ff;
-  --bg: #f5f5f5;
+  --na-blue: #004f9e;
+  --na-blue-dark: #003a7a;
+  --na-blue-soft: #e7f0ff;
+  --bg: #f7f9fc;
   --panel: #ffffff;
-  --soft: #fafafa;
-  --text: #111111;
-  --muted: #666666;
-  --border: #dddddd;
+  --soft: #f9fbff;
+  --text: #102033;
+  --muted: #5f6f86;
+  --border: #d7e2ee;
   --danger-bg: #fff0f0;
   --danger-text: #8b1e1e;
   --danger-border: #f3c3c3;
@@ -29,10 +29,11 @@ body {
 }
 
 header {
-  background: var(--na-blue);
-  color: #fff;
+  background: #ffffff;
+  color: var(--na-blue);
   padding: 14px 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.18);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,79,158,.10);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -49,20 +50,20 @@ header {
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #fff;
+  color: var(--na-blue);
   text-decoration: none;
   min-width: 0;
 }
 
 .header-logo {
-  height: 44px;
+  height: 46px;
   width: auto;
   display: block;
 }
 
 .brand h1 {
   margin: 0;
-  color: #fff;
+  color: var(--na-blue);
   font-size: 28px;
   line-height: 1;
   font-weight: 850;
@@ -86,9 +87,9 @@ header {
   min-height: 38px;
   padding: 7px 14px;
   border-radius: 9px;
-  border: 1px solid rgba(255,255,255,.46);
-  background: rgba(255,255,255,.12);
-  color: #fff;
+  border: 1px solid var(--na-blue);
+  background: #ffffff;
+  color: var(--na-blue);
   text-decoration: none;
   font-weight: 800;
   line-height: 1;
@@ -98,8 +99,9 @@ header {
 .header-link.is-active,
 .header-link:hover,
 .back-link:hover {
-  background: rgba(255,255,255,.22);
-  border-color: rgba(255,255,255,.72);
+  background: var(--na-blue);
+  border-color: var(--na-blue);
+  color: #ffffff;
 }
 
 .calendar-shell,
@@ -147,26 +149,33 @@ aside {
 
 button {
   padding: 10px 13px;
-  border: 0;
+  border: 1px solid var(--na-blue);
   border-radius: 10px;
-  background: var(--na-blue);
-  color: #fff;
+  background: #ffffff;
+  color: var(--na-blue);
   cursor: pointer;
   margin: 4px 5px 8px 0;
   font-weight: 800;
   font: inherit;
-  box-shadow: 0 2px 6px rgba(10,25,129,.25);
+  box-shadow: 0 2px 6px rgba(0,79,158,.10);
 }
 
 button:hover {
-  filter: brightness(1.05);
+  background: var(--na-blue);
+  color: #ffffff;
+  filter: none;
 }
 
 button.secondary {
-  background: var(--na-blue-soft);
+  background: #ffffff;
   color: var(--na-blue);
-  border: 1px solid rgba(10,25,129,.15);
+  border: 1px solid var(--na-blue);
   box-shadow: none;
+}
+
+button.secondary:hover {
+  background: var(--na-blue);
+  color: #ffffff;
 }
 
 input,
@@ -191,7 +200,7 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 3px solid rgba(10,25,129,.14);
+  outline: 3px solid rgba(0,79,158,.16);
   border-color: var(--na-blue);
 }
 
@@ -257,7 +266,8 @@ label {
   cursor: pointer;
   padding: 10px;
   font-weight: 800;
-  background: #eeeeee;
+  background: var(--na-blue-soft);
+  color: var(--na-blue);
 }
 
 .filter-section-body {
@@ -287,10 +297,15 @@ label {
 }
 
 .view-buttons button:not(.is-active) {
-  background: var(--na-blue-soft);
+  background: #ffffff;
   color: var(--na-blue);
-  border: 1px solid rgba(10,25,129,.15);
+  border: 1px solid var(--na-blue);
   box-shadow: none;
+}
+
+.view-buttons button:not(.is-active):hover {
+  background: var(--na-blue);
+  color: #ffffff;
 }
 
 .event-list,
@@ -481,7 +496,7 @@ label {
 .pill {
   display: inline-flex;
   align-items: center;
-  background: #eeeeee;
+  background: var(--na-blue-soft);
   color: #222222;
   padding: 3px 8px;
   border-radius: 999px;
@@ -519,8 +534,8 @@ summary {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  background: var(--na-blue);
-  color: #fff;
+  background: #ffffff;
+  color: var(--na-blue);
   padding: 8px 11px;
   border-radius: 9px;
   border: 1px solid var(--na-blue);
@@ -531,10 +546,16 @@ summary {
 
 .actions a:nth-child(n+2),
 .actions button:nth-child(n+2) {
-  background: var(--na-blue-soft);
+  background: #ffffff;
   color: var(--na-blue);
-  border-color: rgba(10,25,129,.15);
+  border-color: var(--na-blue);
   box-shadow: none;
+}
+
+.actions a:hover,
+.actions button:hover {
+  background: var(--na-blue);
+  color: #ffffff;
 }
 
 .calendar-grid {
@@ -545,8 +566,9 @@ summary {
 
 .month-heading {
   grid-column: 1 / -1;
-  background: var(--na-blue);
-  color: #fff;
+  background: #ffffff;
+  color: var(--na-blue);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px;
   font-size: 18px;
@@ -572,7 +594,7 @@ summary {
 }
 
 .day.is-today {
-  outline: 3px solid rgba(10,25,129,.14);
+  outline: 3px solid rgba(0,79,158,.16);
   border-color: var(--na-blue);
 }
 
@@ -600,7 +622,7 @@ summary {
 .day-event {
   background: var(--na-blue-soft);
   color: var(--na-blue);
-  border: 1px solid rgba(10,25,129,.15);
+  border: 1px solid rgba(0,79,158,.18);
   padding: 5px 6px;
   border-radius: 7px;
   margin-bottom: 5px;
@@ -663,8 +685,8 @@ summary {
 pre {
   white-space: pre-wrap;
   word-break: break-word;
-  background: #111111;
-  color: #eeeeee;
+  background: var(--na-blue-dark);
+  color: #ffffff;
   border-radius: 8px;
   padding: 10px;
   max-height: 260px;

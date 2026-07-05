@@ -37,6 +37,8 @@ Bildlänkar i textfält, till exempel `.svg`, `.png` och `.jpg`, visas som en li
 
 Varje kalenderkort har en `Dela event`-knapp. Om eventet har `web_url`, till exempel en sida på nasverige.org, används den som delningslänk. Annars delas en sammanfattning med titel, tid, arrangör, plats, kartlänk, kostnad, ingress och bildlänk, men utan texten under `Mer information`.
 
+Temat använder vit/blå färgskala med färgad logga från `/assets/na-logo.png`. Knappar är vita med blå text/kant och blir blå med vit text vid hover.
+
 Admin öppnas via `?view=admin`. Gamla länkar med `#admin` stöds fortfarande men normaliseras automatiskt till `?view=admin`.
 
 Admin- och kalenderknapparna växlar vy internt utan sidladdning. Bildlänkar tolererar nu avslutande citattecken eller punkt efter URL:en.
