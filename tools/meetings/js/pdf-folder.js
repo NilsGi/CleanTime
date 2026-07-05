@@ -32,6 +32,24 @@ function formatMeetingTimeForPdf(m){
   return start && end ? start + "–" + end : (start || end || "");
 }
 
+async function loadPdfImageDataUrl(src){
+  const response = await fetch(src, { cache: "force-cache" });
+  if (!response.ok) throw new Error("Kunde inte ladda PDF-logga: " + src);
+  const blob = await response.blob();
+
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function addPdfLogoPng(doc, logoDataUrl, cx, y, size){
+  if (!logoDataUrl) return;
+  doc.addImage(logoDataUrl, "PNG", cx - size / 2, y, size, size);
+}
+
 async function exportFolderPdf(){
   if (!allMeetings.length) {
     setStatus('<span class="bad">Inga möten hämtade ännu.</span>');
@@ -61,7 +79,12 @@ async function exportFolderPdf(){
   const siteUrl = "https://www.nasverige.org";
   const serviceCreditText = "Denna lista är skapad från ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. NA® och NA-logotyper används inom NA:s servicestruktur.";
   const qrDataUrl = await makeQrDataUrl(siteUrl);
-  const logo = await loadImageAsDataUrl("/assets/NA_logo_blue.png");
+  let pdfLogoDataUrl = null;
+  try {
+    pdfLogoDataUrl = await loadPdfImageDataUrl("/assets/NA_logo_blue.png");
+  } catch (e) {
+    console.warn("PDF-loggan kunde inte laddas från /assets/NA_logo_blue.png", e);
+  }
 
   function setBlue(){ doc.setTextColor(...blue); }
   function setBlack(){ doc.setTextColor(20,20,20); }
@@ -134,18 +157,9 @@ async function exportFolderPdf(){
   // Höger panel = framsida
   x = panelW*2 + margin;
   y = 14;
-  if (logo) {
-    const logoW = 38;
-    const logoH = logoW * logo.height / logo.width;
-    doc.addImage(logo.dataUrl, "PNG", x + (panelW - margin*2 - logoW)/2, y, logoW, logoH);
-    y += logoH + 10;
-  } else {
-    setBlue();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(34);
-    doc.text("NA", x + 30, y + 20);
-    y += 38;
-  }
+  const logoW = 40;
+  try { addPdfLogoPng(doc, pdfLogoDataUrl, x + (panelW - margin*2) / 2, y, logoW); } catch(e) {}
+  y += logoW + 9;
   setBlue();
   doc.setFont("helvetica", "bold");
   doc.setFontSize(25);

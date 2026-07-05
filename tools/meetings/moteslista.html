@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>NA Sverige - Möten</title>
-  <meta name="theme-color" content="#0a1981">
+  <meta name="theme-color" content="#10208b">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
@@ -18,7 +18,7 @@
 <header>
   <div class="header-inner">
     <div class="brand">
-      <img src="/assets/na-logo-vit.png" alt="NA Sverige" class="header-logo">
+      <img src="/assets/na-logo.png" alt="NA Sverige" class="header-logo">
       <h1>Möteslista</h1>
     </div>
 
@@ -150,6 +150,19 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(error => console.warn("Service worker kunde inte registreras", error));
   });
 }
+</script>
+
+<script>
+(function(){
+  function releasePressedState(event){
+    var el = event.target && event.target.closest ? event.target.closest('button, a.meeting-action-btn, .back-link') : null;
+    if (el && typeof el.blur === 'function') {
+      setTimeout(function(){ el.blur(); }, 0);
+    }
+  }
+  document.addEventListener('click', releasePressedState, true);
+  document.addEventListener('touchend', releasePressedState, true);
+})();
 </script>
 </body>
 </html>
