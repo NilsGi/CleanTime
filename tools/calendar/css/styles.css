@@ -491,6 +491,16 @@ label {
   background: var(--na-blue-soft);
 }
 
+.online-place {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--na-blue-soft);
+  color: var(--na-blue);
+  font-weight: 850;
+}
+
 .type,
 .event-date-pill,
 .pill {

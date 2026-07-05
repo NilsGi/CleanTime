@@ -261,7 +261,7 @@ function monthEventPill(event, date) {
 }
 
 function eventCard(e) {
-  const address = physicalAddress(e.address);
+  const address = displayAddress(e.address);
 
   return `
     <article class="event-card" id="event-${e.id}">
@@ -277,7 +277,7 @@ function eventCard(e) {
           ${formatDate(e.start_datetime)}
           ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
           ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
-          ${address ? addressMeta(address) : ""}
+          ${address ? addressMeta(address, e.address) : ""}
           ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
         </div>
 
@@ -311,7 +311,11 @@ function eventImage(e) {
   `;
 }
 
-function addressMeta(address) {
+function addressMeta(address, rawAddress = address) {
+  if (isOnlineAddress(rawAddress)) {
+    return `<br>Plats: <span class="online-place">${escapeHtml(address)}</span>`;
+  }
+
   const url = escapeAttr(googleMapsUrl(address));
 
   return `
@@ -382,7 +386,8 @@ async function copyShareText(event) {
 }
 
 function buildShareText(event, options = {}) {
-  const address = physicalAddress(event.address);
+  const address = displayAddress(event.address);
+  const mapAddress = physicalAddress(event.address);
   const lines = [
     event.title || "NA Sverige event",
     labelType(event.event_type),
@@ -390,7 +395,7 @@ function buildShareText(event, options = {}) {
     "Tid: " + formatDate(event.start_datetime) + (event.end_datetime ? " - " + formatDate(event.end_datetime) : ""),
     event.organizer ? "Arrangör: " + event.organizer : "",
     address ? "Plats: " + address : "",
-    address ? "Karta: " + googleMapsUrl(address) : "",
+    mapAddress ? "Karta: " + googleMapsUrl(mapAddress) : "",
     event.price ? "Kostnad: " + formatPrice(event.price) : "",
     event.excerpt ? "\n" + plainText(event.excerpt) : "",
     event.image_url ? "\nBild: " + event.image_url : "",
@@ -422,7 +427,7 @@ function createIcs(events) {
       `DTSTART:${icsDate(new Date(e.start_datetime))}`,
       e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
       `SUMMARY:${icsEscape(e.title)}`,
-      physicalAddress(e.address) ? `LOCATION:${icsEscape(physicalAddress(e.address))}` : "",
+      displayAddress(e.address) ? `LOCATION:${icsEscape(displayAddress(e.address))}` : "",
       `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
       e.web_url ? `URL:${e.web_url}` : "",
       "END:VEVENT"
@@ -437,7 +442,7 @@ function googleCalendarUrl(e) {
     ? googleDate(new Date(e.end_datetime))
     : googleDate(new Date(new Date(e.start_datetime).getTime() + 60 * 60 * 1000));
 
-  const address = physicalAddress(e.address);
+  const address = displayAddress(e.address);
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: e.title || "",
@@ -459,6 +464,12 @@ function googleMapsUrl(address) {
 function physicalAddress(address) {
   const value = String(address || "").trim();
   return value && !isOnlineAddress(value) ? value : "";
+}
+
+function displayAddress(address) {
+  const value = String(address || "").trim();
+  if (!value) return "";
+  return isOnlineAddress(value) ? "Online" : value;
 }
 
 function isOnlineAddress(address) {

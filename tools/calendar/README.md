@@ -39,7 +39,7 @@ Varje kalenderkort har en `Dela event`-knapp. Om eventet har `web_url`, till exe
 
 Temat använder vit/blå färgskala med färgad logga från `/assets/na-logo.png`. Blå färg är samma mörka blå som möteslistan (`#10208b`). Knappar är vita med blå text/kant och blir blå med vit text vid hover.
 
-Om plats/adress är `Online`, `Digitalt`, `Teams`, `Zoom` eller liknande visas ingen fysisk platsinfo och ingen Google Maps-länk. Samma regel används i delning, ICS och Google Kalender.
+Om plats/adress är `Online`, `Digitalt`, `Teams`, `Zoom` eller liknande visas `Plats: Online`, men ingen Google Maps-länk. Samma regel används i delning, ICS och Google Kalender.
 
 Admin öppnas via `?view=admin`. Gamla länkar med `#admin` stöds fortfarande men normaliseras automatiskt till `?view=admin`.
 
