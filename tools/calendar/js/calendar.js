@@ -261,6 +261,8 @@ function monthEventPill(event, date) {
 }
 
 function eventCard(e) {
+  const address = physicalAddress(e.address);
+
   return `
     <article class="event-card" id="event-${e.id}">
       <div class="event-card-main">
@@ -275,7 +277,7 @@ function eventCard(e) {
           ${formatDate(e.start_datetime)}
           ${e.end_datetime ? " – " + formatDate(e.end_datetime) : ""}
           ${e.organizer ? "<br>Arrangör: " + escapeHtml(e.organizer) : ""}
-          ${e.address ? addressMeta(e.address) : ""}
+          ${address ? addressMeta(address) : ""}
           ${e.price ? "<br>Kostnad: " + escapeHtml(formatPrice(e.price)) : ""}
         </div>
 
@@ -380,14 +382,15 @@ async function copyShareText(event) {
 }
 
 function buildShareText(event, options = {}) {
+  const address = physicalAddress(event.address);
   const lines = [
     event.title || "NA Sverige event",
     labelType(event.event_type),
     "",
     "Tid: " + formatDate(event.start_datetime) + (event.end_datetime ? " - " + formatDate(event.end_datetime) : ""),
     event.organizer ? "Arrangör: " + event.organizer : "",
-    event.address ? "Plats: " + event.address : "",
-    event.address ? "Karta: " + googleMapsUrl(event.address) : "",
+    address ? "Plats: " + address : "",
+    address ? "Karta: " + googleMapsUrl(address) : "",
     event.price ? "Kostnad: " + formatPrice(event.price) : "",
     event.excerpt ? "\n" + plainText(event.excerpt) : "",
     event.image_url ? "\nBild: " + event.image_url : "",
@@ -419,7 +422,7 @@ function createIcs(events) {
       `DTSTART:${icsDate(new Date(e.start_datetime))}`,
       e.end_datetime ? `DTEND:${icsDate(new Date(e.end_datetime))}` : "",
       `SUMMARY:${icsEscape(e.title)}`,
-      e.address ? `LOCATION:${icsEscape(e.address)}` : "",
+      physicalAddress(e.address) ? `LOCATION:${icsEscape(physicalAddress(e.address))}` : "",
       `DESCRIPTION:${icsEscape([e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\\n\\n"))}`,
       e.web_url ? `URL:${e.web_url}` : "",
       "END:VEVENT"
@@ -434,12 +437,13 @@ function googleCalendarUrl(e) {
     ? googleDate(new Date(e.end_datetime))
     : googleDate(new Date(new Date(e.start_datetime).getTime() + 60 * 60 * 1000));
 
+  const address = physicalAddress(e.address);
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: e.title || "",
     dates: `${start}/${end}`,
     details: [e.excerpt, e.description, e.price ? "Kostnad: " + formatPrice(e.price) : "", e.web_url].filter(Boolean).join("\n\n"),
-    location: e.address || ""
+    location: address || ""
   });
 
   return "https://calendar.google.com/calendar/render?" + params.toString();
@@ -450,6 +454,19 @@ function googleMapsUrl(address) {
     api: "1",
     query: address || ""
   }).toString();
+}
+
+function physicalAddress(address) {
+  const value = String(address || "").trim();
+  return value && !isOnlineAddress(value) ? value : "";
+}
+
+function isOnlineAddress(address) {
+  const value = String(address || "").trim().toLowerCase();
+  if (!value) return false;
+
+  return /^(online|digitalt?|digital|webb|web|internet|virtuellt?|distans|zoom|teams|microsoft teams|google meet|meet|skype|telefon|phone)(\b|$)/i.test(value) ||
+    /\b(online|digitalt?|virtuellt?|zoom|teams|microsoft teams|google meet|webbmöte|webbmode|distansmöte|distansmote)\b/i.test(value);
 }
 
 function plainText(value) {
