@@ -27,7 +27,10 @@
     changelog: "pages/changelog.js"
   };
 
-  const scriptBase = new URL(".", document.currentScript.src);
+  const currentScriptUrl = document.currentScript && document.currentScript.src
+    ? document.currentScript.src
+    : window.location.href;
+  const scriptBase = new URL(".", currentScriptUrl);
   const routeNames = new Set(Object.values(routes));
 
   const state = {
@@ -154,6 +157,8 @@
   }
 
   async function loadPageDefinition(name, src) {
+    if (state.pages[name]) return;
+
     const urls = resolvePageScripts(src);
     const errors = [];
 
