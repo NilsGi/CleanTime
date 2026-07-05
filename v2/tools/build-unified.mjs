@@ -145,7 +145,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js" defer></script>
+  <script src="assets/js/app.js?v=20260705-001" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -174,6 +174,19 @@ utan skriftligt tillstånd från upphovsmannen.
 /admin/* /index.html 200
 /changelog/* /index.html 200
 /* /index.html 200
+`
+  );
+
+  fs.writeFileSync(
+    path.join(root, "_headers"),
+    `/v2/assets/js/*
+  Cache-Control: no-cache, no-store, must-revalidate
+/v2/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/assets/js/*
+  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
 `
   );
 
@@ -208,6 +221,8 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
+  const APP_VERSION = "20260705-001";
+
   const routes = {
     "": "menu",
     "/": "menu",
@@ -333,7 +348,11 @@ utan skriftligt tillstånd från upphovsmannen.
       new URL(src, scriptBase).href,
       new URL("assets/js/" + src, window.location.origin + basePath).href,
       new URL("/assets/js/" + src, window.location.origin).href
-    ]);
+    ]).map((url) => {
+      const resolved = new URL(url);
+      resolved.searchParams.set("v", APP_VERSION);
+      return resolved.href;
+    });
   }
 
   function loadScriptUrl(resolvedSrc) {

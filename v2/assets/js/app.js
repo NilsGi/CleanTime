@@ -1,4 +1,6 @@
 (function () {
+  const APP_VERSION = "20260705-001";
+
   const routes = {
     "": "menu",
     "/": "menu",
@@ -124,7 +126,11 @@
       new URL(src, scriptBase).href,
       new URL("assets/js/" + src, window.location.origin + basePath).href,
       new URL("/assets/js/" + src, window.location.origin).href
-    ]);
+    ]).map((url) => {
+      const resolved = new URL(url);
+      resolved.searchParams.set("v", APP_VERSION);
+      return resolved.href;
+    });
   }
 
   function loadScriptUrl(resolvedSrc) {
