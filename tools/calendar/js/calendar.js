@@ -20,11 +20,6 @@ document.getElementById("monthFilter").addEventListener("change", e => {
   render();
 });
 refreshCalendarBtn?.addEventListener("click", init);
-showPastBtn?.addEventListener("click", () => {
-  showPastEvents = !showPastEvents;
-  buildMonthFilter();
-  render();
-});
 
 init();
 
@@ -131,6 +126,12 @@ function updateStatus() {
 
 window.refreshCalendar = init;
 
+window.togglePastEvents = function() {
+  showPastEvents = !showPastEvents;
+  buildMonthFilter();
+  render();
+};
+
 window.setView = function(view) {
   currentView = view;
   render();
@@ -206,7 +207,25 @@ function renderList(events) {
     return;
   }
 
-  calendar.innerHTML = events.map(eventCard).join("");
+  if (!showPastEvents) {
+    calendar.innerHTML = sortUpcomingEvents(events).map(eventCard).join("");
+    return;
+  }
+
+  const { upcoming, past } = splitPastEvents(events);
+  const sections = [];
+
+  if (upcoming.length) {
+    sections.push(`<h3 class="event-section-heading">Kommande event</h3>`);
+    sections.push(sortUpcomingEvents(upcoming).map(eventCard).join(""));
+  }
+
+  if (past.length) {
+    sections.push(`<h3 class="event-section-heading">Tidigare event</h3>`);
+    sections.push(sortPastEvents(past).map(eventCard).join(""));
+  }
+
+  calendar.innerHTML = sections.join("");
 }
 
 function renderWeek(events) {
@@ -627,6 +646,21 @@ function isPastEvent(event, now = new Date()) {
     : new Date(event.start_datetime);
 
   return end < now;
+}
+
+function splitPastEvents(events) {
+  return events.reduce((groups, event) => {
+    groups[isPastEvent(event) ? "past" : "upcoming"].push(event);
+    return groups;
+  }, { upcoming: [], past: [] });
+}
+
+function sortUpcomingEvents(events) {
+  return [...events].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+}
+
+function sortPastEvents(events) {
+  return [...events].sort((a, b) => new Date(b.start_datetime) - new Date(a.start_datetime));
 }
 
 function firstOfMonth(date) {

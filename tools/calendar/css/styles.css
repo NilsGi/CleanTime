@@ -341,6 +341,13 @@ label {
   align-items: start;
 }
 
+.event-section-heading {
+  margin: 8px 0 2px;
+  color: var(--na-blue);
+  font-size: 18px;
+  font-weight: 900;
+}
+
 .event-card.is-past {
   border-color: #cfd6e5;
   background: #fbfcff;
