@@ -146,7 +146,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260705-002" defer></script>
+  <script src="assets/js/app.js?v=20260705-003" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -222,7 +222,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260705-002";
+  const APP_VERSION = "20260705-003";
 
   const routes = {
     "": "menu",
@@ -478,6 +478,39 @@ utan skriftligt tillstånd från upphovsmannen.
       window.location.href = nextPath;
     }
   });
+
+  document.addEventListener("click", (event) => {
+    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton, #changelogButton");
+    if (!menuButton) return;
+
+    const routesById = {
+      registerButton: "register",
+      totalButton: "total",
+      manualButton: "manual",
+      statisticsButton: "statistics",
+      historyButton: "history",
+      createButton: "create",
+      adminButton: "admin",
+      changelogButton: "changelog"
+    };
+
+    const route = routesById[menuButton.id];
+    if (!route) return;
+
+    const needsEvent = new Set(["register", "total", "manual", "statistics"]);
+    const selectedEvent = document.getElementById("eventSelect")?.value || localStorage.getItem("selectedEventSlug") || "";
+
+    if (needsEvent.has(route) && !selectedEvent) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const targetPath = needsEvent.has(route)
+      ? routePath(route, { event: selectedEvent })
+      : routePath(route);
+
+    window.location.assign(targetPath);
+  }, true);
 
   document.addEventListener("DOMContentLoaded", boot);
 })();

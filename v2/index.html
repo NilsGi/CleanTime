@@ -14,39 +14,28 @@ utan skriftligt tillstånd från upphovsmannen.
   <link rel="apple-touch-icon" href="assets/favicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clean-time-build" content="20260705-standalone-002">
+  <meta name="clean-time-build" content="20260705-standalone-003">
   <title>Clean Time</title>
   <script>
     (function clearOldCleanTimeCache() {
-      var build = "20260705-standalone-002";
+      var build = "20260705-standalone-003";
       var key = "clean-time-cache-cleared-" + build;
-
       function reloadOnce() {
         if (!sessionStorage.getItem(key)) {
           sessionStorage.setItem(key, "1");
           window.location.replace(window.location.href);
         }
       }
-
       if ("caches" in window) {
-        caches.keys()
-          .then(function(keys) {
-            return Promise.all(keys.map(function(cacheName) {
-              return caches.delete(cacheName);
-            }));
-          })
-          .catch(function() {});
+        caches.keys().then(function(keys) {
+          return Promise.all(keys.map(function(cacheName) { return caches.delete(cacheName); }));
+        }).catch(function() {});
       }
-
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations()
-          .then(function(registrations) {
-            if (!registrations.length) return;
-            return Promise.all(registrations.map(function(registration) {
-              return registration.unregister();
-            })).then(reloadOnce);
-          })
-          .catch(function() {});
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          if (!registrations.length) return;
+          return Promise.all(registrations.map(function(registration) { return registration.unregister(); })).then(reloadOnce);
+        }).catch(function() {});
       }
     })();
   </script>
@@ -85,7 +74,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <noscript>JavaScript behövs för att använda Clean Time.</noscript>
   <script>
 (function () {
-  const APP_VERSION = "20260705-002";
+  const APP_VERSION = "20260705-003";
 
   const routes = {
     "": "menu",
@@ -341,6 +330,39 @@ utan skriftligt tillstånd från upphovsmannen.
       window.location.href = nextPath;
     }
   });
+
+  document.addEventListener("click", (event) => {
+    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton, #changelogButton");
+    if (!menuButton) return;
+
+    const routesById = {
+      registerButton: "register",
+      totalButton: "total",
+      manualButton: "manual",
+      statisticsButton: "statistics",
+      historyButton: "history",
+      createButton: "create",
+      adminButton: "admin",
+      changelogButton: "changelog"
+    };
+
+    const route = routesById[menuButton.id];
+    if (!route) return;
+
+    const needsEvent = new Set(["register", "total", "manual", "statistics"]);
+    const selectedEvent = document.getElementById("eventSelect")?.value || localStorage.getItem("selectedEventSlug") || "";
+
+    if (needsEvent.has(route) && !selectedEvent) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const targetPath = needsEvent.has(route)
+      ? routePath(route, { event: selectedEvent })
+      : routePath(route);
+
+    window.location.assign(targetPath);
+  }, true);
 
   document.addEventListener("DOMContentLoaded", boot);
 })();

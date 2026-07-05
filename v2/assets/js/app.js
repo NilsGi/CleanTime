@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260705-002";
+  const APP_VERSION = "20260705-003";
 
   const routes = {
     "": "menu",
@@ -255,6 +255,39 @@
       window.location.href = nextPath;
     }
   });
+
+  document.addEventListener("click", (event) => {
+    const menuButton = event.target.closest && event.target.closest("#registerButton, #totalButton, #manualButton, #statisticsButton, #historyButton, #createButton, #adminButton, #changelogButton");
+    if (!menuButton) return;
+
+    const routesById = {
+      registerButton: "register",
+      totalButton: "total",
+      manualButton: "manual",
+      statisticsButton: "statistics",
+      historyButton: "history",
+      createButton: "create",
+      adminButton: "admin",
+      changelogButton: "changelog"
+    };
+
+    const route = routesById[menuButton.id];
+    if (!route) return;
+
+    const needsEvent = new Set(["register", "total", "manual", "statistics"]);
+    const selectedEvent = document.getElementById("eventSelect")?.value || localStorage.getItem("selectedEventSlug") || "";
+
+    if (needsEvent.has(route) && !selectedEvent) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const targetPath = needsEvent.has(route)
+      ? routePath(route, { event: selectedEvent })
+      : routePath(route);
+
+    window.location.assign(targetPath);
+  }, true);
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
