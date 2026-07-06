@@ -268,9 +268,9 @@ function summarizeFilterValues(values){
 }
 
 function getMeetingVisibilityLabel(){
-  if (includeOnlineMeetings && includePhysicalMeetings) return "Online och fysiska möten";
-  if (includeOnlineMeetings) return "Endast online-möten";
-  if (includePhysicalMeetings) return "Endast fysiska möten";
+  if (includeOnlineMeetings && includePhysicalMeetings) return "Fysiska möten och onlinemöten";
+  if (includeOnlineMeetings) return "Onlinemöten";
+  if (includePhysicalMeetings) return "Fysiska möten";
   return "Inga möten valda";
 }
 
@@ -288,7 +288,7 @@ function getActiveFilterTags(){
   if (districts.length) tags.push({ label: "Distrikt", value: summarizeFilterValues(districts) });
   if (days.length) tags.push({ label: "Dag", value: summarizeFilterValues(days) });
   if (meetingTypes.length) tags.push({ label: "Typ", value: summarizeFilterValues(meetingTypes) });
-  if (includeOnlineMeetings || !includePhysicalMeetings) {
+  if (!(includeOnlineMeetings && includePhysicalMeetings)) {
     tags.push({ label: "Visning", value: getMeetingVisibilityLabel() });
   }
   if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
