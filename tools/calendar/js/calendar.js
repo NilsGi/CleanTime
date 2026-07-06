@@ -427,15 +427,23 @@ function eventCard(e) {
         ${e.excerpt ? `<div class="rich-text excerpt">${renderFormattedText(e.excerpt)}</div>` : ""}
         ${e.description ? `<details><summary>Mer information</summary><div class="rich-text">${renderFormattedText(e.description)}</div></details>` : ""}
 
-        <div class="actions">
-          ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
-          <button type="button" onclick="shareEvent('${e.id}')">Dela event</button>
-          <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
-          <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
-        </div>
+        ${eventActions(e, past)}
       </div>
       ${eventImage(e)}
     </article>
+  `;
+}
+
+function eventActions(e, past) {
+  if (past) return "";
+
+  return `
+    <div class="actions">
+      ${e.web_url ? `<a href="${escapeAttr(e.web_url)}" target="_blank">Öppna länk</a>` : ""}
+      <button type="button" onclick="shareEvent('${e.id}')">Dela event</button>
+      <button type="button" onclick="downloadEventIcs('${e.id}')">Lägg till i kalender</button>
+      <a href="${googleCalendarUrl(e)}" target="_blank">Google Kalender</a>
+    </div>
   `;
 }
 
