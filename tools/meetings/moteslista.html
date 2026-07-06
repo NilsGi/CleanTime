@@ -44,7 +44,16 @@
 
     <div id="status" class="muted"><span class="muted">Startar...</span></div>
     <div id="activeFilters" class="active-filters" aria-live="polite"></div>
-    <button id="toggleOnlineBtn" class="quick-online-toggle secondary" type="button">Visa online-möten</button>
+    <div class="meeting-mode-switches" aria-label="Välj vilka möten som visas">
+      <button id="togglePhysicalBtn" class="meeting-mode-toggle is-on" type="button" aria-pressed="true">
+        <span class="meeting-mode-label">Fysiska möten</span>
+        <span class="meeting-mode-switch" aria-hidden="true"><span class="meeting-mode-state">På</span></span>
+      </button>
+      <button id="toggleOnlineBtn" class="meeting-mode-toggle" type="button" aria-pressed="false">
+        <span class="meeting-mode-label">Onlinemöten</span>
+        <span class="meeting-mode-switch" aria-hidden="true"><span class="meeting-mode-state">Av</span></span>
+      </button>
+    </div>
 
     <details id="filterSection" class="filter-section">
       <summary>Filter</summary>
@@ -84,14 +93,6 @@
       <summary>Avstånd/karta</summary>
       <div class="filter-section-body">
         <div class="filter-grid view-distance-grid">
-          <div>
-            <label for="typeFilter">Visning</label>
-            <select id="typeFilter">
-              <option value="">Alla möten i listan</option>
-              <option value="physical" selected>Endast fysiska möten</option>
-              <option value="online">Endast online i listan</option>
-            </select>
-          </div>
           <div>
             <label for="distanceFilter">Avstånd från mig</label>
             <select id="distanceFilter">

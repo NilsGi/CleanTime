@@ -57,27 +57,33 @@ function renderDistrictLegend(){
     '</div>';
 }
 
-function syncOnlineToggleButton(){
-  const button = $("toggleOnlineBtn");
-  const type = $("typeFilter");
-  if (!button || !type) return;
+function syncMeetingModeButtons(){
+  const onlineButton = $("toggleOnlineBtn");
+  const physicalButton = $("togglePhysicalBtn");
 
-  if (!includeOnlineMeetings) {
-    button.textContent = "Visa online-möten";
-    button.classList.remove("online-visible");
-    type.value = "physical";
-  } else {
-    button.textContent = "Dölj online-möten";
-    button.classList.add("online-visible");
-    if (type.value === "physical") type.value = "";
-  }
+  syncMeetingModeButton(physicalButton, "Fysiska möten", includePhysicalMeetings);
+  syncMeetingModeButton(onlineButton, "Onlinemöten", includeOnlineMeetings);
+}
+
+function syncMeetingModeButton(button, label, isOn){
+  if (!button) return;
+
+  button.classList.toggle("is-on", isOn);
+  button.setAttribute("aria-pressed", isOn ? "true" : "false");
+  button.innerHTML =
+    '<span class="meeting-mode-label">' + esc(label) + '</span>' +
+    '<span class="meeting-mode-switch" aria-hidden="true">' +
+      '<span class="meeting-mode-state">' + (isOn ? "På" : "Av") + '</span>' +
+    '</span>';
 }
 
 function toggleOnlineMeetings(){
-  const type = $("typeFilter");
-
   includeOnlineMeetings = !includeOnlineMeetings;
-  if (type) type.value = includeOnlineMeetings ? "" : "physical";
+  renderAll(false);
+}
+
+function togglePhysicalMeetings(){
+  includePhysicalMeetings = !includePhysicalMeetings;
   renderAll(false);
 }
 
@@ -211,7 +217,7 @@ function renderAll(syncFromMap = false){
       distanceText;
   }
   renderActiveFilters();
-  syncOnlineToggleButton();
+  syncMeetingModeButtons();
 
   renderMarkers(mapGroups);
   renderStats(meetingList);
@@ -228,8 +234,8 @@ function bindUi(){
   $("exportFolderPdfBtn")?.addEventListener("click", exportFolderPdf);
   $("clearFiltersBtn")?.addEventListener("click", clearAllFilters);
   $("search")?.addEventListener("input", () => renderAll(false));
-  $("typeFilter")?.addEventListener("change", handleTypeFilterChange);
   $("toggleOnlineBtn")?.addEventListener("click", toggleOnlineMeetings);
+  $("togglePhysicalBtn")?.addEventListener("click", togglePhysicalMeetings);
   $("distanceFilter")?.addEventListener("change", handleDistanceFilterChange);
   $("listFollowsMap")?.addEventListener("change", toggleListFollowsMap);
   $("toggleMobileMapBtn")?.addEventListener("click", toggleMobileMap);
@@ -239,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindUi();
   syncResponsivePanels();
   renderActiveFilters();
-  syncOnlineToggleButton();
+  syncMeetingModeButtons();
   updateLayoutHeight();
   initMap();
   fetchAllMeetings();

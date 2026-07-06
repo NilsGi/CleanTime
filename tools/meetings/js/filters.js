@@ -41,8 +41,8 @@ function getActiveFilterState(){
     districts: selectedValues("districtFilter"),
     days: selectedValues("dayFilter"),
     meetingTypes: selectedValues("meetingTypeFilter"),
-    type: $("typeFilter")?.value || "",
     includeOnline: includeOnlineMeetings,
+    includePhysical: includePhysicalMeetings,
     maxDistance: Number($("distanceFilter")?.value || 0)
   };
 }
@@ -54,9 +54,8 @@ function meetingMatchesState(m, state, ignore = new Set()){
   if (!ignore.has("day") && state.days.length && !state.days.includes(m.days)) return false;
   if (!ignore.has("meetingType") && state.meetingTypes.length && !state.meetingTypes.some(t => getTypes(m).includes(t))) return false;
   if (!ignore.has("type")) {
-    if (!state.includeOnline && isOnline(m)) return false;
-    if (state.type === "online" && !isOnline(m)) return false;
-    if (state.type === "physical" && isOnline(m)) return false;
+    if (isOnline(m) && !state.includeOnline) return false;
+    if (!isOnline(m) && !state.includePhysical) return false;
   }
   if (!ignore.has("distance") && state.maxDistance && userPosition) {
     const d = distanceToMeeting(m);
@@ -225,14 +224,13 @@ function getFilterLabelText(){
   const districts = selectedFilterLabels("districtFilter");
   const days = selectedFilterLabels("dayFilter").map(cleanDay);
   const meetingTypes = selectedFilterLabels("meetingTypeFilter");
-  const view = selectedFilterLabels("typeFilter");
   const search = $("search")?.value?.trim();
   const distance = $("distanceFilter")?.value;
   rows.push(["Ort", cities.length ? cities.join(", ") : "Alla"]);
   rows.push(["Distrikt", districts.length ? districts.join(", ") : "Alla"]);
   rows.push(["Dagar", days.length ? days.join(", ") : "Alla"]);
   rows.push(["Mötestyp", meetingTypes.length ? meetingTypes.join(", ") : "Alla"]);
-  rows.push(["Visning", view.length ? view.join(", ") : "Alla möten i listan"]);
+  rows.push(["Visning", getMeetingVisibilityLabel()]);
   if (search) rows.push(["Sökning", search]);
   if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
   return rows;
@@ -269,6 +267,13 @@ function summarizeFilterValues(values){
   return values.slice(0, 2).join(", ") + " +" + (values.length - 2);
 }
 
+function getMeetingVisibilityLabel(){
+  if (includeOnlineMeetings && includePhysicalMeetings) return "Online och fysiska möten";
+  if (includeOnlineMeetings) return "Endast online-möten";
+  if (includePhysicalMeetings) return "Endast fysiska möten";
+  return "Inga möten valda";
+}
+
 function getActiveFilterTags(){
   const tags = [];
   const search = $("search")?.value?.trim();
@@ -276,7 +281,6 @@ function getActiveFilterTags(){
   const districts = selectedFilterLabels("districtFilter");
   const days = selectedFilterLabels("dayFilter").map(cleanDay);
   const meetingTypes = selectedFilterLabels("meetingTypeFilter");
-  const view = selectedFilterLabels("typeFilter");
   const distance = $("distanceFilter")?.value;
 
   if (search) tags.push({ label: "Sök", value: search });
@@ -284,9 +288,9 @@ function getActiveFilterTags(){
   if (districts.length) tags.push({ label: "Distrikt", value: summarizeFilterValues(districts) });
   if (days.length) tags.push({ label: "Dag", value: summarizeFilterValues(days) });
   if (meetingTypes.length) tags.push({ label: "Typ", value: summarizeFilterValues(meetingTypes) });
-  if ($("typeFilter")?.value === "online") tags.push({ label: "Visning", value: "Endast online i listan" });
-  else if (includeOnlineMeetings) tags.push({ label: "Online", value: "visas" });
-  else if (view.length && $("typeFilter")?.value) tags.push({ label: "Visning", value: view[0] });
+  if (includeOnlineMeetings || !includePhysicalMeetings) {
+    tags.push({ label: "Visning", value: getMeetingVisibilityLabel() });
+  }
   if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
 
   return tags;
@@ -295,12 +299,6 @@ function getActiveFilterTags(){
 function toggleListFollowsMap(){
   const el = $("listFollowsMap");
   listFollowsMap = !!(el && el.checked);
-  renderAll(false);
-}
-
-function handleTypeFilterChange(){
-  const type = $("typeFilter");
-  includeOnlineMeetings = type ? type.value !== "physical" : false;
   renderAll(false);
 }
 
@@ -317,9 +315,8 @@ function clearAllFilters(){
   const distance = $("distanceFilter");
   if (distance) distance.value = "";
 
-  const type = $("typeFilter");
-  if (type) type.value = "physical";
   includeOnlineMeetings = false;
+  includePhysicalMeetings = true;
 
   userPosition = null;
   if (userMarker && map) {

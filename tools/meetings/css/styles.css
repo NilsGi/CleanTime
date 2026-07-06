@@ -11,6 +11,9 @@ input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb
   align-items:end;
   margin-bottom:2px;
 }
+.view-distance-grid{
+  grid-template-columns:1fr;
+}
 .view-distance-grid select{
   margin-bottom:6px;
 }
@@ -843,20 +846,75 @@ header{
   background:#f4f7ff;
   color:#17204f;
 }
-.quick-online-toggle{
-  width:auto;
-  min-height:28px;
-  margin:0;
-  padding:5px 9px;
-  border-radius:8px;
-  box-shadow:none;
-  font-size:11.5px;
-  line-height:1.1;
+.meeting-mode-switches{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 10px;
 }
-.quick-online-toggle.online-visible{
-  background:#eaf6ef;
-  color:#17632b;
-  border-color:#bfe4c9;
+.meeting-mode-toggle{
+  width:auto!important;
+  min-height:34px;
+  display:inline-flex!important;
+  align-items:center;
+  gap:8px;
+  margin:0!important;
+  padding:4px 5px 4px 10px!important;
+  border-radius:4px!important;
+  box-shadow:none!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+  background:#fff!important;
+  color:var(--na-blue)!important;
+  border:2px solid var(--na-blue)!important;
+}
+.meeting-mode-label{
+  white-space:nowrap;
+  font-weight:800;
+}
+.meeting-mode-switch{
+  position:relative;
+  width:58px;
+  height:26px;
+  border-radius:999px;
+  background:#e4e4e4;
+  border:1px solid #cfcfcf;
+  transition:background .18s ease, border-color .18s ease;
+  flex:0 0 auto;
+}
+.meeting-mode-switch::after{
+  content:"";
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.12);
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+  transition:transform .18s ease;
+}
+.meeting-mode-state{
+  position:absolute;
+  top:50%;
+  right:9px;
+  transform:translateY(-50%);
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.meeting-mode-toggle.is-on .meeting-mode-switch{
+  background:var(--na-blue)!important;
+  border-color:var(--na-blue)!important;
+}
+.meeting-mode-toggle.is-on .meeting-mode-switch::after{
+  transform:translateX(32px);
+}
+.meeting-mode-toggle.is-on .meeting-mode-state{
+  left:10px;
+  right:auto;
 }
 #summary{
   margin:8px 0 12px;
@@ -925,7 +983,7 @@ header{
     margin-bottom:8px;
   }
 
-  .quick-online-toggle{
+  .meeting-mode-toggle{
     min-height:30px;
     margin-bottom:7px;
     padding:5px 9px;
@@ -1222,7 +1280,6 @@ button{
 }
 
 button.secondary,
-.quick-online-toggle.secondary,
 .mobile-map-toggle.secondary{
   background:#fff!important;
   color:var(--na-blue)!important;
@@ -1230,7 +1287,6 @@ button.secondary,
 }
 
 button.secondary:hover,
-.quick-online-toggle.secondary:hover,
 .mobile-map-toggle.secondary:hover,
 button:hover{
   background:var(--na-blue)!important;
@@ -1300,9 +1356,6 @@ header h1{
   button.secondary:hover,
   button.secondary:active,
   button.secondary:focus,
-  .quick-online-toggle.secondary:hover,
-  .quick-online-toggle.secondary:active,
-  .quick-online-toggle.secondary:focus,
   .mobile-map-toggle.secondary:hover,
   .mobile-map-toggle.secondary:active,
   .mobile-map-toggle.secondary:focus,
@@ -1338,4 +1391,17 @@ button:focus:not(:focus-visible),
 a.meeting-action-btn:focus:not(:focus-visible),
 .back-link:focus:not(:focus-visible){
   outline:none!important;
+}
+
+.meeting-mode-toggle:hover,
+.meeting-mode-toggle:active,
+.meeting-mode-toggle:focus,
+.meeting-mode-toggle:focus:not(:focus-visible),
+.meeting-mode-toggle.is-on:hover,
+.meeting-mode-toggle.is-on:active,
+.meeting-mode-toggle.is-on:focus,
+.meeting-mode-toggle.is-on:focus:not(:focus-visible){
+  background:#fff!important;
+  color:var(--na-blue)!important;
+  border-color:var(--na-blue)!important;
 }
