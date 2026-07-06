@@ -122,6 +122,17 @@ async function exportFolderPdf(){
   doc.setLineWidth(0.4);
   doc.line(x, y, panelW - margin, y);
   y += 5;
+  setBlue();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Vad är öppna möten?", x, y);
+  y += 6;
+  setBlack();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.8);
+  const openMeetingsText = "På öppna möten är även icke beroende välkomna att lyssna.\n\nÖvriga möten är endast öppna för deltagare som redan har identifierat sig som beroende eller tror att de har ett drogproblem.";
+  y = drawWrappedText(doc, openMeetingsText, x, y, panelW - margin*2, 4.2);
+  y += 4;
   try { doc.addImage(qrDataUrl, "PNG", x, y, 26, 26); } catch(e) {}
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
