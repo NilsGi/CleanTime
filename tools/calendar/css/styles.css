@@ -66,7 +66,7 @@ header {
   color: var(--na-blue);
   font-size: 28px;
   line-height: 1;
-  font-weight: 850;
+  font-weight: 400;
   letter-spacing: -0.03em;
 }
 
@@ -91,7 +91,7 @@ header {
   background: #ffffff;
   color: var(--na-blue);
   text-decoration: none;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1;
   white-space: nowrap;
 }
@@ -155,8 +155,8 @@ button {
   color: var(--na-blue);
   cursor: pointer;
   margin: 4px 5px 8px 0;
-  font-weight: 800;
   font: inherit;
+  font-weight: 400;
   box-shadow: 0 2px 6px rgba(16,32,139,.12);
 }
 
@@ -212,7 +212,7 @@ textarea:focus {
 
 label {
   display: block;
-  font-weight: 800;
+  font-weight: 400;
   color: #24304a;
 }
 
@@ -241,7 +241,7 @@ label {
   background: #f3f6ff;
   border: 1px solid #c7d7ff;
   color: var(--na-blue);
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .service-credit,
@@ -271,7 +271,7 @@ label {
 .filter-section summary {
   cursor: pointer;
   padding: 10px;
-  font-weight: 800;
+  font-weight: 400;
   background: var(--na-blue-soft);
   color: var(--na-blue);
 }
@@ -488,12 +488,12 @@ label {
   margin-bottom: 7px;
   line-height: 1.45;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .meta a {
   color: var(--na-blue);
-  font-weight: 800;
+  font-weight: 400;
   text-decoration: none;
 }
 
@@ -516,7 +516,7 @@ label {
   border-radius: 999px;
   background: var(--na-blue-soft);
   color: var(--na-blue);
-  font-weight: 850;
+  font-weight: 400;
 }
 
 .type,
@@ -530,7 +530,7 @@ label {
   padding: 3px 8px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 400;
 }
 
 .type {
@@ -550,7 +550,7 @@ details {
 summary {
   cursor: pointer;
   color: var(--na-blue);
-  font-weight: 850;
+  font-weight: 400;
 }
 
 .actions,
@@ -574,7 +574,7 @@ summary {
   border-radius: 9px;
   border: 1px solid var(--na-blue);
   font-size: 14px;
-  font-weight: 850;
+  font-weight: 400;
   margin: 0;
 }
 
