@@ -29,7 +29,7 @@ body.clean-theme .hero {
   background: #ffffff;
   color: #1E4F9A;
   text-align: center;
-  padding: 24px 16px 30px;
+  padding: 70px 16px 30px;
   border-bottom: 1px solid #d8e3f3;
   box-shadow: 0 2px 12px rgba(30, 79, 154, 0.08);
 }
@@ -59,12 +59,12 @@ body.clean-theme .counter {
 }
 
 body.clean-theme .language-toggle {
-  top: 14px;
-  right: 14px;
+  top: 18px;
+  right: 18px;
   background: #ffffff;
   border: 1px solid #c9d8ed;
   border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10);
 }
 
 body.clean-theme .language-toggle button {
@@ -265,7 +265,17 @@ body.clean-theme .footer-logo {
 
 @media (max-width: 560px) {
   body.clean-theme .hero {
-    padding: 20px 12px 24px;
+    padding: 88px 12px 28px;
+  }
+
+  body.clean-theme .language-toggle {
+    top: 18px;
+    right: 18px;
+  }
+
+  body.clean-theme .language-toggle button {
+    padding: 10px 16px;
+    font-size: 16px;
   }
 
   body.clean-theme .wrap {
@@ -478,7 +488,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260707-004";
+  const APP_VERSION = "20260707-005";
 
   const routes = {
     "": "menu",
