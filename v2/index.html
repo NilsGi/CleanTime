@@ -14,11 +14,11 @@ utan skriftligt tillstånd från upphovsmannen.
   <link rel="apple-touch-icon" href="assets/favicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clean-time-build" content="20260707-standalone-001">
+  <meta name="clean-time-build" content="20260707-standalone-002">
   <title>Clean Time</title>
   <script>
     (function () {
-      const build = "20260707-standalone-001";
+      const build = "20260707-standalone-002";
       const key = "clean-time-build";
       try {
         const previous = localStorage.getItem(key);
@@ -62,7 +62,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
 (function () {
-  const APP_VERSION = "20260707-001";
+  const APP_VERSION = "20260707-002";
 
   const routes = {
     "": "menu",
@@ -109,13 +109,6 @@ body.clean-theme .hero {
   box-shadow: 0 2px 12px rgba(30, 79, 154, 0.08);
 }
 
-body.clean-theme .theme-logo {
-  display: block;
-  width: 74px;
-  height: auto;
-  margin: 0 auto 12px;
-}
-
 body.clean-theme .hero h1,
 body.clean-theme .hero .event-title {
   color: #1E4F9A;
@@ -124,7 +117,7 @@ body.clean-theme .hero .event-title {
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.16;
-  text-transform: none;
+  text-transform: uppercase;
 }
 
 body.clean-theme .hero p,
@@ -163,7 +156,9 @@ body.clean-theme .language-toggle button:hover {
 }
 
 body.clean-theme .wrap {
+  width: min(640px, calc(100% - 24px));
   margin: 20px auto 42px;
+  padding: 0;
 }
 
 body.clean-theme .card,
@@ -180,6 +175,7 @@ body.clean-theme .result-box {
 
 body.clean-theme .card h2,
 body.clean-theme h2,
+body.clean-theme .stat-title,
 body.clean-theme .stat-value,
 body.clean-theme .summary-value,
 body.clean-theme .event-display-title,
@@ -187,6 +183,7 @@ body.clean-theme .preview-title,
 body.clean-theme .qr-title,
 body.clean-theme .link-label {
   color: #1E4F9A;
+  text-transform: uppercase;
 }
 
 body.clean-theme .helper-text,
@@ -200,9 +197,14 @@ body.clean-theme input[type="password"],
 body.clean-theme input[type="date"],
 body.clean-theme select,
 body.clean-theme textarea {
+  display: block;
+  width: calc(100% - 32px);
+  margin-left: auto;
+  margin-right: auto;
   border: 1px solid #c9d8ed;
   border-radius: 10px;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
 body.clean-theme input:focus,
@@ -216,6 +218,10 @@ body.clean-theme button,
 body.clean-theme .nav-button,
 body.clean-theme .back-button,
 body.clean-theme .secondary-button {
+  display: block;
+  width: calc(100% - 32px);
+  margin-left: auto;
+  margin-right: auto;
   background: #ffffff;
   color: #1E4F9A;
   border: 1.5px solid #1E4F9A;
@@ -239,13 +245,26 @@ body.clean-theme .secondary-button:focus-visible {
 }
 
 body.clean-theme .copy-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 44px;
   height: 44px;
   min-width: 44px;
   padding: 0;
+  margin: 0;
   background: #1E4F9A;
   color: #ffffff;
   border-color: #1E4F9A;
+}
+
+body.clean-theme .button-grid,
+body.clean-theme .flyer-actions,
+body.clean-theme .admin-actions,
+body.clean-theme .row-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 body.clean-theme .copy-icon-button svg {
@@ -289,13 +308,8 @@ body.clean-theme .footer-logo {
     padding: 20px 12px 24px;
   }
 
-  body.clean-theme .theme-logo {
-    width: 64px;
-  }
-
   body.clean-theme .wrap {
     margin-top: 14px;
-    padding: 0 12px;
   }
 }
 `;
@@ -487,16 +501,7 @@ body.clean-theme .footer-logo {
   }
 
   function decorateThemedPage(name, root) {
-    const hero = root.querySelector(".hero");
-    if (hero && !hero.querySelector(".theme-logo")) {
-      const logo = document.createElement("img");
-      logo.className = "theme-logo";
-      logo.src = "/assets/na-logo.png";
-      logo.alt = "Narcotics Anonymous, Anonyma Narkomaner";
-      hero.prepend(logo);
-    }
-
-    if (name !== "menu" && !root.querySelector(".back-button")) {
+    if (name !== "menu" && name !== "register" && !root.querySelector(".back-button")) {
       const target = root.querySelector(".card") || root.querySelector(".wrap");
       if (target) {
         const backLink = document.createElement("a");
