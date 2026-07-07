@@ -1405,3 +1405,85 @@ a.meeting-action-btn:focus:not(:focus-visible),
   color:var(--na-blue)!important;
   border-color:var(--na-blue)!important;
 }
+
+/* v14.17 – tätare kontroller och lugnare textvikter */
+#status:empty{
+  display:none;
+}
+
+.top-buttons{
+  gap:7px!important;
+  margin:3px 0 10px!important;
+}
+.top-buttons button{
+  min-height:31px!important;
+  padding:5px 5px!important;
+  font-size:11.5px!important;
+  line-height:1.05!important;
+  font-weight:500!important;
+}
+
+.active-filters{
+  gap:4px!important;
+  margin:0 0 7px!important;
+  font-size:11px!important;
+  line-height:1.2!important;
+}
+.active-filter-title{
+  font-weight:600!important;
+}
+.active-filter-chip{
+  padding:2px 6px!important;
+  font-size:11px!important;
+}
+.active-filter-chip b{
+  font-weight:600!important;
+}
+
+.meeting-mode-switches{
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:8px!important;
+  width:100%;
+  margin:0 0 10px!important;
+}
+.meeting-mode-toggle{
+  width:100%!important;
+  justify-content:space-between!important;
+  gap:7px!important;
+  min-height:34px!important;
+  padding:4px 5px 4px 9px!important;
+  font-size:11.5px!important;
+  font-weight:500!important;
+}
+.meeting-mode-label{
+  font-weight:500!important;
+}
+.meeting-mode-state{
+  font-weight:600!important;
+}
+
+.filter-section > summary,
+.stats-details summary{
+  font-weight:500!important;
+}
+.info-details{
+  margin-top:8px!important;
+}
+.info-details-body{
+  padding:8px 10px;
+}
+.info-details .beta-notice{
+  margin:0 0 6px!important;
+  font-size:10.5px!important;
+}
+.info-details .service-credit{
+  margin:0!important;
+}
+
+.meeting-actions .meeting-action-btn,
+.meeting-actions a.meeting-action-btn,
+.meeting-actions button.meeting-action-btn,
+.meeting-actions button.meeting-action-btn.secondary{
+  font-weight:500!important;
+}

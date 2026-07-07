@@ -8,6 +8,7 @@ let listFollowsMap = true;
 let includeOnlineMeetings = false;
 let includePhysicalMeetings = true;
 let suppressMapMoveRender = false;
+let statusTimer = null;
 
 window.addEventListener("error", event => {
   setStatus('<span class="bad">JavaScript-fel:</span> ' + esc(event.message));
@@ -16,9 +17,23 @@ window.addEventListener("error", event => {
 function $(id){return document.getElementById(id)}
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function setStatus(html){
+function setStatus(html, options = {}){
   const status = $("status");
-  if (status) status.innerHTML = html;
+  if (!status) return;
+
+  if (statusTimer) {
+    clearTimeout(statusTimer);
+    statusTimer = null;
+  }
+
+  status.innerHTML = html || "";
+
+  if (options.temporary) {
+    statusTimer = setTimeout(() => {
+      status.innerHTML = "";
+      statusTimer = null;
+    }, options.timeout || 4500);
+  }
 }
 
 

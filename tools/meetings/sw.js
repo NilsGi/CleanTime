@@ -1,4 +1,4 @@
-const CACHE_NAME = 'na-moteslista-v4';
+const CACHE_NAME = 'na-moteslista-v5';
 const APP_SHELL = [
   '/',
   '/index.html',

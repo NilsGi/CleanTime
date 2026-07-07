@@ -171,7 +171,8 @@ async function fetchAllMeetings(){
       '<span class="ok">Klart.</span> Hämtade ' +
       (meta.uniqueCount || allMeetings.length) +
       ' möten.' +
-      (meta.duplicateCount ? ' Dubbletter borttagna: ' + meta.duplicateCount + '.' : '')
+      (meta.duplicateCount ? ' Dubbletter borttagna: ' + meta.duplicateCount + '.' : ''),
+      { temporary: true, timeout: 4500 }
     );
   } catch(error) {
     setStatus('<span class="bad">Fel:</span> ' + esc(error.message));
