@@ -29,7 +29,7 @@ body.clean-theme .hero {
   background: #ffffff;
   color: #1E4F9A;
   text-align: center;
-  padding: 70px 16px 30px;
+  padding: 24px 16px 30px;
   border-bottom: 1px solid #d8e3f3;
   box-shadow: 0 2px 12px rgba(30, 79, 154, 0.08);
 }
@@ -59,12 +59,12 @@ body.clean-theme .counter {
 }
 
 body.clean-theme .language-toggle {
-  top: 18px;
-  right: 18px;
+  top: 14px;
+  right: 14px;
   background: #ffffff;
   border: 1px solid #c9d8ed;
   border-radius: 999px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 body.clean-theme .language-toggle button {
@@ -265,17 +265,20 @@ body.clean-theme .footer-logo {
 
 @media (max-width: 560px) {
   body.clean-theme .hero {
-    padding: 88px 12px 28px;
+    padding: 22px 12px 24px;
   }
 
-  body.clean-theme .language-toggle {
-    top: 18px;
-    right: 18px;
+  body.clean-theme .hero .language-toggle {
+    position: static;
+    display: inline-flex;
+    width: auto;
+    margin: 0 auto 18px;
+    transform: none;
   }
 
-  body.clean-theme .language-toggle button {
-    padding: 10px 16px;
-    font-size: 16px;
+  body.clean-theme .hero h1,
+  body.clean-theme .hero .event-title {
+    margin-top: 0;
   }
 
   body.clean-theme .wrap {
@@ -414,7 +417,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260707-004" defer></script>
+  <script src="assets/js/app.js?v=20260707-007" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -488,7 +491,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260707-005";
+  const APP_VERSION = "20260707-007";
 
   const routes = {
     "": "menu",
@@ -519,6 +522,10 @@ utan skriftligt tillstånd från upphovsmannen.
     : window.location.href;
   const scriptBase = new URL(".", currentScriptUrl);
   const routeNames = new Set(Object.values(routes));
+  const SERVICE_CREDIT_TEXTS = {
+    sv: 'Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige.<br>Narcotics Anonymous® och NA-logotyper används inom NA:s servicestruktur.',
+    en: "This web app is a service tool developed by the Web Committee of NA Region Sweden for Narcotics Anonymous Sweden.<br>Narcotics Anonymous® and NA logos are used within NA's service structure."
+  };
   const MEETING_LIST_THEME_CSS = ${JSON.stringify(meetingListThemeCss)};
 
   const state = {
@@ -545,6 +552,9 @@ utan skriftligt tillstånd från upphovsmannen.
     },
     routeUrl(route, params) {
       return window.location.origin + this.routePath(route, params);
+    },
+    updateServiceCredit(root) {
+      updateServiceCredit(root || document);
     }
   };
 
@@ -691,11 +701,13 @@ utan skriftligt tillstånd från upphovsmannen.
     if (themedPage) {
       decorateThemedPage(name, app);
     }
+    updateServiceCredit(app);
     rewriteInternalLinks(app);
 
     if (typeof page.init === "function") {
       try {
         page.init();
+        updateServiceCredit(app);
         rewriteInternalLinks(app);
       } catch (error) {
         console.error(error);
@@ -720,6 +732,17 @@ utan skriftligt tillstånd från upphovsmannen.
     }
   }
 
+  function getLanguage() {
+    return localStorage.getItem("language") === "en" ? "en" : "sv";
+  }
+
+  function updateServiceCredit(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(".service-credit").forEach((element) => {
+      element.innerHTML = SERVICE_CREDIT_TEXTS[getLanguage()];
+    });
+  }
+
   async function boot() {
     const name = getPageName();
     const file = pageFiles[name] || pageFiles.menu;
@@ -735,6 +758,13 @@ utan skriftligt tillstånd från upphovsmannen.
       console.error(error);
     }
   }
+
+  document.addEventListener("click", (event) => {
+    const languageButton = event.target.closest && event.target.closest("#langSv, #langEn");
+    if (languageButton) {
+      setTimeout(() => updateServiceCredit(document), 0);
+    }
+  }, true);
 
   document.addEventListener("click", (event) => {
     const anchor = event.target.closest && event.target.closest("a[href]");

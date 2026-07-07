@@ -129,6 +129,8 @@ window.CleanTime.registerPage("register", {
         let registrationStatus = null;
         let registrationIsOpen = false;
         let existingEntryId = null;
+        let eventTitleKey = null;
+        let currentMessage = null;
     
         const cleanDateInput = document.getElementById("cleanDate");
         const submitButton = document.getElementById("submitButton");
@@ -170,6 +172,11 @@ window.CleanTime.registerPage("register", {
           }
     
           refreshDisplayedStatsLanguage();
+          updateEventTitleText();
+          refreshCurrentMessage();
+          if (window.CleanTime && typeof window.CleanTime.updateServiceCredit === "function") {
+            window.CleanTime.updateServiceCredit(document);
+          }
         }
     
         function refreshDisplayedStatsLanguage() {
@@ -230,16 +237,35 @@ window.CleanTime.registerPage("register", {
           };
         }
     
-        function showMessage(text, type) {
+        function showMessage(text, type, key, suffix) {
           const box = document.getElementById("messageBox");
           box.textContent = text;
           box.className = "message " + type;
+          currentMessage = key ? { key, type, suffix: suffix || "" } : null;
+        }
+
+        function showTranslatedMessage(key, type, suffix) {
+          showMessage(t(key) + (suffix || ""), type, key, suffix || "");
+        }
+
+        function refreshCurrentMessage() {
+          if (!currentMessage) return;
+          showTranslatedMessage(currentMessage.key, currentMessage.type, currentMessage.suffix);
         }
     
         function clearMessage() {
           const box = document.getElementById("messageBox");
           box.textContent = "";
           box.className = "message";
+          currentMessage = null;
+        }
+
+        function updateEventTitleText() {
+          if (eventTitleKey) {
+            setText("eventTitle", t(eventTitleKey));
+          } else if (eventName) {
+            setText("eventTitle", eventName.toUpperCase());
+          }
         }
     
         function setEmptyStats() {
@@ -264,7 +290,8 @@ window.CleanTime.registerPage("register", {
           eventSlug = params.get("event");
     
           if (!eventSlug) {
-            document.getElementById("eventTitle").innerText = t("eventMissingTitle");
+            eventTitleKey = "eventMissingTitle";
+            updateEventTitleText();
             submitButton.disabled = true;
             setEmptyStats();
             return false;
@@ -278,7 +305,8 @@ window.CleanTime.registerPage("register", {
             .single();
     
           if (error || !data) {
-            document.getElementById("eventTitle").innerText = t("eventNotFoundTitle");
+            eventTitleKey = "eventNotFoundTitle";
+            updateEventTitleText();
             submitButton.disabled = true;
             setEmptyStats();
             console.log(error);
@@ -290,20 +318,23 @@ window.CleanTime.registerPage("register", {
           registrationStatus = data.registration_status;
           registrationIsOpen = registrationStatus === "open";
     
-          document.getElementById("eventTitle").innerText = eventName.toUpperCase();
+          eventTitleKey = null;
+          updateEventTitleText();
           document.title = t("pageTitle") + " - " + eventName;
     
           if (!registrationIsOpen) {
             submitButton.disabled = true;
     
             if (registrationStatus === "not_started") {
-              document.getElementById("eventTitle").innerText = t("eventNotStartedTitle");
-              showMessage(t("eventNotStartedMessage"), "error");
+              eventTitleKey = "eventNotStartedTitle";
+              updateEventTitleText();
+              showTranslatedMessage("eventNotStartedMessage", "error");
             } else if (registrationStatus === "closed") {
-              document.getElementById("eventTitle").innerText = t("eventClosedTitle");
-              showMessage(t("eventClosedMessage"), "error");
+              eventTitleKey = "eventClosedTitle";
+              updateEventTitleText();
+              showTranslatedMessage("eventClosedMessage", "error");
             } else {
-              showMessage(t("errorNoEvent"), "error");
+              showTranslatedMessage("errorNoEvent", "error");
             }
           } else {
             submitButton.disabled = false;
@@ -350,7 +381,7 @@ window.CleanTime.registerPage("register", {
             .limit(1);
     
           if (error) {
-            showMessage(t("errorStats") + " " + error.message, "error");
+            showTranslatedMessage("errorStats", "error", " " + error.message);
             console.log(error);
             setEmptyStats();
             return;
@@ -382,17 +413,17 @@ window.CleanTime.registerPage("register", {
           clearMessage();
     
           if (!eventId) {
-            showMessage(t("errorNoEvent"), "error");
+            showTranslatedMessage("errorNoEvent", "error");
             return;
           }
     
           if (!registrationIsOpen) {
             if (registrationStatus === "not_started") {
-              showMessage(t("eventNotStartedMessage"), "error");
+              showTranslatedMessage("eventNotStartedMessage", "error");
             } else if (registrationStatus === "closed") {
-              showMessage(t("eventClosedMessage"), "error");
+              showTranslatedMessage("eventClosedMessage", "error");
             } else {
-              showMessage(t("errorNoEvent"), "error");
+              showTranslatedMessage("errorNoEvent", "error");
             }
             return;
           }
@@ -405,7 +436,7 @@ window.CleanTime.registerPage("register", {
             .limit(1);
     
           if (existingError) {
-            showMessage(t("errorCheckExisting") + " " + existingError.message, "error");
+            showTranslatedMessage("errorCheckExisting", "error", " " + existingError.message);
             console.log(existingError);
             return;
           }
@@ -417,7 +448,7 @@ window.CleanTime.registerPage("register", {
           const rawDate = cleanDateInput.value;
     
           if (rawDate.length !== 8) {
-            showMessage(t("errorDateFormat"), "error");
+            showTranslatedMessage("errorDateFormat", "error");
             return;
           }
     
@@ -431,19 +462,19 @@ window.CleanTime.registerPage("register", {
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
           if (Number.isNaN(selectedDate.getTime())) {
-            showMessage(t("errorInvalidDate"), "error");
+            showTranslatedMessage("errorInvalidDate", "error");
             return;
           }
     
           const inputYear = Number(rawDate.substring(0, 4));
     
           if (inputYear < 1953) {
-            showMessage(t("errorTooOldDate"), "error");
+            showTranslatedMessage("errorTooOldDate", "error");
             return;
           }
     
           if (selectedDate > today) {
-            showMessage(t("errorFutureDate"), "error");
+            showTranslatedMessage("errorFutureDate", "error");
             return;
           }
     
@@ -481,18 +512,15 @@ window.CleanTime.registerPage("register", {
     
           if (error) {
             if (error.message && error.message.includes("clean_time_device_unique")) {
-              showMessage(t("errorOldUniqueIndex"), "error");
+              showTranslatedMessage("errorOldUniqueIndex", "error");
             } else if (error.message && error.message.includes("clean_time_device_event_unique")) {
-              showMessage(t("errorAlreadyRegistered"), "error");
+              showTranslatedMessage("errorAlreadyRegistered", "error");
             } else {
-              showMessage(t("errorGeneric") + " " + error.message, "error");
+              showTranslatedMessage("errorGeneric", "error", " " + error.message);
             }
             console.log(error);
           } else {
-            showMessage(
-              existingEntryId ? t("successUpdated") : t("successRegistered"),
-              "success"
-            );
+            showTranslatedMessage(existingEntryId ? "successUpdated" : "successRegistered", "success");
             await loadExistingRegistration();
             await loadStats();
           }
