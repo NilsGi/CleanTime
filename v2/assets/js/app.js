@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260707-007";
+  const APP_VERSION = "20260707-008";
 
   const routes = {
     "": "menu",

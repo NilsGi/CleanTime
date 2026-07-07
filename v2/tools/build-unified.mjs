@@ -417,7 +417,7 @@ utan skriftligt tillstånd från upphovsmannen.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/js/app.js?v=20260707-007" defer></script>
+  <script src="assets/js/app.js?v=20260707-008" defer></script>
 </head>
 <body>
   <div id="app" aria-live="polite"></div>
@@ -491,7 +491,7 @@ utan skriftligt tillstånd från upphovsmannen.
   fs.writeFileSync(
     path.join(root, "assets/js/app.js"),
     `(function () {
-  const APP_VERSION = "20260707-007";
+  const APP_VERSION = "20260707-008";
 
   const routes = {
     "": "menu",
