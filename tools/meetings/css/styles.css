@@ -1514,3 +1514,25 @@ header h1{
   left:8px!important;
   right:auto!important;
 }
+
+/* v14.19 – info bara i Info-fliken och filter i en kolumn */
+.beta-notice,
+.service-credit{
+  display:none!important;
+}
+.info-details .beta-notice,
+.info-details .service-credit{
+  display:block!important;
+}
+.filter-grid{
+  grid-template-columns:1fr!important;
+  gap:0!important;
+}
+.filter-hint-global{
+  margin:0 0 8px!important;
+  font-size:11px!important;
+}
+.checkbox-filter{
+  max-height:130px!important;
+  margin-bottom:8px!important;
+}
