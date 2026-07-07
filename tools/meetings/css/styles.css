@@ -1487,3 +1487,30 @@ a.meeting-action-btn:focus:not(:focus-visible),
 .meeting-actions button.meeting-action-btn.secondary{
   font-weight:500!important;
 }
+
+/* v14.18 – rubrik, tillbaka och smalare switchreglage */
+header h1{
+  font-weight:500!important;
+}
+.back-link{
+  font-weight:500!important;
+}
+.meeting-mode-switch{
+  width:48px!important;
+  height:24px!important;
+}
+.meeting-mode-switch::after{
+  width:18px!important;
+  height:18px!important;
+}
+.meeting-mode-toggle.is-on .meeting-mode-switch::after{
+  transform:translateX(24px)!important;
+}
+.meeting-mode-state{
+  right:7px!important;
+  font-size:9px!important;
+}
+.meeting-mode-toggle.is-on .meeting-mode-state{
+  left:8px!important;
+  right:auto!important;
+}
