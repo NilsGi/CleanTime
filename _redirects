@@ -1,0 +1,15 @@
+/v2/register/* /v2/index.html 200
+/v2/total/* /v2/index.html 200
+/v2/statistics/* /v2/index.html 200
+/v2/manual/* /v2/index.html 200
+/v2/history/* /v2/index.html 200
+/v2/create/* /v2/index.html 200
+/v2/admin/* /v2/index.html 200
+/register/* /index.html 200
+/total/* /index.html 200
+/statistics/* /index.html 200
+/manual/* /index.html 200
+/history/* /index.html 200
+/create/* /index.html 200
+/admin/* /index.html 200
+/* /index.html 200
