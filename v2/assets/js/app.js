@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260707-002";
+  const APP_VERSION = "20260707-004";
 
   const routes = {
     "": "menu",
@@ -206,6 +206,41 @@ body.clean-theme .row-actions {
 
 body.clean-theme .copy-icon-button svg {
   stroke: currentColor;
+}
+
+body.clean-theme .message,
+body.clean-theme .selected-event,
+body.clean-theme .selected-info,
+body.clean-theme .result-box,
+body.clean-theme .link-row,
+body.clean-theme .qr-box,
+body.clean-theme .preview-flyer,
+body.clean-theme .summary-box,
+body.clean-theme .dashboard-box,
+body.clean-theme .stat-card {
+  width: calc(100% - 32px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+body.clean-theme #manualHistoryList > div > div:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+body.clean-theme #manualHistoryList button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px !important;
+  min-width: 44px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 8px 12px !important;
 }
 
 body.clean-theme .danger-button,
