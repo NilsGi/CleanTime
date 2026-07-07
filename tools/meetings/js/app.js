@@ -242,7 +242,33 @@ function bindUi(){
   $("toggleMobileMapBtn")?.addEventListener("click", toggleMobileMap);
 }
 
+function ensureAppInfo(){
+  const stats = $("statsFull");
+  const aside = document.querySelector("#meetingsPanel aside");
+  if (!stats || !aside) return;
+
+  let info = $("appInfo");
+  if (!info) {
+    info = document.createElement("details");
+    info.id = "appInfo";
+    info.className = "filter-section info-details";
+    info.innerHTML =
+      '<summary>Info</summary>' +
+      '<div class="info-details-body">' +
+        '<div class="beta-notice">Beta-version: möteslistan uppdateras och förbättras löpande.</div>' +
+        '<div class="service-credit">' +
+          'Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. NA® och NA-logotyper används inom NA:s servicestruktur.' +
+        '</div>' +
+      '</div>';
+  }
+
+  info.classList.add("filter-section", "info-details");
+  info.open = false;
+  stats.insertAdjacentElement("afterend", info);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  ensureAppInfo();
   bindUi();
   syncResponsivePanels();
   renderActiveFilters();

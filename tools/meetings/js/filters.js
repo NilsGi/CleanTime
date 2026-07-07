@@ -330,7 +330,7 @@ function clearAllFilters(){
     map.setView([62.0, 15.0], 5);
   }
 
-  setStatus('<span class="ok">Alla filter rensade.</span>');
+  setStatus('<span class="ok">Alla filter rensade.</span>', { temporary: true, timeout: 3500 });
 }
 
 function fitDistanceFilteredMeetings(){

@@ -516,5 +516,5 @@ async function exportFolderPdf(){
   }
 
   doc.save("NA Sverige Möteslista " + exportDate + ".pdf");
-  setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>');
+  setStatus('<span class="ok">Vikbar folder-PDF skapad.</span>', { temporary: true, timeout: 3500 });
 }
