@@ -1,8 +1,0 @@
-/v2/assets/js/*
-  Cache-Control: no-cache, no-store, must-revalidate
-/v2/index.html
-  Cache-Control: no-cache, no-store, must-revalidate
-/assets/js/*
-  Cache-Control: no-cache, no-store, must-revalidate
-/index.html
-  Cache-Control: no-cache, no-store, must-revalidate
