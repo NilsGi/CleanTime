@@ -1,5 +1,5 @@
 (function () {
-  const APP_VERSION = "20260705-006";
+  const APP_VERSION = "20260707-001";
 
   const routes = {
     "": "menu",
@@ -30,6 +30,212 @@
     : window.location.href;
   const scriptBase = new URL(".", currentScriptUrl);
   const routeNames = new Set(Object.values(routes));
+  const MEETING_LIST_THEME_CSS = `
+body.clean-theme {
+  background: #f7f9fc;
+  color: #0f172a;
+}
+
+body.clean-theme .hero {
+  position: relative;
+  background: #ffffff;
+  color: #1E4F9A;
+  text-align: center;
+  padding: 24px 16px 30px;
+  border-bottom: 1px solid #d8e3f3;
+  box-shadow: 0 2px 12px rgba(30, 79, 154, 0.08);
+}
+
+body.clean-theme .theme-logo {
+  display: block;
+  width: 74px;
+  height: auto;
+  margin: 0 auto 12px;
+}
+
+body.clean-theme .hero h1,
+body.clean-theme .hero .event-title {
+  color: #1E4F9A;
+  margin: 0 0 8px;
+  font-size: clamp(24px, 6vw, 38px);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.16;
+  text-transform: none;
+}
+
+body.clean-theme .hero p,
+body.clean-theme .hero .hero-subtitle,
+body.clean-theme .counter-note {
+  color: #475569;
+  opacity: 1;
+}
+
+body.clean-theme .counter {
+  color: #1E4F9A;
+  font-size: clamp(2rem, 9vw, 4rem);
+  letter-spacing: 0;
+}
+
+body.clean-theme .language-toggle {
+  top: 14px;
+  right: 14px;
+  background: #ffffff;
+  border: 1px solid #c9d8ed;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+body.clean-theme .language-toggle button {
+  color: #1E4F9A;
+  background: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+body.clean-theme .language-toggle button.active,
+body.clean-theme .language-toggle button:hover {
+  background: #1E4F9A;
+  color: #ffffff;
+}
+
+body.clean-theme .wrap {
+  margin: 20px auto 42px;
+}
+
+body.clean-theme .card,
+body.clean-theme .stat-card,
+body.clean-theme .summary-box,
+body.clean-theme .qr-box,
+body.clean-theme .preview-flyer,
+body.clean-theme .link-row,
+body.clean-theme .result-box {
+  border-radius: 12px;
+  border: 1px solid #d8e3f3;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+body.clean-theme .card h2,
+body.clean-theme h2,
+body.clean-theme .stat-value,
+body.clean-theme .summary-value,
+body.clean-theme .event-display-title,
+body.clean-theme .preview-title,
+body.clean-theme .qr-title,
+body.clean-theme .link-label {
+  color: #1E4F9A;
+}
+
+body.clean-theme .helper-text,
+body.clean-theme .stat-note,
+body.clean-theme .created-note {
+  color: #475569;
+}
+
+body.clean-theme input[type="text"],
+body.clean-theme input[type="password"],
+body.clean-theme input[type="date"],
+body.clean-theme select,
+body.clean-theme textarea {
+  border: 1px solid #c9d8ed;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+body.clean-theme input:focus,
+body.clean-theme select:focus,
+body.clean-theme textarea:focus {
+  outline: 3px solid rgba(30, 79, 154, 0.16);
+  border-color: #1E4F9A;
+}
+
+body.clean-theme button,
+body.clean-theme .nav-button,
+body.clean-theme .back-button,
+body.clean-theme .secondary-button {
+  background: #ffffff;
+  color: #1E4F9A;
+  border: 1.5px solid #1E4F9A;
+  border-radius: 10px;
+  box-shadow: none;
+  font-weight: 750;
+}
+
+body.clean-theme button:hover,
+body.clean-theme .nav-button:hover,
+body.clean-theme .back-button:hover,
+body.clean-theme .secondary-button:hover,
+body.clean-theme button:focus-visible,
+body.clean-theme .nav-button:focus-visible,
+body.clean-theme .back-button:focus-visible,
+body.clean-theme .secondary-button:focus-visible {
+  background: #1E4F9A;
+  color: #ffffff;
+  border-color: #1E4F9A;
+  transform: none;
+}
+
+body.clean-theme .copy-icon-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  background: #1E4F9A;
+  color: #ffffff;
+  border-color: #1E4F9A;
+}
+
+body.clean-theme .copy-icon-button svg {
+  stroke: currentColor;
+}
+
+body.clean-theme .danger-button,
+body.clean-theme button[style*="#b91c1c"],
+body.clean-theme button[style*="background:#b91c1c"] {
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+body.clean-theme .danger-button:hover,
+body.clean-theme button[style*="#b91c1c"]:hover,
+body.clean-theme button[style*="background:#b91c1c"]:hover {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+body.clean-theme .message.success,
+body.clean-theme .selected-event,
+body.clean-theme .selected-info,
+body.clean-theme .link-row {
+  background: #eef5ff;
+  border-color: #c9d8ed;
+  color: #163D78;
+}
+
+body.clean-theme table th {
+  background: #eef5ff;
+  color: #1E4F9A;
+}
+
+body.clean-theme .footer-logo {
+  width: min(70vw, 220px);
+}
+
+@media (max-width: 560px) {
+  body.clean-theme .hero {
+    padding: 20px 12px 24px;
+  }
+
+  body.clean-theme .theme-logo {
+    width: 64px;
+  }
+
+  body.clean-theme .wrap {
+    margin-top: 14px;
+    padding: 0 12px;
+  }
+}
+`;
 
   const state = {
     pages: Object.create(null),
@@ -186,7 +392,8 @@
 
     state.currentPage = name;
     document.title = page.title || "Clean Time";
-    document.body.className = "route-" + name;
+    const themedPage = name !== "total";
+    document.body.className = "route-" + name + (themedPage ? " clean-theme" : "");
 
     let style = document.getElementById("page-style");
     if (!style) {
@@ -195,8 +402,11 @@
       document.head.appendChild(style);
     }
 
-    style.textContent = page.style || "";
+    style.textContent = (page.style || "") + (themedPage ? "\n\n" + MEETING_LIST_THEME_CSS : "");
     app.innerHTML = page.html || "";
+    if (themedPage) {
+      decorateThemedPage(name, app);
+    }
     rewriteInternalLinks(app);
 
     if (typeof page.init === "function") {
@@ -209,6 +419,28 @@
         warning.style.cssText = "max-width:760px;margin:16px auto;padding:12px;border:1px solid #fecdd3;border-radius:12px;background:#fff1f2;color:#9f1239;font-family:Segoe UI,Arial,sans-serif";
         warning.textContent = "Sidan laddades, men en funktion kunde inte starta. Kontrollera anslutning och konsolen.";
         app.prepend(warning);
+      }
+    }
+  }
+
+  function decorateThemedPage(name, root) {
+    const hero = root.querySelector(".hero");
+    if (hero && !hero.querySelector(".theme-logo")) {
+      const logo = document.createElement("img");
+      logo.className = "theme-logo";
+      logo.src = "/assets/na-logo.png";
+      logo.alt = "Narcotics Anonymous, Anonyma Narkomaner";
+      hero.prepend(logo);
+    }
+
+    if (name !== "menu" && !root.querySelector(".back-button")) {
+      const target = root.querySelector(".card") || root.querySelector(".wrap");
+      if (target) {
+        const backLink = document.createElement("a");
+        backLink.className = "back-button theme-back-button";
+        backLink.href = "./";
+        backLink.textContent = "Till huvudmenyn";
+        target.appendChild(backLink);
       }
     }
   }
