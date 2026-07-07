@@ -1468,7 +1468,10 @@ a.meeting-action-btn:focus:not(:focus-visible),
   font-weight:500!important;
 }
 .info-details{
+  display:block!important;
+  visibility:visible!important;
   margin-top:8px!important;
+  margin-bottom:12px!important;
 }
 .info-details-body{
   padding:8px 10px;
@@ -1535,4 +1538,8 @@ header h1{
 .checkbox-filter{
   max-height:130px!important;
   margin-bottom:8px!important;
+}
+
+#appInfo > summary{
+  display:list-item!important;
 }
