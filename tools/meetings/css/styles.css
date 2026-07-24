@@ -1544,7 +1544,7 @@ header h1{
   display:list-item!important;
 }
 
-/* v14.22 – ortssökning och gemensam utgångspunkt för avstånd */
+/* v14.23 – ortssökning och gemensam utgångspunkt för avstånd */
 .place-search{
   margin:0 0 8px;
 }

@@ -271,10 +271,57 @@ function ensureAppInfo(){
   stats.insertAdjacentElement("afterend", info);
 }
 
+let placeSearchLoaderPromise = null;
+
+function showPlaceSearchLoadError(){
+  const message = "Ortsökningen kunde inte startas. Ladda om sidan och försök igen.";
+  console.error(message);
+
+  const status = $("status");
+  if (status) {
+    status.innerHTML = '<span class="bad">' + esc(message) + '</span>';
+  }
+}
+
+function initializePlaceSearch(){
+  if (typeof window.initPlaceSearch === "function") {
+    window.initPlaceSearch();
+    return Promise.resolve(true);
+  }
+
+  if (placeSearchLoaderPromise) return placeSearchLoaderPromise;
+
+  placeSearchLoaderPromise = new Promise(resolve => {
+    const script = document.createElement("script");
+    script.src = "js/place-search.js?v=14.23&fallback=1";
+    script.dataset.placeSearchFallback = "true";
+
+    script.addEventListener("load", () => {
+      if (typeof window.initPlaceSearch === "function") {
+        window.initPlaceSearch();
+        resolve(true);
+        return;
+      }
+
+      showPlaceSearchLoadError();
+      resolve(false);
+    });
+
+    script.addEventListener("error", () => {
+      showPlaceSearchLoadError();
+      resolve(false);
+    });
+
+    document.head.appendChild(script);
+  });
+
+  return placeSearchLoaderPromise;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   ensureAppInfo();
   bindUi();
-  initPlaceSearch();
+  initializePlaceSearch();
   syncResponsivePanels();
   renderActiveFilters();
   syncMeetingModeButtons();

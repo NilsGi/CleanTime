@@ -15,7 +15,7 @@ function normalizePlaceSearchTerm(value){
 
 function loadSwedishPlaces(){
   if (!swedishPlacesPromise) {
-    swedishPlacesPromise = fetch("data/sweden-places.json", {
+    swedishPlacesPromise = fetch("data/sweden-places.json?v=14.23", {
       method: "GET",
       headers: { "Accept": "application/json" }
     })
@@ -432,6 +432,8 @@ function initPlaceSearch(){
   const wrapper = document.querySelector(".place-search");
 
   if (!input || !button) return;
+  if (input.dataset.placeSearchInitialized === "true") return;
+  input.dataset.placeSearchInitialized = "true";
 
   input.addEventListener("input", schedulePlaceSearchPreview);
   input.addEventListener("focus", () => {
@@ -463,3 +465,5 @@ function initPlaceSearch(){
 
   updateDistanceOriginUi();
 }
+
+window.initPlaceSearch = initPlaceSearch;

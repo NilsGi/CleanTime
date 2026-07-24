@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>NA Sverige - Möten</title>
   <meta name="theme-color" content="#10208b">
-  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="manifest" href="/manifest.webmanifest?v=14.23">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=14.23">
 </head>
 
 <body>
@@ -175,20 +175,20 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/api.js"></script>
-<script src="js/meetings.js"></script>
-<script src="js/filters.js"></script>
-<script src="js/place-search.js"></script>
-<script src="js/map.js"></script>
-<script src="js/stats.js"></script>
-<script src="js/pdf-folder.js"></script>
-<script src="js/share-navigation.js"></script>
-<script src="js/app.js"></script>
+<script src="js/utils.js?v=14.23"></script>
+<script src="js/api.js?v=14.23"></script>
+<script src="js/meetings.js?v=14.23"></script>
+<script src="js/filters.js?v=14.23"></script>
+<script src="js/place-search.js?v=14.23"></script>
+<script src="js/map.js?v=14.23"></script>
+<script src="js/stats.js?v=14.23"></script>
+<script src="js/pdf-folder.js?v=14.23"></script>
+<script src="js/share-navigation.js?v=14.23"></script>
+<script src="js/app.js?v=14.23"></script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(error => console.warn("Service worker kunde inte registreras", error));
+    navigator.serviceWorker.register("/sw.js?v=14.23").catch(error => console.warn("Service worker kunde inte registreras", error));
   });
 }
 </script>
