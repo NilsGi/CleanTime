@@ -15,7 +15,7 @@ function normalizePlaceSearchTerm(value){
 
 function loadSwedishPlaces(){
   if (!swedishPlacesPromise) {
-    swedishPlacesPromise = fetch("data/sweden-places.json?v=14.23", {
+    swedishPlacesPromise = fetch("data/sweden-places.json?v=14.24", {
       method: "GET",
       headers: { "Accept": "application/json" }
     })

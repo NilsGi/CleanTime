@@ -271,6 +271,54 @@ function ensureAppInfo(){
   stats.insertAdjacentElement("afterend", info);
 }
 
+function ensurePlaceSearchUi(){
+  const section = $("mapFilterSection");
+  const body = section?.querySelector(".filter-section-body");
+  if (!section || !body) return false;
+
+  const summary = section.querySelector("summary");
+  if (summary) summary.textContent = "Närmaste möten/karta";
+
+  if (!$("placeSearch")) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "place-search";
+    wrapper.innerHTML =
+      '<label for="placeSearch">Sök närmaste möten från en ort</label>' +
+      '<div class="place-search-control">' +
+        '<input id="placeSearch" type="search" placeholder="Skriv en ort, t.ex. Uppsala" ' +
+          'autocomplete="off" role="combobox" aria-autocomplete="list" ' +
+          'aria-expanded="false" aria-controls="placeSearchResults">' +
+        '<button id="placeSearchBtn" type="button">Hitta möten</button>' +
+      '</div>' +
+      '<div id="placeSearchResults" class="place-search-results" role="listbox" ' +
+        'aria-label="Välj ort" hidden></div>' +
+      '<div id="placeSearchSelection" class="place-search-selection" aria-live="polite" hidden>' +
+        '<span id="placeSearchSelectionText"></span>' +
+        '<button id="clearPlaceSearchBtn" class="secondary place-search-clear" type="button">Rensa</button>' +
+      '</div>' +
+      '<div class="filter-hint place-search-hint">' +
+        'Sökningen omfattar svenska orter och orterna i möteslistan.' +
+      '</div>';
+    body.insertBefore(wrapper, body.firstElementChild);
+  }
+
+  const distanceLabel = body.querySelector('label[for="distanceFilter"]');
+  if (distanceLabel) {
+    distanceLabel.id = "distanceFilterLabel";
+    distanceLabel.textContent = "Avstånd";
+  }
+
+  const distanceContainer = $("distanceFilter")?.parentElement;
+  if (distanceContainer && !distanceContainer.querySelector(".distance-filter-hint")) {
+    const hint = document.createElement("div");
+    hint.className = "filter-hint distance-filter-hint";
+    hint.textContent = "Utan vald ort används din position när du väljer ett avstånd.";
+    distanceContainer.appendChild(hint);
+  }
+
+  return true;
+}
+
 let placeSearchLoaderPromise = null;
 
 function showPlaceSearchLoadError(){
@@ -293,7 +341,7 @@ function initializePlaceSearch(){
 
   placeSearchLoaderPromise = new Promise(resolve => {
     const script = document.createElement("script");
-    script.src = "js/place-search.js?v=14.23&fallback=1";
+    script.src = "js/place-search.js?v=14.24&fallback=1";
     script.dataset.placeSearchFallback = "true";
 
     script.addEventListener("load", () => {
@@ -320,6 +368,7 @@ function initializePlaceSearch(){
 
 document.addEventListener("DOMContentLoaded", () => {
   ensureAppInfo();
+  ensurePlaceSearchUi();
   bindUi();
   initializePlaceSearch();
   syncResponsivePanels();
