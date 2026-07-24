@@ -81,11 +81,42 @@
     </details>
 
     <details id="mapFilterSection" class="filter-section">
-      <summary>Avstånd/karta</summary>
+      <summary>Närmaste möten/karta</summary>
       <div class="filter-section-body">
+        <div class="place-search">
+          <label for="placeSearch">Sök närmaste möten från en ort</label>
+          <div class="place-search-control">
+            <input
+              id="placeSearch"
+              type="search"
+              placeholder="Skriv en ort, t.ex. Uppsala"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="placeSearchResults"
+            >
+            <button id="placeSearchBtn" type="button">Hitta möten</button>
+          </div>
+          <div
+            id="placeSearchResults"
+            class="place-search-results"
+            role="listbox"
+            aria-label="Välj ort"
+            hidden
+          ></div>
+          <div id="placeSearchSelection" class="place-search-selection" aria-live="polite" hidden>
+            <span id="placeSearchSelectionText"></span>
+            <button id="clearPlaceSearchBtn" class="secondary place-search-clear" type="button">Rensa</button>
+          </div>
+          <div class="filter-hint place-search-hint">
+            Sökningen omfattar svenska orter och orterna i möteslistan.
+          </div>
+        </div>
+
         <div class="filter-grid view-distance-grid">
           <div>
-            <label for="distanceFilter">Avstånd från mig</label>
+            <label id="distanceFilterLabel" for="distanceFilter">Avstånd</label>
             <select id="distanceFilter">
               <option value="">Alla avstånd</option>
               <option value="5">Inom 5 km</option>
@@ -95,6 +126,9 @@
               <option value="100">Inom 100 km</option>
               <option value="250">Inom 250 km</option>
             </select>
+            <div class="filter-hint distance-filter-hint">
+              Utan vald ort används din position när du väljer ett avstånd.
+            </div>
           </div>
         </div>
 
@@ -122,6 +156,10 @@
         <div class="service-credit">
           Denna webbapp är ett serviceverktyg utvecklat av NA Region Sveriges webbkommitté för Anonyma Narkomaner Sverige. NA® och NA-logotyper används inom NA:s servicestruktur.
         </div>
+        <div class="place-data-credit">
+          Ortsdata: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a>
+          via cities.json, licens <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.
+        </div>
       </div>
     </details>
     <div id="summary" class="muted"></div>
@@ -141,6 +179,7 @@
 <script src="js/api.js"></script>
 <script src="js/meetings.js"></script>
 <script src="js/filters.js"></script>
+<script src="js/place-search.js"></script>
 <script src="js/map.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/pdf-folder.js"></script>

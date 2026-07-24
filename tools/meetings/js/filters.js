@@ -232,6 +232,7 @@ function getFilterLabelText(){
   rows.push(["Mötestyp", meetingTypes.length ? meetingTypes.join(", ") : "Alla"]);
   rows.push(["Visning", getMeetingVisibilityLabel()]);
   if (search) rows.push(["Sökning", search]);
+  if (userPosition && distanceOriginLabel) rows.push(["Utgångspunkt", distanceOriginLabel]);
   if (distance) rows.push(["Avstånd", "Inom " + distance + " km"]);
   return rows;
 }
@@ -291,6 +292,9 @@ function getActiveFilterTags(){
   if (!(includeOnlineMeetings && includePhysicalMeetings)) {
     tags.push({ label: "Visning", value: getMeetingVisibilityLabel() });
   }
+  if (userPosition && distanceOriginLabel) {
+    tags.push({ label: "Utgångspunkt", value: distanceOriginLabel });
+  }
   if (distance) tags.push({ label: "Avstånd", value: "inom " + distance + " km" });
 
   return tags;
@@ -312,17 +316,15 @@ function clearAllFilters(){
     setSelectedValues(id, []);
   });
 
-  const distance = $("distanceFilter");
-  if (distance) distance.value = "";
-
   includeOnlineMeetings = false;
   includePhysicalMeetings = true;
 
-  userPosition = null;
-  if (userMarker && map) {
-    map.removeLayer(userMarker);
-    userMarker = null;
-  }
+  resetDistanceOrigin({
+    clearInput: true,
+    clearDistance: true,
+    render: false,
+    quiet: true
+  });
 
   renderAll(false);
 
@@ -333,27 +335,25 @@ function clearAllFilters(){
   setStatus('<span class="ok">Alla filter rensade.</span>', { temporary: true, timeout: 3500 });
 }
 
-function fitDistanceFilteredMeetings(){
+function fitDistanceFilteredMeetings(groupsOverride = null){
   if (!map || !userPosition) return;
 
   const maxDistance = Number($("distanceFilter")?.value || 0);
-  if (!maxDistance) {
-    fitVisible();
-    return;
-  }
+  const groups = (Array.isArray(groupsOverride)
+    ? groupsOverride
+    : groupMeetingsForDisplay(filteredMeetings()).filter(groupMatchesMap))
+    .filter(g => g.distance !== null && g.distance !== undefined)
+    .sort((a,b) => a.distance - b.distance);
 
-  const meetingList = filteredMeetings();
-  const groups = groupMeetingsForDisplay(meetingList)
-    .filter(groupMatchesMap)
-    .filter(g => g.distance !== null && g.distance !== undefined && g.distance <= maxDistance);
+  const groupsToFit = maxDistance
+    ? groups.filter(g => g.distance <= maxDistance)
+    : groups.slice(0, 10);
 
   const points = [];
 
-  if (userPosition) {
-    points.push([userPosition.lat, userPosition.lng]);
-  }
+  points.push([userPosition.lat, userPosition.lng]);
 
-  groups.forEach(g => {
+  groupsToFit.forEach(g => {
     points.push([g.latitude, g.longitude]);
   });
 
@@ -393,7 +393,11 @@ function updateUserPositionMarker(){
 	      iconAnchor: [12, 32]
 	    }),
 	    zIndexOffset: 1000
-	  }).addTo(map).bindPopup("Du är här");
+	  }).addTo(map).bindPopup(
+      distanceOriginSource === "place"
+        ? "Utgångspunkt: " + esc(distanceOriginLabel || "Vald ort")
+        : "Din position"
+    );
 }
 
 function handleDistanceFilterChange(){
@@ -401,21 +405,43 @@ function handleDistanceFilterChange(){
   const value = distanceEl ? distanceEl.value : "";
 
   if (!value) {
-    userPosition = null;
-
-    if (userMarker && map) {
-      map.removeLayer(userMarker);
-      userMarker = null;
+    if (distanceOriginSource === "device") {
+      resetDistanceOrigin({
+        clearInput: false,
+        clearDistance: false,
+        render: false,
+        quiet: true
+      });
     }
 
+    updateDistanceOriginUi();
     renderAll(false);
-    setStatus('<span class="ok">Avståndsfiltret rensat.</span>');
+    setStatus(
+      distanceOriginSource === "place"
+        ? '<span class="ok">Avståndsfiltret rensat.</span> Mötena sorteras fortfarande från vald ort.'
+        : '<span class="ok">Avståndsfiltret rensat.</span>',
+      { temporary: true }
+    );
+    return;
+  }
+
+  if (userPosition) {
+    renderAll(false);
+    setStatus(
+      '<span class="ok">Avstånd uppdaterat.</span> Visar möten inom ' +
+      esc(value) +
+      " km från " +
+      esc(distanceOriginLabel || "vald utgångspunkt") +
+      ".",
+      { temporary: true }
+    );
     return;
   }
 
   if (!navigator.geolocation) {
     setStatus('<span class="bad">Din webbläsare stödjer inte platsdelning.</span>');
     if (distanceEl) distanceEl.value = "";
+    updateDistanceOriginUi();
     renderActiveFilters();
     return;
   }
@@ -424,26 +450,33 @@ function handleDistanceFilterChange(){
 
   navigator.geolocation.getCurrentPosition(
     pos => {
-      userPosition = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      };
-
-      updateUserPositionMarker();
+      setDistanceOrigin(
+        {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        },
+        {
+          source: "device",
+          label: "Din position"
+        }
+      );
 
       renderAll(false);
-      fitDistanceFilteredMeetings();
 
       setStatus(
         '<span class="ok">Position hämtad.</span> Visar möten inom ' +
         value +
-        ' km.'
+        " km.",
+        { temporary: true }
       );
     },
     err => {
-      userPosition = null;
-
-      if (distanceEl) distanceEl.value = "";
+      resetDistanceOrigin({
+        clearInput: false,
+        clearDistance: true,
+        render: false,
+        quiet: true
+      });
       renderActiveFilters();
 
       let message = err.message || "Kunde inte hämta position.";

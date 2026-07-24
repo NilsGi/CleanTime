@@ -284,6 +284,7 @@ function groupPopupHtml(g){
 }
 
 function buildListHtml(groups){
+  const sortByDistance = !!userPosition;
   const meetings = groups
     .flatMap(g => g.meetings.map(m => ({
       ...m,
@@ -295,7 +296,13 @@ function buildListHtml(groups){
       _groupLng: g.longitude,
       _groupDistance: g.distance
     })))
-    .sort(compareMeetingsByDayTime);
+    .sort((a,b) => {
+      if (sortByDistance) {
+        const distanceOrder = (a._groupDistance ?? Infinity) - (b._groupDistance ?? Infinity);
+        if (distanceOrder) return distanceOrder;
+      }
+      return compareMeetingsByDayTime(a,b);
+    });
 
   if (!meetings.length) {
     return "<p>Inga möten matchar filtret.</p>";
@@ -307,7 +314,9 @@ function buildListHtml(groups){
   meetings.forEach(m => {
     const day = cleanDay(m.days);
 
-    if (day !== currentDay) {
+    if (sortByDistance && !html) {
+      html += '<h2 class="day-heading">Närmaste möten</h2>';
+    } else if (!sortByDistance && day !== currentDay) {
       currentDay = day;
       html += `<h2 class="day-heading">${esc(day)}</h2>`;
     }
@@ -321,7 +330,7 @@ function buildListHtml(groups){
     html += `
       <div class="meeting" data-lat="${esc(m._groupLat ?? "")}" data-lng="${esc(m._groupLng ?? "")}" data-popup-key="${esc(m._groupKey)}">
         <h3>${esc(m.title || m._groupTitle || "Okänt möte")}</h3>
-        <div class="meeting-time-main"><b>${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</b></div>
+        <div class="meeting-time-main"><b>${sortByDistance ? esc(day) + " " : ""}${esc((m.startTime||"").slice(0,5))}–${esc((m.endTime||"").slice(0,5))}</b></div>
         <div class="muted"><span class="district-swatch" style="background:${esc(getDistrictColor(getMeetingDistrict(m) || m._groupDistrict || "Okänt distrikt"))}"></span>${esc(getCity(m) || m._groupCity || "")} · ${esc(getMeetingDistrict(m) || m._groupDistrict || "")}</div>
         ${address ? `<div>${esc(address)}</div>` : ""}
         ${station}

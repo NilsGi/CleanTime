@@ -1,4 +1,4 @@
-const CACHE_NAME = 'na-moteslista-v9';
+const CACHE_NAME = 'na-moteslista-v14-22';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,11 +7,13 @@ const APP_SHELL = [
   '/js/api.js',
   '/js/meetings.js',
   '/js/filters.js',
+  '/js/place-search.js',
   '/js/map.js',
   '/js/stats.js',
   '/js/pdf-folder.js',
   '/js/share-navigation.js',
   '/js/app.js',
+  '/data/sweden-places.json',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png'

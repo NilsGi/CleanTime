@@ -98,7 +98,8 @@ function setMobileMapCollapsed(collapsed){
   if (!collapsed && map) {
     setTimeout(() => {
       map.invalidateSize();
-      renderAll(true);
+      if (userPosition) fitDistanceFilteredMeetings();
+      else renderAll(true);
     }, 80);
   } else {
     renderAll(false);
@@ -164,7 +165,7 @@ async function fetchAllMeetings(){
 	
 	    populateFiltersFromSmartProxy(json);
     renderAll(false);
-    fitVisible();
+    if (!userPosition) fitVisible();
 
     const meta = json.meta || {};
     setStatus(
@@ -186,17 +187,17 @@ function renderAll(syncFromMap = false){
   const meetingList = filteredMeetings(syncFromMap);
   const groupList = groupMeetingsForDisplay(meetingList);
   const mapGroups = groupList.filter(groupMatchesMap);
-  const searchActive = hasActiveTextSearch();
 
   const shouldFitMapToFilters =
     !syncFromMap &&
     map &&
-    mapGroups.length &&
+    (mapGroups.length || userPosition) &&
     !suppressMapMoveRender &&
     !isMobileMapCollapsed();
 
   if (shouldFitMapToFilters) {
-    fitGroupsOnMap(mapGroups);
+    if (userPosition) fitDistanceFilteredMeetings(mapGroups);
+    else fitGroupsOnMap(mapGroups);
   }
 
   const visibleGroupList = shouldUseMapViewForList(syncFromMap)
@@ -204,11 +205,14 @@ function renderAll(syncFromMap = false){
     : groupList;
 
   const visibleMeetingCount = visibleGroupList.reduce((sum, group) => sum + group.meetings.length, 0);
-  const distanceText = userPosition && $("distanceFilter").value
-    ? "<br><b>Avstånd:</b> visar grupper inom " + $("distanceFilter").value + " km från din position."
-    : userPosition
-      ? "<br><b>Position hämtad:</b> välj ett avstånd i filtret för att begränsa resultaten."
-      : "";
+  const selectedDistance = $("distanceFilter")?.value || "";
+  const distanceText = userPosition
+    ? selectedDistance
+      ? "<br><b>Utgångspunkt:</b> " + esc(distanceOriginLabel || "Vald plats") +
+        " · visar grupper inom " + esc(selectedDistance) + " km."
+      : "<br><b>Utgångspunkt:</b> " + esc(distanceOriginLabel || "Vald plats") +
+        " · mötena sorteras närmast först."
+    : "";
 
   const summary = $("summary");
   if (summary) {
@@ -270,6 +274,7 @@ function ensureAppInfo(){
 document.addEventListener("DOMContentLoaded", () => {
   ensureAppInfo();
   bindUi();
+  initPlaceSearch();
   syncResponsivePanels();
   renderActiveFilters();
   syncMeetingModeButtons();
